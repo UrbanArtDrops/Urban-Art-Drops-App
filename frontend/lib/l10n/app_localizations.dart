@@ -1046,6 +1046,180 @@ abstract class AppLocalizations {
   /// **'Social channels and claim override'**
   String get dropMakerPublishSubtitle;
 
+  /// No description provided for @makeDropWizardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Make a Drop Wizard'**
+  String get makeDropWizardTitle;
+
+  /// No description provided for @makeDropWizardFabLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Create drop'**
+  String get makeDropWizardFabLabel;
+
+  /// No description provided for @makeDropStepBrowseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'1. Review artworks'**
+  String get makeDropStepBrowseTitle;
+
+  /// No description provided for @makeDropStepBrowseDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Review the available artworks for the new drop.'**
+  String get makeDropStepBrowseDescription;
+
+  /// No description provided for @makeDropStepSelectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'2. Select artwork'**
+  String get makeDropStepSelectTitle;
+
+  /// No description provided for @makeDropStepSelectDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Click an artwork that should be used for this drop.'**
+  String get makeDropStepSelectDescription;
+
+  /// No description provided for @makeDropStepDownloadTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'3. Download 3D model'**
+  String get makeDropStepDownloadTitle;
+
+  /// No description provided for @makeDropStepDownloadDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Download the 3D model or asset file for production.'**
+  String get makeDropStepDownloadDescription;
+
+  /// No description provided for @makeDropDownloadAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Download 3D model'**
+  String get makeDropDownloadAction;
+
+  /// No description provided for @makeDropDownloadSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Download step marked as done.'**
+  String get makeDropDownloadSet;
+
+  /// No description provided for @makeDropDownloadDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Download step completed.'**
+  String get makeDropDownloadDone;
+
+  /// No description provided for @makeDropSelectArtFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select an artwork first.'**
+  String get makeDropSelectArtFirst;
+
+  /// No description provided for @makeDropConfirmDownloadFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Please complete the download step first.'**
+  String get makeDropConfirmDownloadFirst;
+
+  /// No description provided for @makeDropStepPrintTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'4. Print drop + enter quantity'**
+  String get makeDropStepPrintTitle;
+
+  /// No description provided for @makeDropStepPrintDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Printing the drop is out of scope. Enter the item quantity here.'**
+  String get makeDropStepPrintDescription;
+
+  /// No description provided for @makeDropItemCountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Item quantity'**
+  String get makeDropItemCountLabel;
+
+  /// No description provided for @makeDropItemCountInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'The quantity must be at least 1.'**
+  String get makeDropItemCountInvalid;
+
+  /// No description provided for @makeDropStepQrTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'5. Show QR codes'**
+  String get makeDropStepQrTitle;
+
+  /// No description provided for @makeDropStepQrDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate QR codes for all drop items.'**
+  String get makeDropStepQrDescription;
+
+  /// No description provided for @makeDropGenerateQrAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate QR codes'**
+  String get makeDropGenerateQrAction;
+
+  /// No description provided for @makeDropGenerateQrFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Please generate QR codes first.'**
+  String get makeDropGenerateQrFirst;
+
+  /// No description provided for @makeDropStepPlaceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'6. Place drop + enter location'**
+  String get makeDropStepPlaceTitle;
+
+  /// No description provided for @makeDropStepPlaceDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Placing the drop is out of scope. Then enter the drop location.'**
+  String get makeDropStepPlaceDescription;
+
+  /// No description provided for @makeDropLocationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop location'**
+  String get makeDropLocationLabel;
+
+  /// No description provided for @makeDropLocationRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a location.'**
+  String get makeDropLocationRequired;
+
+  /// No description provided for @makeDropWizardFinished.
+  ///
+  /// In en, this message translates to:
+  /// **'Wizard completed. You can continue editing the drop now.'**
+  String get makeDropWizardFinished;
+
+  /// No description provided for @makeDropNextAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get makeDropNextAction;
+
+  /// No description provided for @makeDropBackAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get makeDropBackAction;
+
+  /// No description provided for @makeDropFinishAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish'**
+  String get makeDropFinishAction;
+
   /// No description provided for @moderationTitle.
   ///
   /// In en, this message translates to:

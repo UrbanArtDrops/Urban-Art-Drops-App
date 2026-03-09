@@ -11,6 +11,7 @@ class PageShell extends StatelessWidget {
     required this.body,
     this.actions = const <Widget>[],
     this.expandBodyToViewport = false,
+    this.floatingActionButton,
     super.key,
   });
 
@@ -18,6 +19,7 @@ class PageShell extends StatelessWidget {
   final Widget body;
   final List<Widget> actions;
   final bool expandBodyToViewport;
+  final Widget? floatingActionButton;
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +43,7 @@ class PageShell extends StatelessWidget {
               ...actions,
             ],
           ),
+          floatingActionButton: floatingActionButton,
           drawer: Drawer(
             child: SafeArea(
               child: ListView(

@@ -517,6 +517,101 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dropMakerPublishSubtitle => 'Social channels and claim override';
 
   @override
+  String get makeDropWizardTitle => 'Make a Drop Wizard';
+
+  @override
+  String get makeDropWizardFabLabel => 'Create drop';
+
+  @override
+  String get makeDropStepBrowseTitle => '1. Review artworks';
+
+  @override
+  String get makeDropStepBrowseDescription =>
+      'Review the available artworks for the new drop.';
+
+  @override
+  String get makeDropStepSelectTitle => '2. Select artwork';
+
+  @override
+  String get makeDropStepSelectDescription =>
+      'Click an artwork that should be used for this drop.';
+
+  @override
+  String get makeDropStepDownloadTitle => '3. Download 3D model';
+
+  @override
+  String get makeDropStepDownloadDescription =>
+      'Download the 3D model or asset file for production.';
+
+  @override
+  String get makeDropDownloadAction => 'Download 3D model';
+
+  @override
+  String get makeDropDownloadSet => 'Download step marked as done.';
+
+  @override
+  String get makeDropDownloadDone => 'Download step completed.';
+
+  @override
+  String get makeDropSelectArtFirst => 'Please select an artwork first.';
+
+  @override
+  String get makeDropConfirmDownloadFirst =>
+      'Please complete the download step first.';
+
+  @override
+  String get makeDropStepPrintTitle => '4. Print drop + enter quantity';
+
+  @override
+  String get makeDropStepPrintDescription =>
+      'Printing the drop is out of scope. Enter the item quantity here.';
+
+  @override
+  String get makeDropItemCountLabel => 'Item quantity';
+
+  @override
+  String get makeDropItemCountInvalid => 'The quantity must be at least 1.';
+
+  @override
+  String get makeDropStepQrTitle => '5. Show QR codes';
+
+  @override
+  String get makeDropStepQrDescription =>
+      'Generate QR codes for all drop items.';
+
+  @override
+  String get makeDropGenerateQrAction => 'Generate QR codes';
+
+  @override
+  String get makeDropGenerateQrFirst => 'Please generate QR codes first.';
+
+  @override
+  String get makeDropStepPlaceTitle => '6. Place drop + enter location';
+
+  @override
+  String get makeDropStepPlaceDescription =>
+      'Placing the drop is out of scope. Then enter the drop location.';
+
+  @override
+  String get makeDropLocationLabel => 'Drop location';
+
+  @override
+  String get makeDropLocationRequired => 'Please enter a location.';
+
+  @override
+  String get makeDropWizardFinished =>
+      'Wizard completed. You can continue editing the drop now.';
+
+  @override
+  String get makeDropNextAction => 'Next';
+
+  @override
+  String get makeDropBackAction => 'Back';
+
+  @override
+  String get makeDropFinishAction => 'Finish';
+
+  @override
   String get moderationTitle => 'Moderation queue';
 
   @override

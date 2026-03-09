@@ -89,10 +89,30 @@ class _MapPageState extends State<MapPage> {
                 : "";
             final dropMakerName =
                 usersById[drop.dropMakerId]?.userName ?? drop.dropMakerId;
+            final claimedHunterNames = <String>[];
+            final seenClaimers = <String>{};
+            for (final item in drop.claimedItems) {
+              String hunterName = "";
+              if (item.claimedByUserId != null) {
+                hunterName =
+                    usersById[item.claimedByUserId!]?.userName ??
+                    item.claimedByUserId!;
+              } else if (item.claimedByAnonymousNickname != null) {
+                hunterName = item.claimedByAnonymousNickname!;
+              }
+
+              final normalized = hunterName.trim().toLowerCase();
+              if (normalized.isEmpty || !seenClaimers.add(normalized)) {
+                continue;
+              }
+              claimedHunterNames.add(hunterName.trim());
+            }
+            final subtitle = "$artistName · $dropMakerName";
 
             return _MapDropViewModel(
               id: drop.id,
               title: artPiece?.title ?? drop.id,
+              subtitle: subtitle,
               latitude: drop.latitude ?? _defaultCenter.latitude,
               longitude: drop.longitude ?? _defaultCenter.longitude,
               artistName: artistName,
@@ -104,6 +124,7 @@ class _MapPageState extends State<MapPage> {
               claimedItemCount: drop.claimedItemCount,
               itemCount: drop.itemCount,
               isFullyClaimed: drop.isFullyClaimed,
+              claimedHunterNames: claimedHunterNames,
             );
           })
           .toList(growable: false);
@@ -747,6 +768,11 @@ class _DropDetailsPanel extends StatelessWidget {
                   drop.title,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
+                const SizedBox(height: 4),
+                Text(
+                  drop.subtitle,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
                 const SizedBox(height: 12),
                 Text("${l10n.mapArtistLabel}: ${drop.artistName}"),
                 const SizedBox(height: 6),
@@ -762,6 +788,22 @@ class _DropDetailsPanel extends StatelessWidget {
                 Text(
                   "${l10n.mapClaimedByLabel}: ${l10n.claimedItemsValue("${drop.claimedItemCount}", "${drop.itemCount}")}",
                 ),
+                const SizedBox(height: 12),
+                Text(
+                  l10n.claimedHuntersTitle,
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+                const SizedBox(height: 6),
+                if (drop.claimedHunterNames.isEmpty)
+                  Text(l10n.mapUnclaimedLabel)
+                else
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: drop.claimedHunterNames
+                        .map((name) => Chip(label: Text(name)))
+                        .toList(growable: false),
+                  ),
               ],
             ),
           ),
@@ -781,6 +823,7 @@ class _MapDropViewModel {
   const _MapDropViewModel({
     required this.id,
     required this.title,
+    required this.subtitle,
     required this.latitude,
     required this.longitude,
     required this.artistName,
@@ -790,10 +833,12 @@ class _MapDropViewModel {
     required this.claimedItemCount,
     required this.itemCount,
     required this.isFullyClaimed,
+    required this.claimedHunterNames,
   });
 
   final String id;
   final String title;
+  final String subtitle;
   final double latitude;
   final double longitude;
   final String artistName;
@@ -803,6 +848,7 @@ class _MapDropViewModel {
   final int claimedItemCount;
   final int itemCount;
   final bool isFullyClaimed;
+  final List<String> claimedHunterNames;
 
   LatLng get position => LatLng(latitude, longitude);
 }

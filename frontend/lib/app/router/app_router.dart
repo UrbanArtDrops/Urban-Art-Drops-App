@@ -13,6 +13,7 @@ import "../../features/discovery/presentation/pages/drop_list_page.dart";
 import "../../features/discovery/presentation/pages/leaderboard_page.dart";
 import "../../features/discovery/presentation/pages/map_page.dart";
 import "../../features/drop_maker/presentation/pages/drop_maker_page.dart";
+import "../../features/drop_maker/presentation/pages/make_drop_wizard_page.dart";
 import "../../features/drop_maker/presentation/pages/my_drops_page.dart";
 import "../../features/moderation/presentation/pages/moderation_page.dart";
 
@@ -61,6 +62,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: "/drop-maker/drops",
       builder: (context, state) => const MyDropsPage(),
+    ),
+    GoRoute(
+      path: "/drop-maker/make-drop-wizard",
+      builder: (context, state) => const MakeDropWizardPage(),
     ),
     GoRoute(
       path: "/moderation/reports",

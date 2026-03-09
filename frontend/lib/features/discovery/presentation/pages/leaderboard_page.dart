@@ -51,8 +51,12 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
       final aggregates = <String, _HunterAggregate>{};
 
       for (final drop in drops) {
-        final dropTitle =
-            artById[drop.artPieceId]?.title ?? l10n.dropFallbackTitle(drop.id);
+        final artPiece = artById[drop.artPieceId];
+        final dropTitle = artPiece?.title ?? l10n.dropFallbackTitle(drop.id);
+        final previewImageUrl = _resolveDropPreviewImage(
+          artPiece: artPiece,
+          drop: drop,
+        );
         for (final item in drop.claimedItems) {
           final hunterKey = _resolveHunterKey(item);
           if (hunterKey == null) {
@@ -77,6 +81,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
             ifAbsent: () => _ClaimedDropSummary(
               dropId: drop.id,
               dropTitle: dropTitle,
+              previewImageUrl: previewImageUrl,
               claimedItems: 1,
             ),
           );
@@ -177,8 +182,8 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                                 .map(
                                   (claimedDrop) => ListTile(
                                     contentPadding: EdgeInsets.zero,
-                                    leading: const Icon(
-                                      Icons.location_on_outlined,
+                                    leading: _LeaderboardDropImage(
+                                      imageUrl: claimedDrop.previewImageUrl,
                                     ),
                                     title: Text(claimedDrop.dropTitle),
                                     subtitle: Text(
@@ -248,17 +253,20 @@ class _ClaimedDropSummary {
   const _ClaimedDropSummary({
     required this.dropId,
     required this.dropTitle,
+    required this.previewImageUrl,
     required this.claimedItems,
   });
 
   final String dropId;
   final String dropTitle;
+  final String previewImageUrl;
   final int claimedItems;
 
   _ClaimedDropSummary copyWith({int? claimedItems}) {
     return _ClaimedDropSummary(
       dropId: dropId,
       dropTitle: dropTitle,
+      previewImageUrl: previewImageUrl,
       claimedItems: claimedItems ?? this.claimedItems,
     );
   }
@@ -270,4 +278,46 @@ class _HunterAggregate {
   final String displayName;
   int totalClaims = 0;
   final Map<String, _ClaimedDropSummary> claimedDrops = {};
+}
+
+String _resolveDropPreviewImage({
+  required ArtPieceModel? artPiece,
+  required DropModel drop,
+}) {
+  if (artPiece != null && artPiece.photoUrls.isNotEmpty) {
+    return artPiece.photoUrls.first;
+  }
+  if (drop.locationPhotoUrls.isNotEmpty) {
+    return drop.locationPhotoUrls.first;
+  }
+
+  return "";
+}
+
+class _LeaderboardDropImage extends StatelessWidget {
+  const _LeaderboardDropImage({required this.imageUrl});
+
+  final String imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    if (imageUrl.isEmpty) {
+      return const CircleAvatar(
+        child: Icon(Icons.image_not_supported_outlined, size: 18),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Image.network(
+        imageUrl,
+        width: 48,
+        height: 48,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => const CircleAvatar(
+          child: Icon(Icons.image_not_supported_outlined, size: 18),
+        ),
+      ),
+    );
+  }
 }

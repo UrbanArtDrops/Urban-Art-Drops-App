@@ -523,6 +523,101 @@ class AppLocalizationsDe extends AppLocalizations {
   String get dropMakerPublishSubtitle => 'Social-Kanäle und Claim-Override';
 
   @override
+  String get makeDropWizardTitle => 'Make a Drop Wizard';
+
+  @override
+  String get makeDropWizardFabLabel => 'Drop erstellen';
+
+  @override
+  String get makeDropStepBrowseTitle => '1. Kunstwerke ansehen';
+
+  @override
+  String get makeDropStepBrowseDescription =>
+      'Sichte die verfügbaren Kunstwerke für den neuen Drop.';
+
+  @override
+  String get makeDropStepSelectTitle => '2. Kunstwerk auswählen';
+
+  @override
+  String get makeDropStepSelectDescription =>
+      'Klicke ein Kunstwerk an, das für den Drop verwendet werden soll.';
+
+  @override
+  String get makeDropStepDownloadTitle => '3. 3D-Modell herunterladen';
+
+  @override
+  String get makeDropStepDownloadDescription =>
+      'Lade das 3D-Modell oder die Asset-Datei für die Produktion herunter.';
+
+  @override
+  String get makeDropDownloadAction => '3D-Modell herunterladen';
+
+  @override
+  String get makeDropDownloadSet => 'Download-Schritt als erledigt markiert.';
+
+  @override
+  String get makeDropDownloadDone => 'Download-Schritt erledigt.';
+
+  @override
+  String get makeDropSelectArtFirst => 'Bitte zuerst ein Kunstwerk auswählen.';
+
+  @override
+  String get makeDropConfirmDownloadFirst =>
+      'Bitte zuerst den Download-Schritt abschließen.';
+
+  @override
+  String get makeDropStepPrintTitle => '4. Drop drucken + Anzahl eingeben';
+
+  @override
+  String get makeDropStepPrintDescription =>
+      'Drop drucken ist out of scope. Trage hier die Anzahl der Gegenstände ein.';
+
+  @override
+  String get makeDropItemCountLabel => 'Anzahl Gegenstände';
+
+  @override
+  String get makeDropItemCountInvalid => 'Die Anzahl muss mindestens 1 sein.';
+
+  @override
+  String get makeDropStepQrTitle => '5. QR-Codes anzeigen';
+
+  @override
+  String get makeDropStepQrDescription =>
+      'Erzeuge die QR-Codes für alle Gegenstände des Drops.';
+
+  @override
+  String get makeDropGenerateQrAction => 'QR-Codes generieren';
+
+  @override
+  String get makeDropGenerateQrFirst => 'Bitte zuerst QR-Codes generieren.';
+
+  @override
+  String get makeDropStepPlaceTitle => '6. Drop anbringen + Standort eintragen';
+
+  @override
+  String get makeDropStepPlaceDescription =>
+      'Drop anbringen ist out of scope. Trage danach den Standort des Drops ein.';
+
+  @override
+  String get makeDropLocationLabel => 'Standort des Drops';
+
+  @override
+  String get makeDropLocationRequired => 'Bitte den Standort eintragen.';
+
+  @override
+  String get makeDropWizardFinished =>
+      'Wizard abgeschlossen. Du kannst den Drop jetzt weiterbearbeiten.';
+
+  @override
+  String get makeDropNextAction => 'Weiter';
+
+  @override
+  String get makeDropBackAction => 'Zurück';
+
+  @override
+  String get makeDropFinishAction => 'Abschließen';
+
+  @override
   String get moderationTitle => 'Moderations-Queue';
 
   @override

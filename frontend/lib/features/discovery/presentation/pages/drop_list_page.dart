@@ -2,6 +2,7 @@ import "dart:async";
 import "dart:convert";
 
 import "package:flutter/material.dart";
+import "package:flutter_bloc/flutter_bloc.dart";
 import "package:flutter_map/flutter_map.dart";
 import "package:geolocator/geolocator.dart";
 import "package:go_router/go_router.dart";
@@ -9,6 +10,7 @@ import "package:http/http.dart" as http;
 import "package:latlong2/latlong.dart";
 import "package:urban_art_drops_app/l10n/app_localizations.dart";
 
+import "../../../authentication/presentation/bloc/auth_session_cubit.dart";
 import "../../../../shared/models/app_models.dart";
 import "../../../../shared/services/app_api_client.dart";
 import "../../../../shared/widgets/page_shell.dart";
@@ -519,10 +521,23 @@ class _DropListPageState extends State<DropListPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final authState = context.watch<AuthSessionCubit>().state;
+    final canOpenWizard =
+        authState.isAuthenticated &&
+        (authState.role == AppUserRole.artist ||
+            authState.role == AppUserRole.dropMaker);
     final viewModels = _buildViewModels(l10n);
 
     return PageShell(
       title: l10n.navDrops,
+      floatingActionButton: canOpenWizard
+          ? FloatingActionButton.extended(
+              heroTag: "make-drop-wizard-fab",
+              onPressed: () => context.go("/drop-maker/make-drop-wizard"),
+              icon: const Icon(Icons.auto_fix_high_outlined),
+              label: Text(l10n.makeDropWizardFabLabel),
+            )
+          : null,
       body: _isLoading
           ? Center(child: Text(l10n.loadingData))
           : _error != null
