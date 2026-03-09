@@ -683,17 +683,27 @@ class _DropPin extends StatelessWidget {
                       color: Color(0xFFE7ECEE),
                       child: Icon(Icons.image_not_supported_outlined, size: 20),
                     )
-                  : Image.network(
-                      imageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          const ColoredBox(
-                            color: Color(0xFFE7ECEE),
-                            child: Icon(
-                              Icons.image_not_supported_outlined,
-                              size: 20,
+                  : SizedBox.expand(
+                      child: Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        alignment: Alignment.center,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) {
+                            return child;
+                          }
+
+                          return const ColoredBox(color: Color(0xFFE7ECEE));
+                        },
+                        errorBuilder: (context, error, stackTrace) =>
+                            const ColoredBox(
+                              color: Color(0xFFE7ECEE),
+                              child: Icon(
+                                Icons.image_not_supported_outlined,
+                                size: 20,
+                              ),
                             ),
-                          ),
+                      ),
                     ),
               if (isFullyClaimed)
                 ColoredBox(color: Colors.grey.shade500.withValues(alpha: 0.4)),
