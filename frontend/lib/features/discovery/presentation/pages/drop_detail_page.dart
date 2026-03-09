@@ -127,6 +127,16 @@ class _DropDetailContent extends StatelessWidget {
   final ArtPieceModel? artPiece;
   final Map<String, ManagedUser> usersById;
 
+  Widget _withUnifiedWidth(Widget child) {
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 760),
+        child: child,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final title = artPiece?.title ?? l10n.dropFallbackTitle(drop.id);
@@ -144,51 +154,61 @@ class _DropDetailContent extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(12),
       children: [
-        Text(title, style: Theme.of(context).textTheme.headlineSmall),
+        _withUnifiedWidth(
+          Text(title, style: Theme.of(context).textTheme.headlineSmall),
+        ),
         const SizedBox(height: 6),
-        Text(subtitle, style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 12),
-        _DropDetailGallery(imageUrls: photos),
-        const SizedBox(height: 12),
-        _SectionCard(
-          title: l10n.dropDetailDescriptionSection,
-          child: Text(description.isEmpty ? "-" : description),
+        _withUnifiedWidth(
+          Text(subtitle, style: Theme.of(context).textTheme.titleMedium),
         ),
         const SizedBox(height: 12),
-        _SectionCard(
-          title: l10n.claimedHuntersTitle,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.claimedItemsValue(
-                  "${drop.claimedItemCount}",
-                  "${drop.itemCount}",
-                ),
-              ),
-              const SizedBox(height: 8),
-              if (claimedHunters.isEmpty)
-                Text(l10n.mapUnclaimedLabel)
-              else
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: claimedHunters
-                      .map((name) => Chip(label: Text(name)))
-                      .toList(growable: false),
-                ),
-            ],
+        _withUnifiedWidth(_DropDetailGallery(imageUrls: photos)),
+        const SizedBox(height: 12),
+        _withUnifiedWidth(
+          _SectionCard(
+            title: l10n.dropDetailDescriptionSection,
+            child: Text(description.isEmpty ? "-" : description),
           ),
         ),
         const SizedBox(height: 12),
-        _SectionCard(
-          title: l10n.dropDetailLocationSection,
-          child: SizedBox(
-            height: 220,
-            child: _DropDetailMap(
-              l10n: l10n,
-              latitude: drop.latitude,
-              longitude: drop.longitude,
+        _withUnifiedWidth(
+          _SectionCard(
+            title: l10n.claimedHuntersTitle,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.claimedItemsValue(
+                    "${drop.claimedItemCount}",
+                    "${drop.itemCount}",
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (claimedHunters.isEmpty)
+                  Text(l10n.mapUnclaimedLabel)
+                else
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: claimedHunters
+                        .map((name) => Chip(label: Text(name)))
+                        .toList(growable: false),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        _withUnifiedWidth(
+          _SectionCard(
+            title: l10n.dropDetailLocationSection,
+            child: SizedBox(
+              height: 220,
+              child: _DropDetailMap(
+                l10n: l10n,
+                latitude: drop.latitude,
+                longitude: drop.longitude,
+              ),
             ),
           ),
         ),
@@ -401,6 +421,7 @@ class _SectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      margin: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
