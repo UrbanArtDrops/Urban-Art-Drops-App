@@ -780,8 +780,9 @@ static async Task SeedDebugDataAsync(IServiceProvider services)
         "Neon Fox Totem",
         "Leuchtendes urbanes Totem mit modularen Oberflaechen fuer den Nachtbereich.",
         ArtPieceAssetKind.Model3d);
-    artPieceOne.AddPhoto("https://example.invalid/art/neon-fox-01.jpg");
-    artPieceOne.AddPhoto("https://example.invalid/art/neon-fox-02.jpg");
+    artPieceOne.AddPhoto("https://picsum.photos/seed/neon-fox-art-01/1600/1000");
+    artPieceOne.AddPhoto("https://picsum.photos/seed/neon-fox-art-02/1600/1000");
+    artPieceOne.AddPhoto("https://picsum.photos/seed/neon-fox-art-03/1600/1000");
     artPieceOne.Publish();
 
     var artPieceTwo = ArtPiece.Create(
@@ -789,14 +790,16 @@ static async Task SeedDebugDataAsync(IServiceProvider services)
         "Steel Bird Fragment",
         "Geometrische Stahlform mit Kontrastkanten fuer experimentelle Installationen.",
         ArtPieceAssetKind.Image);
-    artPieceTwo.AddPhoto("https://example.invalid/art/steel-bird-01.jpg");
+    artPieceTwo.AddPhoto("https://picsum.photos/seed/steel-bird-art-01/1600/1000");
+    artPieceTwo.AddPhoto("https://picsum.photos/seed/steel-bird-art-02/1600/1000");
     artPieceTwo.Publish();
 
     await dbContext.ArtPieces.AddRangeAsync(artPieceOne, artPieceTwo);
 
     var dropOne = Drop.Create(artPieceOne.Id, dropMaker.Id, isStationary: false, portableItemCount: 3);
     dropOne.SetLocation(52.5208, 13.4095);
-    dropOne.AddLocationPhoto("https://example.invalid/drop/neon-fox-location-01.jpg");
+    dropOne.AddLocationPhoto("https://picsum.photos/seed/neon-fox-location-01/1600/1000");
+    dropOne.AddLocationPhoto("https://picsum.photos/seed/neon-fox-location-02/1600/1000");
     dropOne.AddItem("debug-drop-neon-fox-item-01");
     dropOne.AddItem("debug-drop-neon-fox-item-02");
     dropOne.AddItem("debug-drop-neon-fox-item-03");
@@ -805,7 +808,8 @@ static async Task SeedDebugDataAsync(IServiceProvider services)
 
     var dropTwo = Drop.Create(artPieceTwo.Id, dropMaker.Id, isStationary: true, portableItemCount: null);
     dropTwo.SetLocation(52.5331, 13.3889);
-    dropTwo.AddLocationPhoto("https://example.invalid/drop/steel-bird-location-01.jpg");
+    dropTwo.AddLocationPhoto("https://picsum.photos/seed/steel-bird-location-01/1600/1000");
+    dropTwo.AddLocationPhoto("https://picsum.photos/seed/steel-bird-location-02/1600/1000");
     dropTwo.AddItem("debug-drop-steel-bird-item-01");
     dropTwo.AddItem("debug-drop-steel-bird-item-02");
     dropTwo.Publish();

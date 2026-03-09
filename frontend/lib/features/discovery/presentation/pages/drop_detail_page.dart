@@ -134,6 +134,8 @@ class _DropDetailContent extends StatelessWidget {
         : (usersById[artPiece!.artistId]?.userName ?? artPiece!.artistId);
     final dropMakerName =
         usersById[drop.dropMakerId]?.userName ?? drop.dropMakerId;
+    final subtitle =
+        "${l10n.mapArtistLabel}: $artistName · ${l10n.mapDropMakerLabel}: $dropMakerName";
     final claimedHunters = _extractClaimedHunters(drop, usersById);
     final photos = _buildGalleryUrls(artPiece, drop);
 
@@ -142,10 +144,7 @@ class _DropDetailContent extends StatelessWidget {
       children: [
         Text(title, style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 6),
-        Text(
-          "${l10n.mapArtistLabel}: $artistName · ${l10n.mapDropMakerLabel}: $dropMakerName",
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
+        Text(subtitle, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 12),
         _DropDetailGallery(imageUrls: photos),
         const SizedBox(height: 12),
@@ -189,42 +188,6 @@ class _DropDetailContent extends StatelessWidget {
               latitude: drop.latitude,
               longitude: drop.longitude,
             ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        _SectionCard(
-          title: l10n.dropDetailTechnicalSection,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _DetailRow(label: "ID", value: drop.id),
-              _DetailRow(
-                label: l10n.statusPublished,
-                value: drop.isPublished
-                    ? l10n.statusPublished
-                    : l10n.statusUnpublished,
-              ),
-              _DetailRow(
-                label: l10n.dropStationaryLabel,
-                value: drop.isStationary ? l10n.boolYes : l10n.boolNo,
-              ),
-              _DetailRow(
-                label: l10n.dropPortableItemCountLabel,
-                value: drop.portableItemCount?.toString() ?? "-",
-              ),
-              _DetailRow(
-                label: l10n.dropLatitudeLabel,
-                value: drop.latitude?.toStringAsFixed(6) ?? "-",
-              ),
-              _DetailRow(
-                label: l10n.dropLongitudeLabel,
-                value: drop.longitude?.toStringAsFixed(6) ?? "-",
-              ),
-              _DetailRow(
-                label: l10n.dropItemCountLabel,
-                value: "${drop.itemCount}",
-              ),
-            ],
           ),
         ),
       ],
@@ -400,31 +363,6 @@ class _SectionCard extends StatelessWidget {
             child,
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _DetailRow extends StatelessWidget {
-  const _DetailRow({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 2,
-            child: Text(label, style: Theme.of(context).textTheme.labelLarge),
-          ),
-          const SizedBox(width: 8),
-          Expanded(flex: 3, child: Text(value)),
-        ],
       ),
     );
   }

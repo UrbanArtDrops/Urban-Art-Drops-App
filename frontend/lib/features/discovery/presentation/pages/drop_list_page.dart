@@ -134,14 +134,20 @@ class _DropListPageState extends State<DropListPage> {
       }
 
       final position = await Geolocator.getCurrentPosition();
+      final resolvedLocationLabel = await _resolveLocationLabelFromCoordinates(
+        latitude: position.latitude,
+        longitude: position.longitude,
+      );
       if (!mounted) {
         return;
       }
 
+      final locationLabel = resolvedLocationLabel ?? l10n.centerOnMyLocation;
       setState(() {
         _referenceLocation = LatLng(position.latitude, position.longitude);
-        _referenceLocationLabel = l10n.centerOnMyLocation;
-        _locationController.clear();
+        _referenceLocationLabel = locationLabel;
+        _locationController.text = locationLabel;
+        _lastLocationQuery = locationLabel;
         _locationSuggestions = const [];
       });
       ScaffoldMessenger.of(
@@ -157,6 +163,75 @@ class _DropListPageState extends State<DropListPage> {
       if (mounted) {
         setState(() => _isResolvingUserLocation = false);
       }
+    }
+  }
+
+  Future<String?> _resolveLocationLabelFromCoordinates({
+    required double latitude,
+    required double longitude,
+  }) async {
+    final localeTag = Localizations.localeOf(context).toLanguageTag();
+    final uri = Uri.https("nominatim.openstreetmap.org", "/reverse", {
+      "lat": latitude.toString(),
+      "lon": longitude.toString(),
+      "format": "jsonv2",
+      "addressdetails": "1",
+      "accept-language": localeTag,
+    });
+
+    try {
+      final response = await http.get(
+        uri,
+        headers: const {
+          "Accept": "application/json",
+          "User-Agent": "UrbanArtDropsApp/1.0 (drop-list-reverse)",
+        },
+      );
+
+      if (response.statusCode != 200) {
+        return null;
+      }
+
+      final payload = jsonDecode(response.body);
+      if (payload is! Map<dynamic, dynamic>) {
+        return null;
+      }
+
+      final address = payload["address"];
+      final displayName = payload["display_name"]?.toString().trim() ?? "";
+      if (address is! Map<dynamic, dynamic>) {
+        return displayName.isEmpty ? null : displayName;
+      }
+
+      final localityCandidates = [
+        address["city"],
+        address["town"],
+        address["village"],
+        address["hamlet"],
+        address["municipality"],
+        address["county"],
+      ];
+      final locality = localityCandidates
+          .map((value) => value?.toString().trim() ?? "")
+          .firstWhere((value) => value.isNotEmpty, orElse: () => "");
+      final postcode = address["postcode"]?.toString().trim() ?? "";
+
+      if (locality.isNotEmpty && postcode.isNotEmpty) {
+        return "$locality ($postcode)";
+      }
+      if (locality.isNotEmpty) {
+        return locality;
+      }
+      if (postcode.isNotEmpty) {
+        return postcode;
+      }
+      if (displayName.isNotEmpty) {
+        return displayName;
+      }
+
+      return null;
+    } catch (_) {
+      return null;
     }
   }
 
