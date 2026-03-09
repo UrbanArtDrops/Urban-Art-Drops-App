@@ -69,26 +69,32 @@ public sealed class Drop
         Longitude = null;
     }
 
-    public void AddLocationPhoto(string url)
+    public void AddLocationPhoto(byte[] binaryData, string contentType)
     {
-        if (string.IsNullOrWhiteSpace(url))
+        if (binaryData is null || binaryData.Length == 0)
         {
-            throw new DomainValidationException("Location photo url is required.");
+            throw new DomainValidationException("Location photo binary data is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(contentType))
+        {
+            throw new DomainValidationException("Location photo content type is required.");
         }
 
         LocationPhotos.Add(new DropLocationPhoto
         {
             DropId = Id,
-            Url = url.Trim()
+            BinaryData = binaryData,
+            ContentType = contentType.Trim()
         });
     }
 
-    public void ReplaceLocationPhotos(IEnumerable<string> urls)
+    public void ReplaceLocationPhotos(IEnumerable<(byte[] BinaryData, string ContentType)> photos)
     {
         LocationPhotos.Clear();
-        foreach (var url in urls)
+        foreach (var photo in photos)
         {
-            AddLocationPhoto(url);
+            AddLocationPhoto(photo.BinaryData, photo.ContentType);
         }
     }
 

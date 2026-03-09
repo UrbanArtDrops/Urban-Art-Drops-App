@@ -7,6 +7,8 @@ namespace UrbanArtDropFinder.Application.Tests;
 
 public sealed class DropClaimApplicationServiceTests
 {
+    private static readonly byte[] SamplePhotoBytes = [1, 2, 3];
+
     [Fact]
     public async Task ClaimAsync_WithAnonymousNickname_ClaimsItem()
     {
@@ -15,7 +17,7 @@ public sealed class DropClaimApplicationServiceTests
 
         var drop = Drop.Create(Guid.NewGuid(), Guid.NewGuid(), true, null);
         drop.SetLocation(50, 8);
-        drop.AddLocationPhoto("https://example.com/location.jpg");
+        drop.AddLocationPhoto(SamplePhotoBytes, "image/jpeg");
         drop.AddItem(Guid.NewGuid().ToString("N"));
         var item = drop.Items.First();
 

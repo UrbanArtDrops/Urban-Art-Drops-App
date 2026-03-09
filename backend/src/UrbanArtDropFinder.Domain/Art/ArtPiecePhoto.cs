@@ -4,5 +4,6 @@ public sealed class ArtPiecePhoto
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid ArtPieceId { get; set; }
-    public string Url { get; set; } = string.Empty;
+    public byte[] BinaryData { get; set; } = [];
+    public string ContentType { get; set; } = "application/octet-stream";
 }

@@ -13,6 +13,10 @@
   - `UnclaimedDropRadiusKm` (default 3)
   - `ShowExactPositionWhenFullyClaimed`
 
+## Media storage
+- Drop and art photos are persisted as binary data in SQL tables
+- Clients receive media URLs from API responses and load image content through `/api/media/*` endpoints
+
 ## Backup
 - Daily backup job
 - 14-day retention

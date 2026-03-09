@@ -18,6 +18,7 @@
 - Each drop item has unique QR token
 - One claim per hunter per drop
 - Anonymous nickname cannot collide with registered usernames
+- Art piece photos and drop location photos are stored as binary payloads in the database and served through media endpoints
 
 ## Discovery and Map Rendering
 - Fully claimed drops are rendered as exact-position pins

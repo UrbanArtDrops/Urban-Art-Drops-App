@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using UrbanArtDropFinder.Application.Abstractions;
@@ -30,6 +31,7 @@ builder.WebHost.ConfigureKestrel(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddGrpc();
+builder.Services.AddHttpClient("photo-fetcher");
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendDev", policy =>
@@ -57,6 +59,29 @@ await SeedDebugDataAsync(app.Services);
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok", utcNow = DateTimeOffset.UtcNow }))
     .WithName("Health");
 app.MapGrpcService<HealthGrpcService>();
+
+var mediaGroup = app.MapGroup("/api/media");
+mediaGroup.MapGet("/art-piece-photos/{photoId:guid}", async (
+    Guid photoId,
+    UrbanArtDbContext dbContext,
+    CancellationToken cancellationToken) =>
+{
+    var photo = await dbContext.ArtPiecePhotos.AsNoTracking().FirstOrDefaultAsync(x => x.Id == photoId, cancellationToken);
+    return photo is null
+        ? Results.NotFound()
+        : Results.File(photo.BinaryData, photo.ContentType, enableRangeProcessing: false);
+});
+
+mediaGroup.MapGet("/drop-location-photos/{photoId:guid}", async (
+    Guid photoId,
+    UrbanArtDbContext dbContext,
+    CancellationToken cancellationToken) =>
+{
+    var photo = await dbContext.DropLocationPhotos.AsNoTracking().FirstOrDefaultAsync(x => x.Id == photoId, cancellationToken);
+    return photo is null
+        ? Results.NotFound()
+        : Results.File(photo.BinaryData, photo.ContentType, enableRangeProcessing: false);
+});
 
 var authGroup = app.MapGroup("/api/auth");
 authGroup.MapPost("/register-local", async (
@@ -116,35 +141,48 @@ authGroup.MapPost("/verify-email/{userId:guid}", async (
 });
 
 var artGroup = app.MapGroup("/api/art-pieces");
-artGroup.MapGet("/", async (UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
-    Results.Ok(await dbContext.ArtPieces
+artGroup.MapGet("/", async (HttpContext httpContext, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+{
+    var artPieces = await dbContext.ArtPieces
         .Include(x => x.Photos)
         .AsNoTracking()
-        .ToListAsync(cancellationToken)));
+        .ToListAsync(cancellationToken);
 
-artGroup.MapGet("/{id:guid}", async (Guid id, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+    var response = artPieces
+        .Select(artPiece => ToArtPieceResponse(artPiece, httpContext.Request))
+        .ToList();
+    return Results.Ok(response);
+});
+
+artGroup.MapGet("/{id:guid}", async (Guid id, HttpContext httpContext, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
 {
     var item = await dbContext.ArtPieces
         .Include(x => x.Photos)
         .AsNoTracking()
         .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
-    return item is null ? Results.NotFound() : Results.Ok(item);
+    return item is null ? Results.NotFound() : Results.Ok(ToArtPieceResponse(item, httpContext.Request));
 });
 
-artGroup.MapPost("/", async (CreateArtPieceRequest request, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+artGroup.MapPost("/", async (
+    CreateArtPieceRequest request,
+    HttpContext httpContext,
+    UrbanArtDbContext dbContext,
+    IHttpClientFactory httpClientFactory,
+    CancellationToken cancellationToken) =>
 {
     try
     {
         var artPiece = ArtPiece.Create(request.ArtistId, request.Title, request.Description, request.AssetKind);
-        foreach (var photo in request.PhotoUrls)
+        var photoPayloads = await ResolvePhotoSourcesAsync(request.PhotoUrls, dbContext, httpClientFactory, cancellationToken);
+        foreach (var photo in photoPayloads)
         {
-            artPiece.AddPhoto(photo);
+            artPiece.AddPhoto(photo.BinaryData, photo.ContentType);
         }
 
         await dbContext.ArtPieces.AddAsync(artPiece, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
-        return Results.Created($"/api/art-pieces/{artPiece.Id}", artPiece);
+        return Results.Created($"/api/art-pieces/{artPiece.Id}", ToArtPieceResponse(artPiece, httpContext.Request));
     }
     catch (DomainValidationException ex)
     {
@@ -152,7 +190,13 @@ artGroup.MapPost("/", async (CreateArtPieceRequest request, UrbanArtDbContext db
     }
 });
 
-artGroup.MapPut("/{id:guid}", async (Guid id, UpdateArtPieceRequest request, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+artGroup.MapPut("/{id:guid}", async (
+    Guid id,
+    UpdateArtPieceRequest request,
+    HttpContext httpContext,
+    UrbanArtDbContext dbContext,
+    IHttpClientFactory httpClientFactory,
+    CancellationToken cancellationToken) =>
 {
     var artPiece = await dbContext.ArtPieces.Include(x => x.Photos).FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     if (artPiece is null)
@@ -163,9 +207,10 @@ artGroup.MapPut("/{id:guid}", async (Guid id, UpdateArtPieceRequest request, Urb
     try
     {
         artPiece.UpdateDetails(request.Title, request.Description);
-        artPiece.ReplacePhotos(request.PhotoUrls);
+        var photoPayloads = await ResolvePhotoSourcesAsync(request.PhotoUrls, dbContext, httpClientFactory, cancellationToken);
+        artPiece.ReplacePhotos(photoPayloads.Select(photo => (photo.BinaryData, photo.ContentType)));
         await dbContext.SaveChangesAsync(cancellationToken);
-        return Results.Ok(artPiece);
+        return Results.Ok(ToArtPieceResponse(artPiece, httpContext.Request));
     }
     catch (DomainValidationException ex)
     {
@@ -220,14 +265,21 @@ artGroup.MapDelete("/{id:guid}", async (Guid id, UrbanArtDbContext dbContext, Ca
 });
 
 var dropsGroup = app.MapGroup("/api/drops");
-dropsGroup.MapGet("/", async (UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
-    Results.Ok(await dbContext.Drops
+dropsGroup.MapGet("/", async (HttpContext httpContext, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+{
+    var drops = await dbContext.Drops
         .Include(x => x.Items)
         .Include(x => x.LocationPhotos)
         .AsNoTracking()
-        .ToListAsync(cancellationToken)));
+        .ToListAsync(cancellationToken);
 
-dropsGroup.MapGet("/{id:guid}", async (Guid id, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+    var response = drops
+        .Select(drop => ToDropResponse(drop, httpContext.Request))
+        .ToList();
+    return Results.Ok(response);
+});
+
+dropsGroup.MapGet("/{id:guid}", async (Guid id, HttpContext httpContext, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
 {
     var drop = await dbContext.Drops
         .Include(x => x.Items)
@@ -235,12 +287,14 @@ dropsGroup.MapGet("/{id:guid}", async (Guid id, UrbanArtDbContext dbContext, Can
         .AsNoTracking()
         .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
-    return drop is null ? Results.NotFound() : Results.Ok(drop);
+    return drop is null ? Results.NotFound() : Results.Ok(ToDropResponse(drop, httpContext.Request));
 });
 
 dropsGroup.MapPost("/", async (
     CreateDropRequest request,
+    HttpContext httpContext,
     UrbanArtDbContext dbContext,
+    IHttpClientFactory httpClientFactory,
     CancellationToken cancellationToken) =>
 {
     try
@@ -252,9 +306,15 @@ dropsGroup.MapPost("/", async (
             drop.SetLocation(request.Latitude.Value, request.Longitude.Value);
         }
 
-        foreach (var photo in request.LocationPhotoUrls)
+        var locationPhotoPayloads = await ResolvePhotoSourcesAsync(
+            request.LocationPhotoUrls,
+            dbContext,
+            httpClientFactory,
+            cancellationToken);
+
+        foreach (var photo in locationPhotoPayloads)
         {
-            drop.AddLocationPhoto(photo);
+            drop.AddLocationPhoto(photo.BinaryData, photo.ContentType);
         }
 
         for (var i = 0; i < request.ItemCount; i += 1)
@@ -265,7 +325,7 @@ dropsGroup.MapPost("/", async (
         await dbContext.Drops.AddAsync(drop, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return Results.Created($"/api/drops/{drop.Id}", drop);
+        return Results.Created($"/api/drops/{drop.Id}", ToDropResponse(drop, httpContext.Request));
     }
     catch (DomainValidationException ex)
     {
@@ -276,7 +336,9 @@ dropsGroup.MapPost("/", async (
 dropsGroup.MapPut("/{id:guid}", async (
     Guid id,
     CreateDropRequest request,
+    HttpContext httpContext,
     UrbanArtDbContext dbContext,
+    IHttpClientFactory httpClientFactory,
     CancellationToken cancellationToken) =>
 {
     var drop = await dbContext.Drops
@@ -302,13 +364,18 @@ dropsGroup.MapPut("/{id:guid}", async (
             drop.ClearLocation();
         }
 
-        drop.ReplaceLocationPhotos(request.LocationPhotoUrls);
+        var locationPhotoPayloads = await ResolvePhotoSourcesAsync(
+            request.LocationPhotoUrls,
+            dbContext,
+            httpClientFactory,
+            cancellationToken);
+        drop.ReplaceLocationPhotos(locationPhotoPayloads.Select(photo => (photo.BinaryData, photo.ContentType)));
 
         var tokens = Enumerable.Range(0, request.ItemCount).Select(_ => Guid.NewGuid().ToString("N"));
         drop.ReplaceItems(tokens);
 
         await dbContext.SaveChangesAsync(cancellationToken);
-        return Results.Ok(drop);
+        return Results.Ok(ToDropResponse(drop, httpContext.Request));
     }
     catch (DomainValidationException ex)
     {
@@ -715,7 +782,14 @@ static async Task SeedConfigurationAsync(IServiceProvider services)
     using var scope = services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<UrbanArtDbContext>();
 
-    await dbContext.Database.EnsureCreatedAsync();
+    if (dbContext.Database.IsRelational())
+    {
+        await dbContext.Database.MigrateAsync();
+    }
+    else
+    {
+        await dbContext.Database.EnsureCreatedAsync();
+    }
 
     if (!await dbContext.AppConfigurations.AnyAsync())
     {
@@ -780,9 +854,9 @@ static async Task SeedDebugDataAsync(IServiceProvider services)
         "Neon Fox Totem",
         "Leuchtendes urbanes Totem mit modularen Oberflaechen fuer den Nachtbereich.",
         ArtPieceAssetKind.Model3d);
-    artPieceOne.AddPhoto("https://picsum.photos/seed/neon-fox-art-01/1600/1000");
-    artPieceOne.AddPhoto("https://picsum.photos/seed/neon-fox-art-02/1600/1000");
-    artPieceOne.AddPhoto("https://picsum.photos/seed/neon-fox-art-03/1600/1000");
+    AddSeedPhoto(artPieceOne);
+    AddSeedPhoto(artPieceOne);
+    AddSeedPhoto(artPieceOne);
     artPieceOne.Publish();
 
     var artPieceTwo = ArtPiece.Create(
@@ -790,16 +864,16 @@ static async Task SeedDebugDataAsync(IServiceProvider services)
         "Steel Bird Fragment",
         "Geometrische Stahlform mit Kontrastkanten fuer experimentelle Installationen.",
         ArtPieceAssetKind.Image);
-    artPieceTwo.AddPhoto("https://picsum.photos/seed/steel-bird-art-01/1600/1000");
-    artPieceTwo.AddPhoto("https://picsum.photos/seed/steel-bird-art-02/1600/1000");
+    AddSeedPhoto(artPieceTwo);
+    AddSeedPhoto(artPieceTwo);
     artPieceTwo.Publish();
 
     await dbContext.ArtPieces.AddRangeAsync(artPieceOne, artPieceTwo);
 
     var dropOne = Drop.Create(artPieceOne.Id, dropMaker.Id, isStationary: false, portableItemCount: 3);
     dropOne.SetLocation(52.5208, 13.4095);
-    dropOne.AddLocationPhoto("https://picsum.photos/seed/neon-fox-location-01/1600/1000");
-    dropOne.AddLocationPhoto("https://picsum.photos/seed/neon-fox-location-02/1600/1000");
+    AddSeedLocationPhoto(dropOne);
+    AddSeedLocationPhoto(dropOne);
     dropOne.AddItem("debug-drop-neon-fox-item-01");
     dropOne.AddItem("debug-drop-neon-fox-item-02");
     dropOne.AddItem("debug-drop-neon-fox-item-03");
@@ -808,8 +882,8 @@ static async Task SeedDebugDataAsync(IServiceProvider services)
 
     var dropTwo = Drop.Create(artPieceTwo.Id, dropMaker.Id, isStationary: true, portableItemCount: null);
     dropTwo.SetLocation(52.5331, 13.3889);
-    dropTwo.AddLocationPhoto("https://picsum.photos/seed/steel-bird-location-01/1600/1000");
-    dropTwo.AddLocationPhoto("https://picsum.photos/seed/steel-bird-location-02/1600/1000");
+    AddSeedLocationPhoto(dropTwo);
+    AddSeedLocationPhoto(dropTwo);
     dropTwo.AddItem("debug-drop-steel-bird-item-01");
     dropTwo.AddItem("debug-drop-steel-bird-item-02");
     dropTwo.Publish();
@@ -849,6 +923,263 @@ static async Task<AppConfiguration> GetConfigurationAsync(UrbanArtDbContext dbCo
     return config;
 }
 
+static ArtPieceResponseDto ToArtPieceResponse(ArtPiece artPiece, HttpRequest request)
+{
+    var baseUri = $"{request.Scheme}://{request.Host}";
+    var photos = artPiece.Photos
+        .Select(photo => new PhotoReferenceDto(photo.Id, $"{baseUri}/api/media/art-piece-photos/{photo.Id}"))
+        .ToList();
+
+    return new ArtPieceResponseDto(
+        artPiece.Id,
+        artPiece.ArtistId,
+        artPiece.Title,
+        artPiece.Description,
+        artPiece.AssetKind,
+        artPiece.IsPublished,
+        photos);
+}
+
+static DropResponseDto ToDropResponse(Drop drop, HttpRequest request)
+{
+    var baseUri = $"{request.Scheme}://{request.Host}";
+    var locationPhotos = drop.LocationPhotos
+        .Select(photo => new PhotoReferenceDto(photo.Id, $"{baseUri}/api/media/drop-location-photos/{photo.Id}"))
+        .ToList();
+    var items = drop.Items
+        .Select(item => new DropItemResponseDto(
+            item.Id,
+            item.QrToken,
+            item.IsClaimed,
+            item.ClaimedByUserId,
+            item.ClaimedByAnonymousNickname,
+            item.ClaimedAtUtc))
+        .ToList();
+
+    return new DropResponseDto(
+        drop.Id,
+        drop.ArtPieceId,
+        drop.DropMakerId,
+        drop.IsStationary,
+        drop.PortableItemCount,
+        drop.Latitude,
+        drop.Longitude,
+        drop.IsPublished,
+        locationPhotos,
+        items);
+}
+
+static async Task<IReadOnlyList<ResolvedPhotoPayload>> ResolvePhotoSourcesAsync(
+    IEnumerable<string>? photoSources,
+    UrbanArtDbContext dbContext,
+    IHttpClientFactory httpClientFactory,
+    CancellationToken cancellationToken)
+{
+    var resolvedPayloads = new List<ResolvedPhotoPayload>();
+    foreach (var source in photoSources ?? [])
+    {
+        var payload = await ResolvePhotoSourceAsync(source, dbContext, httpClientFactory, cancellationToken);
+        resolvedPayloads.Add(payload);
+    }
+
+    return resolvedPayloads;
+}
+
+static async Task<ResolvedPhotoPayload> ResolvePhotoSourceAsync(
+    string source,
+    UrbanArtDbContext dbContext,
+    IHttpClientFactory httpClientFactory,
+    CancellationToken cancellationToken)
+{
+    var normalizedSource = source?.Trim() ?? string.Empty;
+    if (string.IsNullOrWhiteSpace(normalizedSource))
+    {
+        throw new DomainValidationException("Photo source is required.");
+    }
+
+    if (TryParseDataUrl(normalizedSource, out var dataUrlPayload))
+    {
+        return dataUrlPayload;
+    }
+
+    if (TryParseMediaPhotoReference(normalizedSource, out var mediaKind, out var mediaPhotoId))
+    {
+        return await ReadStoredPhotoPayloadAsync(mediaKind, mediaPhotoId, dbContext, cancellationToken);
+    }
+
+    if (!Uri.TryCreate(normalizedSource, UriKind.Absolute, out var photoUri) ||
+        (photoUri.Scheme != Uri.UriSchemeHttp && photoUri.Scheme != Uri.UriSchemeHttps))
+    {
+        throw new DomainValidationException("Photo source must be an http(s) URL, data URL or existing media URL.");
+    }
+
+    var client = httpClientFactory.CreateClient("photo-fetcher");
+    using var request = new HttpRequestMessage(HttpMethod.Get, photoUri);
+    request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("image/*"));
+
+    using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new DomainValidationException($"Photo could not be loaded from '{normalizedSource}'.");
+    }
+
+    var binaryData = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+    ValidateBinaryPhotoPayload(binaryData);
+
+    var contentType = response.Content.Headers.ContentType?.MediaType;
+    if (string.IsNullOrWhiteSpace(contentType))
+    {
+        contentType = "application/octet-stream";
+    }
+
+    return new ResolvedPhotoPayload(binaryData, contentType);
+}
+
+static async Task<ResolvedPhotoPayload> ReadStoredPhotoPayloadAsync(
+    MediaPhotoKind mediaKind,
+    Guid photoId,
+    UrbanArtDbContext dbContext,
+    CancellationToken cancellationToken)
+{
+    if (mediaKind == MediaPhotoKind.ArtPiece)
+    {
+        var artPiecePhoto = await dbContext.ArtPiecePhotos.AsNoTracking().FirstOrDefaultAsync(x => x.Id == photoId, cancellationToken);
+        if (artPiecePhoto is null)
+        {
+            throw new DomainValidationException("Referenced art piece photo does not exist.");
+        }
+
+        ValidateBinaryPhotoPayload(artPiecePhoto.BinaryData);
+        return new ResolvedPhotoPayload(artPiecePhoto.BinaryData, artPiecePhoto.ContentType);
+    }
+
+    var dropLocationPhoto = await dbContext.DropLocationPhotos.AsNoTracking().FirstOrDefaultAsync(x => x.Id == photoId, cancellationToken);
+    if (dropLocationPhoto is null)
+    {
+        throw new DomainValidationException("Referenced drop location photo does not exist.");
+    }
+
+    ValidateBinaryPhotoPayload(dropLocationPhoto.BinaryData);
+    return new ResolvedPhotoPayload(dropLocationPhoto.BinaryData, dropLocationPhoto.ContentType);
+}
+
+static bool TryParseMediaPhotoReference(string source, out MediaPhotoKind mediaKind, out Guid photoId)
+{
+    mediaKind = MediaPhotoKind.ArtPiece;
+    photoId = Guid.Empty;
+
+    var path = source;
+    if (Uri.TryCreate(source, UriKind.Absolute, out var absoluteUri))
+    {
+        path = absoluteUri.AbsolutePath;
+    }
+
+    if (!path.StartsWith("/", StringComparison.Ordinal))
+    {
+        path = "/" + path;
+    }
+
+    var segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+    if (segments.Length != 4 ||
+        !segments[0].Equals("api", StringComparison.OrdinalIgnoreCase) ||
+        !segments[1].Equals("media", StringComparison.OrdinalIgnoreCase) ||
+        !Guid.TryParse(segments[3], out photoId))
+    {
+        return false;
+    }
+
+    if (segments[2].Equals("art-piece-photos", StringComparison.OrdinalIgnoreCase))
+    {
+        mediaKind = MediaPhotoKind.ArtPiece;
+        return true;
+    }
+
+    if (segments[2].Equals("drop-location-photos", StringComparison.OrdinalIgnoreCase))
+    {
+        mediaKind = MediaPhotoKind.DropLocation;
+        return true;
+    }
+
+    return false;
+}
+
+static bool TryParseDataUrl(string source, out ResolvedPhotoPayload payload)
+{
+    payload = default;
+    if (!source.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+    {
+        return false;
+    }
+
+    var separatorIndex = source.IndexOf(',');
+    if (separatorIndex < 0)
+    {
+        throw new DomainValidationException("Photo data URL is invalid.");
+    }
+
+    var metadata = source["data:".Length..separatorIndex];
+    var encodedPayload = source[(separatorIndex + 1)..];
+    var metadataParts = metadata.Split(';', StringSplitOptions.RemoveEmptyEntries);
+    var isBase64 = metadataParts.Any(part => part.Equals("base64", StringComparison.OrdinalIgnoreCase));
+    if (!isBase64)
+    {
+        throw new DomainValidationException("Photo data URL must use base64 encoding.");
+    }
+
+    var contentType = metadataParts.FirstOrDefault(part => !part.Equals("base64", StringComparison.OrdinalIgnoreCase));
+    if (string.IsNullOrWhiteSpace(contentType))
+    {
+        contentType = "application/octet-stream";
+    }
+
+    byte[] binaryData;
+    try
+    {
+        binaryData = Convert.FromBase64String(encodedPayload);
+    }
+    catch (FormatException)
+    {
+        throw new DomainValidationException("Photo data URL payload is not valid base64.");
+    }
+
+    ValidateBinaryPhotoPayload(binaryData);
+    payload = new ResolvedPhotoPayload(binaryData, contentType);
+    return true;
+}
+
+static void ValidateBinaryPhotoPayload(byte[]? binaryData)
+{
+    const int MaxPhotoSizeBytes = 10 * 1024 * 1024;
+    if (binaryData is null || binaryData.Length == 0)
+    {
+        throw new DomainValidationException("Photo binary data is required.");
+    }
+
+    if (binaryData.Length > MaxPhotoSizeBytes)
+    {
+        throw new DomainValidationException("Photo exceeds max size of 10 MB.");
+    }
+}
+
+static void AddSeedPhoto(ArtPiece artPiece)
+{
+    var payload = CreateSeedPhotoPayload();
+    artPiece.AddPhoto(payload.BinaryData, payload.ContentType);
+}
+
+static void AddSeedLocationPhoto(Drop drop)
+{
+    var payload = CreateSeedPhotoPayload();
+    drop.AddLocationPhoto(payload.BinaryData, payload.ContentType);
+}
+
+static ResolvedPhotoPayload CreateSeedPhotoPayload()
+{
+    // 1x1 PNG pixel.
+    const string base64Png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO7ZfKkAAAAASUVORK5CYII=";
+    return new ResolvedPhotoPayload(Convert.FromBase64String(base64Png), "image/png");
+}
+
 static double HaversineDistanceKm(double lat1, double lon1, double lat2, double lon2)
 {
     const double EarthRadiusKm = 6371;
@@ -881,6 +1212,45 @@ internal sealed record DiscoveryDropDto(
     int MainMapRadiusKm,
     int MiniMapRadiusKm,
     int UnclaimedDropRadiusKm);
+
+internal sealed record PhotoReferenceDto(Guid Id, string Url);
+
+internal sealed record ArtPieceResponseDto(
+    Guid Id,
+    Guid ArtistId,
+    string Title,
+    string Description,
+    ArtPieceAssetKind AssetKind,
+    bool IsPublished,
+    IReadOnlyCollection<PhotoReferenceDto> Photos);
+
+internal sealed record DropItemResponseDto(
+    Guid Id,
+    string QrToken,
+    bool IsClaimed,
+    Guid? ClaimedByUserId,
+    string? ClaimedByAnonymousNickname,
+    DateTimeOffset? ClaimedAtUtc);
+
+internal sealed record DropResponseDto(
+    Guid Id,
+    Guid ArtPieceId,
+    Guid DropMakerId,
+    bool IsStationary,
+    int? PortableItemCount,
+    double? Latitude,
+    double? Longitude,
+    bool IsPublished,
+    IReadOnlyCollection<PhotoReferenceDto> LocationPhotos,
+    IReadOnlyCollection<DropItemResponseDto> Items);
+
+internal readonly record struct ResolvedPhotoPayload(byte[] BinaryData, string ContentType);
+
+internal enum MediaPhotoKind
+{
+    ArtPiece = 0,
+    DropLocation = 1
+}
 
 internal sealed record CreateManagedUserRequest(
     string Email,

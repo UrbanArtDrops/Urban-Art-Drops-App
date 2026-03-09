@@ -54,7 +54,8 @@ public sealed class UrbanArtDbContext : DbContext
         modelBuilder.Entity<ArtPiecePhoto>(entity =>
         {
             entity.HasKey(x => x.Id);
-            entity.Property(x => x.Url).IsRequired().HasMaxLength(1000);
+            entity.Property(x => x.BinaryData).IsRequired();
+            entity.Property(x => x.ContentType).IsRequired().HasMaxLength(255);
         });
 
         modelBuilder.Entity<Drop>(entity =>
@@ -74,7 +75,8 @@ public sealed class UrbanArtDbContext : DbContext
         modelBuilder.Entity<DropLocationPhoto>(entity =>
         {
             entity.HasKey(x => x.Id);
-            entity.Property(x => x.Url).IsRequired().HasMaxLength(1000);
+            entity.Property(x => x.BinaryData).IsRequired();
+            entity.Property(x => x.ContentType).IsRequired().HasMaxLength(255);
         });
 
         modelBuilder.Entity<DropComment>(entity =>

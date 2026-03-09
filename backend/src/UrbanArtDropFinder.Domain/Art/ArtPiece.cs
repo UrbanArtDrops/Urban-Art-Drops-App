@@ -46,26 +46,32 @@ public sealed class ArtPiece
         };
     }
 
-    public void AddPhoto(string url)
+    public void AddPhoto(byte[] binaryData, string contentType)
     {
-        if (string.IsNullOrWhiteSpace(url))
+        if (binaryData is null || binaryData.Length == 0)
         {
-            throw new DomainValidationException("Photo url is required.");
+            throw new DomainValidationException("Photo binary data is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(contentType))
+        {
+            throw new DomainValidationException("Photo content type is required.");
         }
 
         Photos.Add(new ArtPiecePhoto
         {
             ArtPieceId = Id,
-            Url = url.Trim()
+            BinaryData = binaryData,
+            ContentType = contentType.Trim()
         });
     }
 
-    public void ReplacePhotos(IEnumerable<string> photoUrls)
+    public void ReplacePhotos(IEnumerable<(byte[] BinaryData, string ContentType)> photos)
     {
         Photos.Clear();
-        foreach (var photoUrl in photoUrls)
+        foreach (var photo in photos)
         {
-            AddPhoto(photoUrl);
+            AddPhoto(photo.BinaryData, photo.ContentType);
         }
     }
 
