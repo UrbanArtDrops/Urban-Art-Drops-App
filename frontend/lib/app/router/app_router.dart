@@ -27,7 +27,8 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: "/hunter/drops/:id",
-      builder: (context, state) => const DropDetailPage(),
+      builder: (context, state) =>
+          DropDetailPage(dropId: state.pathParameters["id"]!),
     ),
     GoRoute(
       path: "/hunter/claim",

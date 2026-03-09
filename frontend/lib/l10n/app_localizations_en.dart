@@ -110,6 +110,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchDropsHint => 'Search drops (title or ID)';
 
   @override
+  String get dropListLocationHint => 'Enter city or postal code';
+
+  @override
+  String dropListSortingByDistance(Object location) {
+    return 'Distance sorting active: $location';
+  }
+
+  @override
+  String get dropListLocationUnavailable =>
+      'No location is available for this drop.';
+
+  @override
   String get dropListLoadFailed => 'Drops could not be loaded.';
 
   @override
@@ -120,6 +132,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get leaderboardEmpty => 'No leaderboard entries yet.';
+
+  @override
+  String leaderboardClaimCount(Object count) {
+    return '$count claims';
+  }
+
+  @override
+  String get leaderboardNoClaimedDrops => 'No claimed drops available.';
+
+  @override
+  String leaderboardDropClaimCount(Object count) {
+    return '$count claims in this drop';
+  }
+
+  @override
+  String get leaderboardAnonymousFallback => 'Anonymous';
 
   @override
   String claimedItemsValue(Object claimed, Object total) {
@@ -383,6 +411,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dropDetailTitle => 'Drop details';
 
   @override
+  String get dropDetailLoadFailed => 'Drop details could not be loaded.';
+
+  @override
+  String get dropDetailDescriptionSection => 'Description';
+
+  @override
+  String get dropDetailLocationSection => 'Location';
+
+  @override
+  String get dropDetailTechnicalSection => 'Technical data';
+
+  @override
   String get dropDetailDescription =>
       'Description, gallery, maker comment and claim state.';
 
@@ -415,6 +455,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get passwordLabel => 'Password';
+
+  @override
+  String get boolYes => 'Yes';
+
+  @override
+  String get boolNo => 'No';
 
   @override
   String get providerLoginTitle => 'Provider login';

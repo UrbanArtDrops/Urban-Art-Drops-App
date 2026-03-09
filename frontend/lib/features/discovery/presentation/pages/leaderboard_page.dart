@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import "package:go_router/go_router.dart";
 import "package:urban_art_drops_app/l10n/app_localizations.dart";
 
 import "../../../../shared/models/app_models.dart";
@@ -14,7 +15,7 @@ class LeaderboardPage extends StatefulWidget {
 
 class _LeaderboardPageState extends State<LeaderboardPage> {
   final AppApiClient _apiClient = AppApiClient();
-  List<LeaderboardEntry> _entries = const [];
+  List<_LeaderboardViewModel> _entries = const [];
   bool _isLoading = true;
   String? _error;
 
@@ -31,10 +32,83 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
     });
 
     try {
-      final entries = await _apiClient.getLeaderboard();
+      final results = await Future.wait([
+        _apiClient.getDrops(),
+        _apiClient.getArtPieces(),
+        _apiClient.getUsers(),
+      ]);
       if (!mounted) {
         return;
       }
+
+      final drops = results[0] as List<DropModel>;
+      final artPieces = results[1] as List<ArtPieceModel>;
+      final users = results[2] as List<ManagedUser>;
+
+      final l10n = AppLocalizations.of(context)!;
+      final artById = {for (final art in artPieces) art.id: art};
+      final usersById = {for (final user in users) user.id: user};
+      final aggregates = <String, _HunterAggregate>{};
+
+      for (final drop in drops) {
+        final dropTitle =
+            artById[drop.artPieceId]?.title ?? l10n.dropFallbackTitle(drop.id);
+        for (final item in drop.claimedItems) {
+          final hunterKey = _resolveHunterKey(item);
+          if (hunterKey == null) {
+            continue;
+          }
+
+          final hunterDisplayName = _resolveHunterDisplayName(
+            item: item,
+            usersById: usersById,
+            l10n: l10n,
+          );
+
+          final aggregate = aggregates.putIfAbsent(
+            hunterKey,
+            () => _HunterAggregate(displayName: hunterDisplayName),
+          );
+          aggregate.totalClaims += 1;
+          aggregate.claimedDrops.update(
+            drop.id,
+            (existing) =>
+                existing.copyWith(claimedItems: existing.claimedItems + 1),
+            ifAbsent: () => _ClaimedDropSummary(
+              dropId: drop.id,
+              dropTitle: dropTitle,
+              claimedItems: 1,
+            ),
+          );
+        }
+      }
+
+      final entries =
+          aggregates.values
+              .map(
+                (aggregate) => _LeaderboardViewModel(
+                  hunterName: aggregate.displayName,
+                  claims: aggregate.totalClaims,
+                  claimedDrops:
+                      aggregate.claimedDrops.values.toList(growable: false)
+                        ..sort(
+                          (a, b) =>
+                              b.claimedItems.compareTo(a.claimedItems) != 0
+                              ? b.claimedItems.compareTo(a.claimedItems)
+                              : a.dropTitle.toLowerCase().compareTo(
+                                  b.dropTitle.toLowerCase(),
+                                ),
+                        ),
+                ),
+              )
+              .toList(growable: false)
+            ..sort(
+              (a, b) => b.claims.compareTo(a.claims) != 0
+                  ? b.claims.compareTo(a.claims)
+                  : a.hunterName.toLowerCase().compareTo(
+                      b.hunterName.toLowerCase(),
+                    ),
+            );
 
       setState(() {
         _entries = entries;
@@ -78,14 +152,47 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
           ? Center(child: Text(l10n.leaderboardEmpty))
           : RefreshIndicator(
               onRefresh: _loadLeaderboard,
-              child: ListView.builder(
+              child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
                 itemCount: _entries.length,
+                separatorBuilder: (context, _) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final entry = _entries[index];
+                  final rank = index + 1;
+
                   return Card(
-                    child: ListTile(
-                      title: Text(l10n.rankEntry("${index + 1}", entry.hunter)),
-                      trailing: Text("${entry.claims}"),
+                    child: ExpansionTile(
+                      tilePadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 2,
+                      ),
+                      title: Text(l10n.rankEntry("$rank", entry.hunterName)),
+                      subtitle: Text(
+                        l10n.leaderboardClaimCount("${entry.claims}"),
+                      ),
+                      childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                      children: entry.claimedDrops.isEmpty
+                          ? [Text(l10n.leaderboardNoClaimedDrops)]
+                          : entry.claimedDrops
+                                .map(
+                                  (claimedDrop) => ListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    leading: const Icon(
+                                      Icons.location_on_outlined,
+                                    ),
+                                    title: Text(claimedDrop.dropTitle),
+                                    subtitle: Text(
+                                      l10n.leaderboardDropClaimCount(
+                                        "${claimedDrop.claimedItems}",
+                                      ),
+                                    ),
+                                    trailing: const Icon(Icons.chevron_right),
+                                    onTap: () => context.go(
+                                      "/hunter/drops/${claimedDrop.dropId}",
+                                    ),
+                                  ),
+                                )
+                                .toList(growable: false),
                     ),
                   );
                 },
@@ -93,4 +200,74 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
             ),
     );
   }
+}
+
+String? _resolveHunterKey(DropItemModel item) {
+  if (item.claimedByUserId != null && item.claimedByUserId!.isNotEmpty) {
+    return "user:${item.claimedByUserId}";
+  }
+  if (item.claimedByAnonymousNickname != null &&
+      item.claimedByAnonymousNickname!.trim().isNotEmpty) {
+    return "anon:${item.claimedByAnonymousNickname!.trim().toLowerCase()}";
+  }
+
+  return null;
+}
+
+String _resolveHunterDisplayName({
+  required DropItemModel item,
+  required Map<String, ManagedUser> usersById,
+  required AppLocalizations l10n,
+}) {
+  if (item.claimedByUserId != null) {
+    final user = usersById[item.claimedByUserId!];
+    return user?.userName ?? item.claimedByUserId!;
+  }
+
+  final anonymous = item.claimedByAnonymousNickname?.trim();
+  if (anonymous != null && anonymous.isNotEmpty) {
+    return anonymous;
+  }
+
+  return l10n.leaderboardAnonymousFallback;
+}
+
+class _LeaderboardViewModel {
+  const _LeaderboardViewModel({
+    required this.hunterName,
+    required this.claims,
+    required this.claimedDrops,
+  });
+
+  final String hunterName;
+  final int claims;
+  final List<_ClaimedDropSummary> claimedDrops;
+}
+
+class _ClaimedDropSummary {
+  const _ClaimedDropSummary({
+    required this.dropId,
+    required this.dropTitle,
+    required this.claimedItems,
+  });
+
+  final String dropId;
+  final String dropTitle;
+  final int claimedItems;
+
+  _ClaimedDropSummary copyWith({int? claimedItems}) {
+    return _ClaimedDropSummary(
+      dropId: dropId,
+      dropTitle: dropTitle,
+      claimedItems: claimedItems ?? this.claimedItems,
+    );
+  }
+}
+
+class _HunterAggregate {
+  _HunterAggregate({required this.displayName});
+
+  final String displayName;
+  int totalClaims = 0;
+  final Map<String, _ClaimedDropSummary> claimedDrops = {};
 }

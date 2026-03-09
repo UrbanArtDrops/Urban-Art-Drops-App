@@ -76,6 +76,51 @@ class ArtPieceModel {
   final List<String> photoUrls;
 }
 
+class DropItemModel {
+  const DropItemModel({
+    required this.id,
+    required this.qrToken,
+    required this.isClaimed,
+    required this.claimedByUserId,
+    required this.claimedByAnonymousNickname,
+    required this.claimedAtUtc,
+  });
+
+  factory DropItemModel.fromJson(Map<String, dynamic> json) {
+    final claimedAtRaw = _readNullableString(
+      json,
+      "claimedAtUtc",
+      "ClaimedAtUtc",
+    );
+
+    return DropItemModel(
+      id: _readString(json, "id", "Id"),
+      qrToken: _readString(json, "qrToken", "QrToken"),
+      isClaimed: _readBool(json, "isClaimed", "IsClaimed"),
+      claimedByUserId: _readNullableString(
+        json,
+        "claimedByUserId",
+        "ClaimedByUserId",
+      ),
+      claimedByAnonymousNickname: _readNullableString(
+        json,
+        "claimedByAnonymousNickname",
+        "ClaimedByAnonymousNickname",
+      ),
+      claimedAtUtc: claimedAtRaw == null
+          ? null
+          : DateTime.tryParse(claimedAtRaw),
+    );
+  }
+
+  final String id;
+  final String qrToken;
+  final bool isClaimed;
+  final String? claimedByUserId;
+  final String? claimedByAnonymousNickname;
+  final DateTime? claimedAtUtc;
+}
+
 class DropModel {
   const DropModel({
     required this.id,
@@ -89,15 +134,20 @@ class DropModel {
     required this.locationPhotoUrls,
     required this.itemCount,
     required this.claimedItemCount,
+    required this.items,
   });
 
   factory DropModel.fromJson(Map<String, dynamic> json) {
-    final itemEntries = _readList(json, "items", "Items");
+    final itemEntries = _readList(
+      json,
+      "items",
+      "Items",
+    ).whereType<Map<String, dynamic>>().toList(growable: false);
+    final itemModels = itemEntries
+        .map(DropItemModel.fromJson)
+        .toList(growable: false);
     final locationEntries = _readList(json, "locationPhotos", "LocationPhotos");
-    final claimed = itemEntries
-        .whereType<Map<String, dynamic>>()
-        .where((entry) => _readBool(entry, "isClaimed", "IsClaimed"))
-        .length;
+    final claimed = itemModels.where((entry) => entry.isClaimed).length;
 
     return DropModel(
       id: _readString(json, "id", "Id"),
@@ -117,8 +167,9 @@ class DropModel {
           .map((entry) => _readString(entry, "url", "Url"))
           .where((url) => url.isNotEmpty)
           .toList(growable: false),
-      itemCount: itemEntries.length,
+      itemCount: itemModels.length,
       claimedItemCount: claimed,
+      items: itemModels,
     );
   }
 
@@ -133,8 +184,12 @@ class DropModel {
   final List<String> locationPhotoUrls;
   final int itemCount;
   final int claimedItemCount;
+  final List<DropItemModel> items;
 
   bool get isFullyClaimed => itemCount > 0 && claimedItemCount == itemCount;
+
+  List<DropItemModel> get claimedItems =>
+      items.where((item) => item.isClaimed).toList(growable: false);
 }
 
 class LeaderboardEntry {
@@ -180,6 +235,24 @@ String _readString(Map<String, dynamic> json, String key, String fallbackKey) {
   }
 
   return raw.toString();
+}
+
+String? _readNullableString(
+  Map<String, dynamic> json,
+  String key,
+  String fallbackKey,
+) {
+  final raw = json[key] ?? json[fallbackKey];
+  if (raw == null) {
+    return null;
+  }
+
+  final value = raw.toString().trim();
+  if (value.isEmpty || value.toLowerCase() == "null") {
+    return null;
+  }
+
+  return value;
 }
 
 int _readInt(Map<String, dynamic> json, String key, String fallbackKey) {

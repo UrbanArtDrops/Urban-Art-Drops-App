@@ -37,10 +37,32 @@
   "confirmDelete": "Löschen bestätigen",
   "genericSaveError": "Speichern fehlgeschlagen.",
   "searchDropsHint": "Drops suchen (Titel oder ID)",
+  "dropListLocationHint": "Ort oder PLZ eingeben",
+  "dropListSortingByDistance": "Sortierung nach Distanz aktiv: {location}",
+  "@dropListSortingByDistance": {
+    "placeholders": {
+      "location": {}
+    }
+  },
+  "dropListLocationUnavailable": "Kein Standort für diesen Drop hinterlegt.",
   "dropListLoadFailed": "Drops konnten nicht geladen werden.",
   "dropListEmpty": "Keine veröffentlichten Drops gefunden.",
   "leaderboardLoadFailed": "Rangliste konnte nicht geladen werden.",
   "leaderboardEmpty": "Noch keine Einträge in der Rangliste.",
+  "leaderboardClaimCount": "{count} Claims",
+  "@leaderboardClaimCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "leaderboardNoClaimedDrops": "Keine beanspruchten Drops vorhanden.",
+  "leaderboardDropClaimCount": "{count} Claims in diesem Drop",
+  "@leaderboardDropClaimCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "leaderboardAnonymousFallback": "Anonym",
   "claimedItemsValue": "{claimed} von {total} beansprucht",
   "@claimedItemsValue": {
     "placeholders": {
@@ -168,6 +190,10 @@
     }
   },
   "dropDetailTitle": "Drop-Details",
+  "dropDetailLoadFailed": "Drop-Details konnten nicht geladen werden.",
+  "dropDetailDescriptionSection": "Beschreibung",
+  "dropDetailLocationSection": "Standort",
+  "dropDetailTechnicalSection": "Technische Daten",
   "dropDetailDescription": "Beschreibung, Galerie, Maker-Kommentar und Claim-Status.",
   "claimedHuntersTitle": "Beanspruchte Hunter",
   "claimedHuntersValue": "HunterOne, HunterTwo",
@@ -184,6 +210,8 @@
   },
   "emailLabel": "E-Mail",
   "passwordLabel": "Passwort",
+  "boolYes": "Ja",
+  "boolNo": "Nein",
   "providerLoginTitle": "Provider-Anmeldung",
   "usernameLabel": "Benutzername",
   "roleHunter": "Hunter",

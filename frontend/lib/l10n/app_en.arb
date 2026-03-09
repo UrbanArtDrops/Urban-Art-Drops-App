@@ -37,10 +37,32 @@
   "confirmDelete": "Confirm deletion",
   "genericSaveError": "Save failed.",
   "searchDropsHint": "Search drops (title or ID)",
+  "dropListLocationHint": "Enter city or postal code",
+  "dropListSortingByDistance": "Distance sorting active: {location}",
+  "@dropListSortingByDistance": {
+    "placeholders": {
+      "location": {}
+    }
+  },
+  "dropListLocationUnavailable": "No location is available for this drop.",
   "dropListLoadFailed": "Drops could not be loaded.",
   "dropListEmpty": "No published drops found.",
   "leaderboardLoadFailed": "Leaderboard could not be loaded.",
   "leaderboardEmpty": "No leaderboard entries yet.",
+  "leaderboardClaimCount": "{count} claims",
+  "@leaderboardClaimCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "leaderboardNoClaimedDrops": "No claimed drops available.",
+  "leaderboardDropClaimCount": "{count} claims in this drop",
+  "@leaderboardDropClaimCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "leaderboardAnonymousFallback": "Anonymous",
   "claimedItemsValue": "{claimed} of {total} claimed",
   "@claimedItemsValue": {
     "placeholders": {
@@ -168,6 +190,10 @@
     }
   },
   "dropDetailTitle": "Drop details",
+  "dropDetailLoadFailed": "Drop details could not be loaded.",
+  "dropDetailDescriptionSection": "Description",
+  "dropDetailLocationSection": "Location",
+  "dropDetailTechnicalSection": "Technical data",
   "dropDetailDescription": "Description, gallery, maker comment and claim state.",
   "claimedHuntersTitle": "Claimed hunters",
   "claimedHuntersValue": "HunterOne, HunterTwo",
@@ -184,6 +210,8 @@
   },
   "emailLabel": "Email",
   "passwordLabel": "Password",
+  "boolYes": "Yes",
+  "boolNo": "No",
   "providerLoginTitle": "Provider login",
   "usernameLabel": "Username",
   "roleHunter": "Hunter",

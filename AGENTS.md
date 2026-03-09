@@ -169,6 +169,8 @@ Testing requirements:
 - Keep branches short-lived and scoped to one cohesive change.
 - Rebase branch on top of `origin/main` before merge to keep history linear.
 - Use small atomic commits with Conventional Commit messages.
+- After every completed run, create a commit and push it to the current remote branch.
+- Commit messages must summarize the implemented changes in 2-5 full sentences.
 - Include test and documentation updates in the same branch when behavior changes.
 - Never commit secrets, credentials, personal data, local environment files, or generated coverage artifacts.
 - Before pushing, run formatting, static analysis, and relevant tests for changed areas.

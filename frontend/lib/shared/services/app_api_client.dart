@@ -159,6 +159,11 @@ class AppApiClient {
     return data.map(DropModel.fromJson).toList(growable: false);
   }
 
+  Future<DropModel> getDropById(String id) async {
+    final data = await _getObject("/api/drops/$id");
+    return DropModel.fromJson(data);
+  }
+
   Future<void> createDrop(CreateDropInput input) async {
     final response = await _httpClient.post(
       _uri("/api/drops"),
@@ -220,6 +225,17 @@ class AppApiClient {
     }
 
     return payload.whereType<Map<String, dynamic>>().toList(growable: false);
+  }
+
+  Future<Map<String, dynamic>> _getObject(String path) async {
+    final response = await _httpClient.get(_uri(path));
+    _ensureSuccess(response, "Failed to load data.");
+    final payload = jsonDecode(response.body);
+    if (payload is! Map<String, dynamic>) {
+      throw const ApiException("Unexpected API response format.");
+    }
+
+    return payload;
   }
 
   Uri _uri(String path, [Map<String, String>? query]) {

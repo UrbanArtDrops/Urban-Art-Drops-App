@@ -296,6 +296,24 @@ abstract class AppLocalizations {
   /// **'Search drops (title or ID)'**
   String get searchDropsHint;
 
+  /// No description provided for @dropListLocationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter city or postal code'**
+  String get dropListLocationHint;
+
+  /// No description provided for @dropListSortingByDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance sorting active: {location}'**
+  String dropListSortingByDistance(Object location);
+
+  /// No description provided for @dropListLocationUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No location is available for this drop.'**
+  String get dropListLocationUnavailable;
+
   /// No description provided for @dropListLoadFailed.
   ///
   /// In en, this message translates to:
@@ -319,6 +337,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No leaderboard entries yet.'**
   String get leaderboardEmpty;
+
+  /// No description provided for @leaderboardClaimCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} claims'**
+  String leaderboardClaimCount(Object count);
+
+  /// No description provided for @leaderboardNoClaimedDrops.
+  ///
+  /// In en, this message translates to:
+  /// **'No claimed drops available.'**
+  String get leaderboardNoClaimedDrops;
+
+  /// No description provided for @leaderboardDropClaimCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} claims in this drop'**
+  String leaderboardDropClaimCount(Object count);
+
+  /// No description provided for @leaderboardAnonymousFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Anonymous'**
+  String get leaderboardAnonymousFallback;
 
   /// No description provided for @claimedItemsValue.
   ///
@@ -800,6 +842,30 @@ abstract class AppLocalizations {
   /// **'Drop details'**
   String get dropDetailTitle;
 
+  /// No description provided for @dropDetailLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop details could not be loaded.'**
+  String get dropDetailLoadFailed;
+
+  /// No description provided for @dropDetailDescriptionSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get dropDetailDescriptionSection;
+
+  /// No description provided for @dropDetailLocationSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get dropDetailLocationSection;
+
+  /// No description provided for @dropDetailTechnicalSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Technical data'**
+  String get dropDetailTechnicalSection;
+
   /// No description provided for @dropDetailDescription.
   ///
   /// In en, this message translates to:
@@ -859,6 +925,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Password'**
   String get passwordLabel;
+
+  /// No description provided for @boolYes.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes'**
+  String get boolYes;
+
+  /// No description provided for @boolNo.
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get boolNo;
 
   /// No description provided for @providerLoginTitle.
   ///

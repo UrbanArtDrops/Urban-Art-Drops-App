@@ -110,6 +110,18 @@ class AppLocalizationsDe extends AppLocalizations {
   String get searchDropsHint => 'Drops suchen (Titel oder ID)';
 
   @override
+  String get dropListLocationHint => 'Ort oder PLZ eingeben';
+
+  @override
+  String dropListSortingByDistance(Object location) {
+    return 'Sortierung nach Distanz aktiv: $location';
+  }
+
+  @override
+  String get dropListLocationUnavailable =>
+      'Kein Standort für diesen Drop hinterlegt.';
+
+  @override
   String get dropListLoadFailed => 'Drops konnten nicht geladen werden.';
 
   @override
@@ -120,6 +132,23 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get leaderboardEmpty => 'Noch keine Einträge in der Rangliste.';
+
+  @override
+  String leaderboardClaimCount(Object count) {
+    return '$count Claims';
+  }
+
+  @override
+  String get leaderboardNoClaimedDrops =>
+      'Keine beanspruchten Drops vorhanden.';
+
+  @override
+  String leaderboardDropClaimCount(Object count) {
+    return '$count Claims in diesem Drop';
+  }
+
+  @override
+  String get leaderboardAnonymousFallback => 'Anonym';
 
   @override
   String claimedItemsValue(Object claimed, Object total) {
@@ -384,6 +413,19 @@ class AppLocalizationsDe extends AppLocalizations {
   String get dropDetailTitle => 'Drop-Details';
 
   @override
+  String get dropDetailLoadFailed =>
+      'Drop-Details konnten nicht geladen werden.';
+
+  @override
+  String get dropDetailDescriptionSection => 'Beschreibung';
+
+  @override
+  String get dropDetailLocationSection => 'Standort';
+
+  @override
+  String get dropDetailTechnicalSection => 'Technische Daten';
+
+  @override
   String get dropDetailDescription =>
       'Beschreibung, Galerie, Maker-Kommentar und Claim-Status.';
 
@@ -416,6 +458,12 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get passwordLabel => 'Passwort';
+
+  @override
+  String get boolYes => 'Ja';
+
+  @override
+  String get boolNo => 'Nein';
 
   @override
   String get providerLoginTitle => 'Provider-Anmeldung';
