@@ -3,13 +3,17 @@ import "package:flutter_test/flutter_test.dart";
 import "package:flutter_bloc/flutter_bloc.dart";
 
 import "package:urban_art_drops_app/app/app.dart";
+import "package:urban_art_drops_app/features/authentication/presentation/bloc/auth_session_cubit.dart";
 import "package:urban_art_drops_app/features/navigation/presentation/bloc/navigation_cubit.dart";
 
 void main() {
   testWidgets("app boots", (WidgetTester tester) async {
     await tester.pumpWidget(
-      BlocProvider(
-        create: (_) => NavigationCubit(),
+      MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (_) => NavigationCubit()),
+          BlocProvider(create: (_) => AuthSessionCubit()),
+        ],
         child: const UrbanArtDropsApp(),
       ),
     );

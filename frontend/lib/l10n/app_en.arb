@@ -11,6 +11,106 @@
   "navAdminConfig": "Admin Configuration",
   "navAdminUsers": "Admin Users",
   "navAdminContent": "Admin Content",
+  "menuProfile": "My profile",
+  "menuMyArt": "My art",
+  "menuArtWorks": "Artworks",
+  "menuMyDrops": "My drops",
+  "menuSettings": "Settings",
+  "menuUsers": "Users",
+  "profileNotLoggedIn": "You are currently not signed in.",
+  "profileRoleLabel": "Role: {role}",
+  "@profileRoleLabel": {
+    "placeholders": {
+      "role": {}
+    }
+  },
+  "logoutButton": "Logout",
+  "loadingData": "Loading data...",
+  "retryButton": "Retry",
+  "refreshAction": "Refresh",
+  "createAction": "Create",
+  "editAction": "Edit",
+  "deleteAction": "Delete",
+  "publishAction": "Publish",
+  "depublishAction": "Depublish",
+  "cancelAction": "Cancel",
+  "confirmDelete": "Confirm deletion",
+  "genericSaveError": "Save failed.",
+  "searchDropsHint": "Search drops (title or ID)",
+  "dropListLoadFailed": "Drops could not be loaded.",
+  "dropListEmpty": "No published drops found.",
+  "leaderboardLoadFailed": "Leaderboard could not be loaded.",
+  "leaderboardEmpty": "No leaderboard entries yet.",
+  "claimedItemsValue": "{claimed} of {total} claimed",
+  "@claimedItemsValue": {
+    "placeholders": {
+      "claimed": {},
+      "total": {}
+    }
+  },
+  "dropFallbackTitle": "Drop {id}",
+  "@dropFallbackTitle": {
+    "placeholders": {
+      "id": {}
+    }
+  },
+  "usersLoadFailed": "Users could not be loaded.",
+  "userCreateTitle": "Create user",
+  "userEditUsernameTitle": "Edit username",
+  "userApproveAction": "Approve",
+  "userRevokeApprovalAction": "Revoke approval",
+  "userSuspendAction": "Suspend",
+  "userUnsuspendAction": "Unsuspend",
+  "userChangeRoleAction": "Change role",
+  "userEditUsernameAction": "Edit username",
+  "userApproved": "Approved",
+  "userNotApproved": "Not approved",
+  "userSuspended": "Suspended",
+  "userActive": "Active",
+  "noUsersAvailable": "No users available.",
+  "artPiecesLoadFailed": "Art pieces could not be loaded.",
+  "noArtPiecesAvailable": "No art pieces available.",
+  "noArtistsAvailable": "No artist accounts available.",
+  "artPieceCreateTitle": "Create art piece",
+  "artPieceEditTitle": "Edit art piece",
+  "artPieceTitleLabel": "Title",
+  "artPieceDescriptionLabel": "Description",
+  "artPiecePhotosLabel": "Photo URLs",
+  "artPieceArtistLabel": "Artist",
+  "artPieceAssetTypeLabel": "Asset type",
+  "artPieceAssetImage": "Image",
+  "artPieceAssetModel3d": "3D model",
+  "artPieceDeleteConfirm": "Delete art piece \"{title}\"?",
+  "@artPieceDeleteConfirm": {
+    "placeholders": {
+      "title": {}
+    }
+  },
+  "commaSeparatedHint": "Comma separated values",
+  "dropsLoadFailed": "Drops could not be loaded.",
+  "noDropsAvailable": "No drops available.",
+  "dropDependenciesMissing": "Art pieces or drop-makers are missing.",
+  "dropCreateTitle": "Create drop",
+  "dropEditTitle": "Edit drop",
+  "dropDeleteConfirm": "Delete drop {id}?",
+  "@dropDeleteConfirm": {
+    "placeholders": {
+      "id": {}
+    }
+  },
+  "dropArtPieceLabel": "Art piece",
+  "dropMakerUserLabel": "Drop-maker",
+  "dropStationaryLabel": "Stationary",
+  "dropPortableItemCountLabel": "Portable item count",
+  "dropLatitudeLabel": "Latitude",
+  "dropLongitudeLabel": "Longitude",
+  "dropLocationPhotosLabel": "Location photo URLs",
+  "dropItemCountLabel": "Items (count)",
+  "statusPublished": "Published",
+  "statusUnpublished": "Unpublished",
+  "mapDataLoadFailed": "Map data could not be loaded.",
+  "mapNoDrops": "No drops available.",
+  "topMenuTooltip": "Top navigation",
   "defaultMainRadiusKm": "30",
   "defaultUnclaimedRadiusKm": "3",
   "mapRadiusLabel": "Main map radius: {radiusKm} km",
@@ -25,6 +125,35 @@
       "radiusKm": {}
     }
   },
+  "mapCenteredOnLatestDrop": "Map centered on latest drop: {dropTitle}",
+  "@mapCenteredOnLatestDrop": {
+    "placeholders": {
+      "dropTitle": {}
+    }
+  },
+  "mapCenterCoordinates": "Center: {latitude}, {longitude}",
+  "@mapCenterCoordinates": {
+    "placeholders": {
+      "latitude": {},
+      "longitude": {}
+    }
+  },
+  "centerOnMyLocation": "My location",
+  "mapCenteredOnUser": "Map centered on your location.",
+  "locationServiceDisabled": "Location service is disabled.",
+  "locationPermissionDenied": "Location permission was denied.",
+  "locationError": "Location could not be resolved.",
+  "mapSearchLocationHint": "Search location manually",
+  "mapSearchNoResults": "No matching location found.",
+  "mapSearchError": "Location suggestions could not be loaded.",
+  "mapDropDetails": "Drop details",
+  "mapShowDropDetailsHint": "Tap a drop pin to view details.",
+  "mapArtistLabel": "Artist",
+  "mapDropMakerLabel": "Drop-Maker",
+  "mapDescriptionLabel": "Description",
+  "mapClaimedByLabel": "Claimed by",
+  "mapUnclaimedLabel": "Not claimed yet",
+  "mapCloseDetails": "Close",
   "mapPlaceholder": "Map preview (OpenStreetMap integration endpoint)",
   "searchSortTitle": "Search and sorting",
   "manualLocationLabel": "Manual location or device location",

@@ -3,7 +3,7 @@
   "navMap": "Karte",
   "navDrops": "Drops",
   "navLeaderboard": "Rangliste",
-  "navLogin": "Anmeldung",
+  "navLogin": "Anmelden",
   "navRegister": "Registrierung",
   "navArtistArea": "Artist-Bereich",
   "navDropMakerArea": "Drop-Maker-Bereich",
@@ -11,6 +11,106 @@
   "navAdminConfig": "Admin-Konfiguration",
   "navAdminUsers": "Admin-Benutzer",
   "navAdminContent": "Admin-Inhalte",
+  "menuProfile": "Mein Profil",
+  "menuMyArt": "Meine Kunst",
+  "menuArtWorks": "Kunstwerke",
+  "menuMyDrops": "Meine Drops",
+  "menuSettings": "Einstellungen",
+  "menuUsers": "Benutzer",
+  "profileNotLoggedIn": "Du bist derzeit nicht angemeldet.",
+  "profileRoleLabel": "Rolle: {role}",
+  "@profileRoleLabel": {
+    "placeholders": {
+      "role": {}
+    }
+  },
+  "logoutButton": "Abmelden",
+  "loadingData": "Daten werden geladen...",
+  "retryButton": "Erneut versuchen",
+  "refreshAction": "Aktualisieren",
+  "createAction": "Erstellen",
+  "editAction": "Bearbeiten",
+  "deleteAction": "Löschen",
+  "publishAction": "Veröffentlichen",
+  "depublishAction": "Depublizieren",
+  "cancelAction": "Abbrechen",
+  "confirmDelete": "Löschen bestätigen",
+  "genericSaveError": "Speichern fehlgeschlagen.",
+  "searchDropsHint": "Drops suchen (Titel oder ID)",
+  "dropListLoadFailed": "Drops konnten nicht geladen werden.",
+  "dropListEmpty": "Keine veröffentlichten Drops gefunden.",
+  "leaderboardLoadFailed": "Rangliste konnte nicht geladen werden.",
+  "leaderboardEmpty": "Noch keine Einträge in der Rangliste.",
+  "claimedItemsValue": "{claimed} von {total} beansprucht",
+  "@claimedItemsValue": {
+    "placeholders": {
+      "claimed": {},
+      "total": {}
+    }
+  },
+  "dropFallbackTitle": "Drop {id}",
+  "@dropFallbackTitle": {
+    "placeholders": {
+      "id": {}
+    }
+  },
+  "usersLoadFailed": "Benutzer konnten nicht geladen werden.",
+  "userCreateTitle": "Benutzer erstellen",
+  "userEditUsernameTitle": "Benutzernamen ändern",
+  "userApproveAction": "Freigeben",
+  "userRevokeApprovalAction": "Freigabe entziehen",
+  "userSuspendAction": "Sperren",
+  "userUnsuspendAction": "Entsperren",
+  "userChangeRoleAction": "Rolle ändern",
+  "userEditUsernameAction": "Benutzernamen bearbeiten",
+  "userApproved": "Freigegeben",
+  "userNotApproved": "Nicht freigegeben",
+  "userSuspended": "Gesperrt",
+  "userActive": "Aktiv",
+  "noUsersAvailable": "Keine Benutzer vorhanden.",
+  "artPiecesLoadFailed": "Art Pieces konnten nicht geladen werden.",
+  "noArtPiecesAvailable": "Keine Art Pieces vorhanden.",
+  "noArtistsAvailable": "Keine Artist-Accounts verfügbar.",
+  "artPieceCreateTitle": "Art Piece erstellen",
+  "artPieceEditTitle": "Art Piece bearbeiten",
+  "artPieceTitleLabel": "Titel",
+  "artPieceDescriptionLabel": "Beschreibung",
+  "artPiecePhotosLabel": "Foto-URLs",
+  "artPieceArtistLabel": "Artist",
+  "artPieceAssetTypeLabel": "Asset-Typ",
+  "artPieceAssetImage": "Bild",
+  "artPieceAssetModel3d": "3D-Modell",
+  "artPieceDeleteConfirm": "Art Piece \"{title}\" wirklich löschen?",
+  "@artPieceDeleteConfirm": {
+    "placeholders": {
+      "title": {}
+    }
+  },
+  "commaSeparatedHint": "Kommagetrennte Werte",
+  "dropsLoadFailed": "Drops konnten nicht geladen werden.",
+  "noDropsAvailable": "Keine Drops vorhanden.",
+  "dropDependenciesMissing": "Für die Erstellung fehlen Art Pieces oder Drop-Maker.",
+  "dropCreateTitle": "Drop erstellen",
+  "dropEditTitle": "Drop bearbeiten",
+  "dropDeleteConfirm": "Drop {id} wirklich löschen?",
+  "@dropDeleteConfirm": {
+    "placeholders": {
+      "id": {}
+    }
+  },
+  "dropArtPieceLabel": "Art Piece",
+  "dropMakerUserLabel": "Drop-Maker",
+  "dropStationaryLabel": "Stationär",
+  "dropPortableItemCountLabel": "Mitnehmbare Anzahl",
+  "dropLatitudeLabel": "Breitengrad",
+  "dropLongitudeLabel": "Längengrad",
+  "dropLocationPhotosLabel": "Standortfoto-URLs",
+  "dropItemCountLabel": "Gegenstände (Anzahl)",
+  "statusPublished": "Veröffentlicht",
+  "statusUnpublished": "Nicht veröffentlicht",
+  "mapDataLoadFailed": "Karten-Daten konnten nicht geladen werden.",
+  "mapNoDrops": "Keine Drops verfügbar.",
+  "topMenuTooltip": "Top-Navigation",
   "defaultMainRadiusKm": "30",
   "defaultUnclaimedRadiusKm": "3",
   "mapRadiusLabel": "Hauptkartenausschnitt: {radiusKm} km",
@@ -25,6 +125,35 @@
       "radiusKm": {}
     }
   },
+  "mapCenteredOnLatestDrop": "Karte zentriert auf neuesten Drop: {dropTitle}",
+  "@mapCenteredOnLatestDrop": {
+    "placeholders": {
+      "dropTitle": {}
+    }
+  },
+  "mapCenterCoordinates": "Zentrum: {latitude}, {longitude}",
+  "@mapCenterCoordinates": {
+    "placeholders": {
+      "latitude": {},
+      "longitude": {}
+    }
+  },
+  "centerOnMyLocation": "Mein Standort",
+  "mapCenteredOnUser": "Karte wurde auf deinen Standort zentriert.",
+  "locationServiceDisabled": "Standortdienst ist deaktiviert.",
+  "locationPermissionDenied": "Standortberechtigung wurde nicht erteilt.",
+  "locationError": "Standort konnte nicht ermittelt werden.",
+  "mapSearchLocationHint": "Ort manuell suchen",
+  "mapSearchNoResults": "Kein passender Ort gefunden.",
+  "mapSearchError": "Ortsvorschlaege konnten nicht geladen werden.",
+  "mapDropDetails": "Drop-Details",
+  "mapShowDropDetailsHint": "Tippe auf einen Drop-Pin, um Details zu sehen.",
+  "mapArtistLabel": "Artist",
+  "mapDropMakerLabel": "Drop-Maker",
+  "mapDescriptionLabel": "Beschreibung",
+  "mapClaimedByLabel": "Beansprucht von",
+  "mapUnclaimedLabel": "Noch nicht beansprucht",
+  "mapCloseDetails": "Schließen",
   "mapPlaceholder": "Kartenvorschau (OpenStreetMap-Integration)",
   "searchSortTitle": "Suche und Sortierung",
   "manualLocationLabel": "Manueller Ort oder Gerätestandort",

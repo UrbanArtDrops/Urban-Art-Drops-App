@@ -5,17 +5,18 @@ import "../../../../shared/models/app_models.dart";
 import "../../../../shared/services/app_api_client.dart";
 import "../../../../shared/widgets/page_shell.dart";
 
-class ArtistArtPiecesPage extends StatefulWidget {
-  const ArtistArtPiecesPage({super.key});
+class MyDropsPage extends StatefulWidget {
+  const MyDropsPage({super.key});
 
   @override
-  State<ArtistArtPiecesPage> createState() => _ArtistArtPiecesPageState();
+  State<MyDropsPage> createState() => _MyDropsPageState();
 }
 
-class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
+class _MyDropsPageState extends State<MyDropsPage> {
   final AppApiClient _apiClient = AppApiClient();
+  List<DropModel> _drops = const [];
   List<ArtPieceModel> _artPieces = const [];
-  List<ManagedUser> _artists = const [];
+  List<ManagedUser> _dropMakers = const [];
   bool _isLoading = true;
   bool _isSaving = false;
   String? _error;
@@ -34,6 +35,7 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
 
     try {
       final results = await Future.wait([
+        _apiClient.getDrops(),
         _apiClient.getArtPieces(),
         _apiClient.getUsers(),
       ]);
@@ -41,13 +43,14 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
         return;
       }
 
-      final artists = (results[1] as List<ManagedUser>)
-          .where((user) => user.role == 1)
+      final users = (results[2] as List<ManagedUser>)
+          .where((user) => user.role == 1 || user.role == 2)
           .toList(growable: false);
 
       setState(() {
-        _artPieces = (results[0] as List<ArtPieceModel>);
-        _artists = artists;
+        _drops = (results[0] as List<DropModel>);
+        _artPieces = (results[1] as List<ArtPieceModel>);
+        _dropMakers = users;
         _isLoading = false;
       });
     } catch (_) {
@@ -56,107 +59,145 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
       }
 
       setState(() {
-        _error = AppLocalizations.of(context)!.artPiecesLoadFailed;
+        _error = AppLocalizations.of(context)!.dropsLoadFailed;
         _isLoading = false;
       });
     }
   }
 
-  Future<void> _openArtPieceDialog([ArtPieceModel? existing]) async {
+  Future<void> _openDropDialog([DropModel? existing]) async {
     final l10n = AppLocalizations.of(context)!;
-    if (_artists.isEmpty) {
+    if (_artPieces.isEmpty || _dropMakers.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(l10n.noArtistsAvailable)));
+      ).showSnackBar(SnackBar(content: Text(l10n.dropDependenciesMissing)));
       return;
     }
 
-    final titleController = TextEditingController(text: existing?.title ?? "");
-    final descriptionController = TextEditingController(
-      text: existing?.description ?? "",
+    var selectedArtPieceId = existing?.artPieceId ?? _artPieces.first.id;
+    var selectedDropMakerId = existing?.dropMakerId ?? _dropMakers.first.id;
+    var isStationary = existing?.isStationary ?? true;
+    final portableItemController = TextEditingController(
+      text: existing?.portableItemCount?.toString() ?? "",
     );
-    final photoUrlsController = TextEditingController(
-      text: existing?.photoUrls.join(", ") ?? "",
+    final latitudeController = TextEditingController(
+      text: existing?.latitude?.toString() ?? "",
     );
-
-    var selectedArtistId = existing?.artistId ?? _artists.first.id;
-    var selectedAssetKind = existing?.assetKind ?? 0;
+    final longitudeController = TextEditingController(
+      text: existing?.longitude?.toString() ?? "",
+    );
+    final locationPhotosController = TextEditingController(
+      text: existing?.locationPhotoUrls.join(", ") ?? "",
+    );
+    final itemCountController = TextEditingController(
+      text: existing?.itemCount.toString() ?? "1",
+    );
     var published = existing?.isPublished ?? false;
 
     final shouldSave = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(
-          existing == null ? l10n.artPieceCreateTitle : l10n.artPieceEditTitle,
+          existing == null ? l10n.dropCreateTitle : l10n.dropEditTitle,
         ),
         content: StatefulBuilder(
           builder: (context, setDialogState) => SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(
-                  controller: titleController,
-                  decoration: InputDecoration(
-                    labelText: l10n.artPieceTitleLabel,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: descriptionController,
-                  decoration: InputDecoration(
-                    labelText: l10n.artPieceDescriptionLabel,
-                  ),
-                  maxLines: 4,
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: photoUrlsController,
-                  decoration: InputDecoration(
-                    labelText: l10n.artPiecePhotosLabel,
-                    hintText: l10n.commaSeparatedHint,
-                  ),
-                ),
-                const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
-                  initialValue: selectedArtistId,
+                  initialValue: selectedArtPieceId,
                   decoration: InputDecoration(
-                    labelText: l10n.artPieceArtistLabel,
+                    labelText: l10n.dropArtPieceLabel,
                   ),
-                  items: _artists
+                  items: _artPieces
                       .map(
-                        (artist) => DropdownMenuItem(
-                          value: artist.id,
-                          child: Text("${artist.userName} (${artist.email})"),
+                        (artPiece) => DropdownMenuItem(
+                          value: artPiece.id,
+                          child: Text(artPiece.title),
                         ),
                       )
                       .toList(growable: false),
                   onChanged: (value) {
                     if (value != null) {
-                      setDialogState(() => selectedArtistId = value);
+                      setDialogState(() => selectedArtPieceId = value);
                     }
                   },
                 ),
                 const SizedBox(height: 8),
-                DropdownButtonFormField<int>(
-                  initialValue: selectedAssetKind,
+                DropdownButtonFormField<String>(
+                  initialValue: selectedDropMakerId,
                   decoration: InputDecoration(
-                    labelText: l10n.artPieceAssetTypeLabel,
+                    labelText: l10n.dropMakerUserLabel,
                   ),
-                  items: [
-                    DropdownMenuItem(
-                      value: 0,
-                      child: Text(l10n.artPieceAssetImage),
-                    ),
-                    DropdownMenuItem(
-                      value: 1,
-                      child: Text(l10n.artPieceAssetModel3d),
-                    ),
-                  ],
+                  items: _dropMakers
+                      .map(
+                        (user) => DropdownMenuItem(
+                          value: user.id,
+                          child: Text("${user.userName} (${user.email})"),
+                        ),
+                      )
+                      .toList(growable: false),
                   onChanged: (value) {
                     if (value != null) {
-                      setDialogState(() => selectedAssetKind = value);
+                      setDialogState(() => selectedDropMakerId = value);
                     }
                   },
+                ),
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: isStationary,
+                  onChanged: (value) {
+                    setDialogState(() => isStationary = value);
+                  },
+                  title: Text(l10n.dropStationaryLabel),
+                ),
+                if (!isStationary)
+                  TextField(
+                    controller: portableItemController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: l10n.dropPortableItemCountLabel,
+                    ),
+                  ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: latitudeController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    signed: true,
+                    decimal: true,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: l10n.dropLatitudeLabel,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: longitudeController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    signed: true,
+                    decimal: true,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: l10n.dropLongitudeLabel,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: locationPhotosController,
+                  decoration: InputDecoration(
+                    labelText: l10n.dropLocationPhotosLabel,
+                    hintText: l10n.commaSeparatedHint,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: itemCountController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: l10n.dropItemCountLabel,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 SwitchListTile(
@@ -186,56 +227,55 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
       return;
     }
 
-    final photoUrls = photoUrlsController.text
-        .split(",")
-        .map((entry) => entry.trim())
-        .where((entry) => entry.isNotEmpty)
-        .toList(growable: false);
+    final input = CreateDropInput(
+      artPieceId: selectedArtPieceId,
+      dropMakerId: selectedDropMakerId,
+      isStationary: isStationary,
+      portableItemCount: isStationary
+          ? null
+          : int.tryParse(portableItemController.text.trim()),
+      latitude: double.tryParse(latitudeController.text.trim()),
+      longitude: double.tryParse(longitudeController.text.trim()),
+      locationPhotoUrls: locationPhotosController.text
+          .split(",")
+          .map((entry) => entry.trim())
+          .where((entry) => entry.isNotEmpty)
+          .toList(growable: false),
+      itemCount: int.tryParse(itemCountController.text.trim()) ?? 1,
+    );
 
     await _withSaving(() async {
-      String? changedArtPieceId = existing?.id;
+      String? changedDropId = existing?.id;
       if (existing == null) {
-        await _apiClient.createArtPiece(
-          artistId: selectedArtistId,
-          title: titleController.text.trim(),
-          description: descriptionController.text.trim(),
-          assetKind: selectedAssetKind,
-          photoUrls: photoUrls,
-        );
+        await _apiClient.createDrop(input);
       } else {
-        await _apiClient.updateArtPiece(
-          id: existing.id,
-          title: titleController.text.trim(),
-          description: descriptionController.text.trim(),
-          photoUrls: photoUrls,
-        );
+        await _apiClient.updateDrop(existing.id, input);
       }
-
       await _loadData();
-      if (changedArtPieceId == null) {
-        for (final item in _artPieces) {
-          if (item.title == titleController.text.trim() &&
-              item.artistId == selectedArtistId) {
-            changedArtPieceId = item.id;
-            break;
+
+      if (changedDropId == null) {
+        for (final drop in _drops) {
+          if (drop.artPieceId == selectedArtPieceId &&
+              drop.dropMakerId == selectedDropMakerId) {
+            changedDropId = drop.id;
           }
         }
       }
 
-      if (changedArtPieceId != null) {
-        await _apiClient.setArtPiecePublished(changedArtPieceId, published);
+      if (changedDropId != null) {
+        await _apiClient.setDropPublished(changedDropId, published);
         await _loadData();
       }
     });
   }
 
-  Future<void> _deleteArtPiece(ArtPieceModel artPiece) async {
+  Future<void> _deleteDrop(DropModel drop) async {
     final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(l10n.confirmDelete),
-        content: Text(l10n.artPieceDeleteConfirm(artPiece.title)),
+        content: Text(l10n.dropDeleteConfirm(drop.id)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -254,14 +294,14 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
     }
 
     await _withSaving(() async {
-      await _apiClient.deleteArtPiece(artPiece.id);
+      await _apiClient.deleteDrop(drop.id);
       await _loadData();
     });
   }
 
-  Future<void> _togglePublish(ArtPieceModel artPiece) async {
+  Future<void> _togglePublish(DropModel drop) async {
     await _withSaving(() async {
-      await _apiClient.setArtPiecePublished(artPiece.id, !artPiece.isPublished);
+      await _apiClient.setDropPublished(drop.id, !drop.isPublished);
       await _loadData();
     });
   }
@@ -288,9 +328,12 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final artById = <String, ArtPieceModel>{
+      for (final artPiece in _artPieces) artPiece.id: artPiece,
+    };
 
     return PageShell(
-      title: l10n.menuMyArt,
+      title: l10n.menuMyDrops,
       body: _isLoading
           ? Center(child: Text(l10n.loadingData))
           : _error != null
@@ -314,10 +357,8 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
                   child: Row(
                     children: [
                       FilledButton.icon(
-                        onPressed: _isSaving
-                            ? null
-                            : () => _openArtPieceDialog(),
-                        icon: const Icon(Icons.add),
+                        onPressed: _isSaving ? null : () => _openDropDialog(),
+                        icon: const Icon(Icons.add_location_alt_outlined),
                         label: Text(l10n.createAction),
                       ),
                       const SizedBox(width: 8),
@@ -330,61 +371,42 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
                   ),
                 ),
                 Expanded(
-                  child: _artPieces.isEmpty
-                      ? Center(child: Text(l10n.noArtPiecesAvailable))
+                  child: _drops.isEmpty
+                      ? Center(child: Text(l10n.noDropsAvailable))
                       : RefreshIndicator(
                           onRefresh: _loadData,
                           child: ListView.builder(
-                            itemCount: _artPieces.length,
+                            itemCount: _drops.length,
                             itemBuilder: (context, index) {
-                              final artPiece = _artPieces[index];
-                              final photo = artPiece.photoUrls.isNotEmpty
-                                  ? artPiece.photoUrls.first
-                                  : null;
+                              final drop = _drops[index];
+                              final art = artById[drop.artPieceId];
+                              final title =
+                                  art?.title ?? l10n.dropFallbackTitle(drop.id);
+                              final subtitle = [
+                                drop.isPublished
+                                    ? l10n.statusPublished
+                                    : l10n.statusUnpublished,
+                                l10n.claimedItemsValue(
+                                  "${drop.claimedItemCount}",
+                                  "${drop.itemCount}",
+                                ),
+                              ].join(" · ");
 
                               return Card(
                                 child: ListTile(
-                                  leading: photo == null
-                                      ? const Icon(
-                                          Icons.image_not_supported_outlined,
-                                        )
-                                      : ClipRRect(
-                                          borderRadius: BorderRadius.circular(
-                                            6,
-                                          ),
-                                          child: Image.network(
-                                            photo,
-                                            width: 56,
-                                            height: 56,
-                                            fit: BoxFit.cover,
-                                            errorBuilder:
-                                                (
-                                                  context,
-                                                  error,
-                                                  stackTrace,
-                                                ) => const Icon(
-                                                  Icons
-                                                      .image_not_supported_outlined,
-                                                ),
-                                          ),
-                                        ),
-                                  title: Text(artPiece.title),
-                                  subtitle: Text(
-                                    artPiece.isPublished
-                                        ? l10n.statusPublished
-                                        : l10n.statusUnpublished,
-                                  ),
+                                  title: Text(title),
+                                  subtitle: Text(subtitle),
                                   trailing: PopupMenuButton<String>(
                                     onSelected: (value) {
                                       switch (value) {
                                         case "edit":
-                                          _openArtPieceDialog(artPiece);
+                                          _openDropDialog(drop);
                                           break;
                                         case "togglePublish":
-                                          _togglePublish(artPiece);
+                                          _togglePublish(drop);
                                           break;
                                         case "delete":
-                                          _deleteArtPiece(artPiece);
+                                          _deleteDrop(drop);
                                           break;
                                       }
                                     },
@@ -396,7 +418,7 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
                                       PopupMenuItem(
                                         value: "togglePublish",
                                         child: Text(
-                                          artPiece.isPublished
+                                          drop.isPublished
                                               ? l10n.depublishAction
                                               : l10n.publishAction,
                                         ),

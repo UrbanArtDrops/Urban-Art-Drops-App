@@ -5,6 +5,7 @@ import "../../features/admin/presentation/pages/admin_content_page.dart";
 import "../../features/admin/presentation/pages/admin_user_management_page.dart";
 import "../../features/artist_area/presentation/pages/artist_art_pieces_page.dart";
 import "../../features/authentication/presentation/pages/login_page.dart";
+import "../../features/authentication/presentation/pages/profile_page.dart";
 import "../../features/authentication/presentation/pages/register_page.dart";
 import "../../features/discovery/presentation/pages/claim_page.dart";
 import "../../features/discovery/presentation/pages/drop_detail_page.dart";
@@ -12,14 +13,14 @@ import "../../features/discovery/presentation/pages/drop_list_page.dart";
 import "../../features/discovery/presentation/pages/leaderboard_page.dart";
 import "../../features/discovery/presentation/pages/map_page.dart";
 import "../../features/drop_maker/presentation/pages/drop_maker_page.dart";
+import "../../features/drop_maker/presentation/pages/my_drops_page.dart";
 import "../../features/moderation/presentation/pages/moderation_page.dart";
-import "../../features/navigation/presentation/pages/home_page.dart";
 
 final GoRouter appRouter = GoRouter(
   initialLocation: "/",
   routes: [
-    GoRoute(path: "/", builder: (context, state) => const HomePage()),
-    GoRoute(path: "/hunter/map", builder: (context, state) => const MapPage()),
+    GoRoute(path: "/", builder: (context, state) => const MapPage()),
+    GoRoute(path: "/hunter/map", redirect: (context, state) => "/"),
     GoRoute(
       path: "/hunter/drops",
       builder: (context, state) => const DropListPage(),
@@ -41,6 +42,10 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const LoginPage(),
     ),
     GoRoute(
+      path: "/auth/profile",
+      builder: (context, state) => const ProfilePage(),
+    ),
+    GoRoute(
       path: "/auth/register",
       builder: (context, state) => const RegisterPage(),
     ),
@@ -51,6 +56,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: "/drop-maker/art-pieces",
       builder: (context, state) => const DropMakerPage(),
+    ),
+    GoRoute(
+      path: "/drop-maker/drops",
+      builder: (context, state) => const MyDropsPage(),
     ),
     GoRoute(
       path: "/moderation/reports",

@@ -45,6 +45,239 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navAdminContent => 'Admin Content';
 
   @override
+  String get menuProfile => 'My profile';
+
+  @override
+  String get menuMyArt => 'My art';
+
+  @override
+  String get menuArtWorks => 'Artworks';
+
+  @override
+  String get menuMyDrops => 'My drops';
+
+  @override
+  String get menuSettings => 'Settings';
+
+  @override
+  String get menuUsers => 'Users';
+
+  @override
+  String get profileNotLoggedIn => 'You are currently not signed in.';
+
+  @override
+  String profileRoleLabel(Object role) {
+    return 'Role: $role';
+  }
+
+  @override
+  String get logoutButton => 'Logout';
+
+  @override
+  String get loadingData => 'Loading data...';
+
+  @override
+  String get retryButton => 'Retry';
+
+  @override
+  String get refreshAction => 'Refresh';
+
+  @override
+  String get createAction => 'Create';
+
+  @override
+  String get editAction => 'Edit';
+
+  @override
+  String get deleteAction => 'Delete';
+
+  @override
+  String get publishAction => 'Publish';
+
+  @override
+  String get depublishAction => 'Depublish';
+
+  @override
+  String get cancelAction => 'Cancel';
+
+  @override
+  String get confirmDelete => 'Confirm deletion';
+
+  @override
+  String get genericSaveError => 'Save failed.';
+
+  @override
+  String get searchDropsHint => 'Search drops (title or ID)';
+
+  @override
+  String get dropListLoadFailed => 'Drops could not be loaded.';
+
+  @override
+  String get dropListEmpty => 'No published drops found.';
+
+  @override
+  String get leaderboardLoadFailed => 'Leaderboard could not be loaded.';
+
+  @override
+  String get leaderboardEmpty => 'No leaderboard entries yet.';
+
+  @override
+  String claimedItemsValue(Object claimed, Object total) {
+    return '$claimed of $total claimed';
+  }
+
+  @override
+  String dropFallbackTitle(Object id) {
+    return 'Drop $id';
+  }
+
+  @override
+  String get usersLoadFailed => 'Users could not be loaded.';
+
+  @override
+  String get userCreateTitle => 'Create user';
+
+  @override
+  String get userEditUsernameTitle => 'Edit username';
+
+  @override
+  String get userApproveAction => 'Approve';
+
+  @override
+  String get userRevokeApprovalAction => 'Revoke approval';
+
+  @override
+  String get userSuspendAction => 'Suspend';
+
+  @override
+  String get userUnsuspendAction => 'Unsuspend';
+
+  @override
+  String get userChangeRoleAction => 'Change role';
+
+  @override
+  String get userEditUsernameAction => 'Edit username';
+
+  @override
+  String get userApproved => 'Approved';
+
+  @override
+  String get userNotApproved => 'Not approved';
+
+  @override
+  String get userSuspended => 'Suspended';
+
+  @override
+  String get userActive => 'Active';
+
+  @override
+  String get noUsersAvailable => 'No users available.';
+
+  @override
+  String get artPiecesLoadFailed => 'Art pieces could not be loaded.';
+
+  @override
+  String get noArtPiecesAvailable => 'No art pieces available.';
+
+  @override
+  String get noArtistsAvailable => 'No artist accounts available.';
+
+  @override
+  String get artPieceCreateTitle => 'Create art piece';
+
+  @override
+  String get artPieceEditTitle => 'Edit art piece';
+
+  @override
+  String get artPieceTitleLabel => 'Title';
+
+  @override
+  String get artPieceDescriptionLabel => 'Description';
+
+  @override
+  String get artPiecePhotosLabel => 'Photo URLs';
+
+  @override
+  String get artPieceArtistLabel => 'Artist';
+
+  @override
+  String get artPieceAssetTypeLabel => 'Asset type';
+
+  @override
+  String get artPieceAssetImage => 'Image';
+
+  @override
+  String get artPieceAssetModel3d => '3D model';
+
+  @override
+  String artPieceDeleteConfirm(Object title) {
+    return 'Delete art piece \"$title\"?';
+  }
+
+  @override
+  String get commaSeparatedHint => 'Comma separated values';
+
+  @override
+  String get dropsLoadFailed => 'Drops could not be loaded.';
+
+  @override
+  String get noDropsAvailable => 'No drops available.';
+
+  @override
+  String get dropDependenciesMissing =>
+      'Art pieces or drop-makers are missing.';
+
+  @override
+  String get dropCreateTitle => 'Create drop';
+
+  @override
+  String get dropEditTitle => 'Edit drop';
+
+  @override
+  String dropDeleteConfirm(Object id) {
+    return 'Delete drop $id?';
+  }
+
+  @override
+  String get dropArtPieceLabel => 'Art piece';
+
+  @override
+  String get dropMakerUserLabel => 'Drop-maker';
+
+  @override
+  String get dropStationaryLabel => 'Stationary';
+
+  @override
+  String get dropPortableItemCountLabel => 'Portable item count';
+
+  @override
+  String get dropLatitudeLabel => 'Latitude';
+
+  @override
+  String get dropLongitudeLabel => 'Longitude';
+
+  @override
+  String get dropLocationPhotosLabel => 'Location photo URLs';
+
+  @override
+  String get dropItemCountLabel => 'Items (count)';
+
+  @override
+  String get statusPublished => 'Published';
+
+  @override
+  String get statusUnpublished => 'Unpublished';
+
+  @override
+  String get mapDataLoadFailed => 'Map data could not be loaded.';
+
+  @override
+  String get mapNoDrops => 'No drops available.';
+
+  @override
+  String get topMenuTooltip => 'Top navigation';
+
+  @override
   String get defaultMainRadiusKm => '30';
 
   @override
@@ -59,6 +292,64 @@ class AppLocalizationsEn extends AppLocalizations {
   String mapUnclaimedRadiusLabel(Object radiusKm) {
     return 'Unclaimed drop radius: $radiusKm km';
   }
+
+  @override
+  String mapCenteredOnLatestDrop(Object dropTitle) {
+    return 'Map centered on latest drop: $dropTitle';
+  }
+
+  @override
+  String mapCenterCoordinates(Object latitude, Object longitude) {
+    return 'Center: $latitude, $longitude';
+  }
+
+  @override
+  String get centerOnMyLocation => 'My location';
+
+  @override
+  String get mapCenteredOnUser => 'Map centered on your location.';
+
+  @override
+  String get locationServiceDisabled => 'Location service is disabled.';
+
+  @override
+  String get locationPermissionDenied => 'Location permission was denied.';
+
+  @override
+  String get locationError => 'Location could not be resolved.';
+
+  @override
+  String get mapSearchLocationHint => 'Search location manually';
+
+  @override
+  String get mapSearchNoResults => 'No matching location found.';
+
+  @override
+  String get mapSearchError => 'Location suggestions could not be loaded.';
+
+  @override
+  String get mapDropDetails => 'Drop details';
+
+  @override
+  String get mapShowDropDetailsHint => 'Tap a drop pin to view details.';
+
+  @override
+  String get mapArtistLabel => 'Artist';
+
+  @override
+  String get mapDropMakerLabel => 'Drop-Maker';
+
+  @override
+  String get mapDescriptionLabel => 'Description';
+
+  @override
+  String get mapClaimedByLabel => 'Claimed by';
+
+  @override
+  String get mapUnclaimedLabel => 'Not claimed yet';
+
+  @override
+  String get mapCloseDetails => 'Close';
 
   @override
   String get mapPlaceholder =>

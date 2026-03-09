@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using UrbanArtDropFinder.Application.Abstractions;
 using UrbanArtDropFinder.Application.Auth;
 using UrbanArtDropFinder.Application.Drops;
 using UrbanArtDropFinder.Contracts.Admin;
@@ -29,6 +30,13 @@ builder.WebHost.ConfigureKestrel(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddGrpc();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FrontendDev", policy =>
+    {
+        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+    });
+});
 builder.Services.AddUrbanArtInfrastructure(builder.Configuration);
 
 var app = builder.Build();
@@ -39,7 +47,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors("FrontendDev");
+
 await SeedConfigurationAsync(app.Services);
+#if DEBUG
+await SeedDebugDataAsync(app.Services);
+#endif
 
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok", utcNow = DateTimeOffset.UtcNow }))
     .WithName("Health");
@@ -338,6 +351,23 @@ dropsGroup.MapPost("/{id:guid}/depublish", async (Guid id, UrbanArtDbContext dbC
     drop.Depublish();
     await dbContext.SaveChangesAsync(cancellationToken);
     return Results.Ok();
+});
+
+dropsGroup.MapDelete("/{id:guid}", async (Guid id, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+{
+    var drop = await dbContext.Drops
+        .Include(x => x.Items)
+        .Include(x => x.LocationPhotos)
+        .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+    if (drop is null)
+    {
+        return Results.NotFound();
+    }
+
+    dbContext.Drops.Remove(drop);
+    await dbContext.SaveChangesAsync(cancellationToken);
+    return Results.NoContent();
 });
 
 dropsGroup.MapPost("/{id:guid}/mark-all-claimed", async (
@@ -692,6 +722,113 @@ static async Task SeedConfigurationAsync(IServiceProvider services)
         dbContext.AppConfigurations.Add(new AppConfiguration());
         await dbContext.SaveChangesAsync();
     }
+}
+
+static async Task SeedDebugDataAsync(IServiceProvider services)
+{
+    using var scope = services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<UrbanArtDbContext>();
+    var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+
+    if (await dbContext.ArtPieces.AnyAsync() || await dbContext.Drops.AnyAsync())
+    {
+        return;
+    }
+
+    var artist = UserAccount.CreateLocal(
+        "artist.debug@example.local",
+        "debug.artist",
+        UserRole.Artist,
+        passwordHasher.Hash("Debug!ArtistPass123"),
+        approved: true);
+    artist.MarkEmailVerified();
+
+    var dropMaker = UserAccount.CreateLocal(
+        "dropmaker.debug@example.local",
+        "debug.dropmaker",
+        UserRole.DropMaker,
+        passwordHasher.Hash("Debug!DropMakerPass123"),
+        approved: true);
+    dropMaker.MarkEmailVerified();
+
+    var hunter = UserAccount.CreateLocal(
+        "hunter.debug@example.local",
+        "debug.hunter",
+        UserRole.Hunter,
+        passwordHasher.Hash("Debug!HunterPass123"),
+        approved: true);
+    hunter.MarkEmailVerified();
+
+    var moderator = UserAccount.CreateProvider(
+        "moderator.debug@example.local",
+        "debug.moderator",
+        UserRole.Moderator,
+        "google",
+        approved: true);
+
+    var admin = UserAccount.CreateProvider(
+        "admin.debug@example.local",
+        "debug.admin",
+        UserRole.Admin,
+        "google",
+        approved: true);
+
+    await dbContext.UserAccounts.AddRangeAsync(artist, dropMaker, hunter, moderator, admin);
+
+    var artPieceOne = ArtPiece.Create(
+        artist.Id,
+        "Neon Fox Totem",
+        "Leuchtendes urbanes Totem mit modularen Oberflaechen fuer den Nachtbereich.",
+        ArtPieceAssetKind.Model3d);
+    artPieceOne.AddPhoto("https://example.invalid/art/neon-fox-01.jpg");
+    artPieceOne.AddPhoto("https://example.invalid/art/neon-fox-02.jpg");
+    artPieceOne.Publish();
+
+    var artPieceTwo = ArtPiece.Create(
+        artist.Id,
+        "Steel Bird Fragment",
+        "Geometrische Stahlform mit Kontrastkanten fuer experimentelle Installationen.",
+        ArtPieceAssetKind.Image);
+    artPieceTwo.AddPhoto("https://example.invalid/art/steel-bird-01.jpg");
+    artPieceTwo.Publish();
+
+    await dbContext.ArtPieces.AddRangeAsync(artPieceOne, artPieceTwo);
+
+    var dropOne = Drop.Create(artPieceOne.Id, dropMaker.Id, isStationary: false, portableItemCount: 3);
+    dropOne.SetLocation(52.5208, 13.4095);
+    dropOne.AddLocationPhoto("https://example.invalid/drop/neon-fox-location-01.jpg");
+    dropOne.AddItem("debug-drop-neon-fox-item-01");
+    dropOne.AddItem("debug-drop-neon-fox-item-02");
+    dropOne.AddItem("debug-drop-neon-fox-item-03");
+    dropOne.Publish();
+    dropOne.Items.First().MarkClaimed(hunter.Id, null, DateTimeOffset.UtcNow.AddHours(-3));
+
+    var dropTwo = Drop.Create(artPieceTwo.Id, dropMaker.Id, isStationary: true, portableItemCount: null);
+    dropTwo.SetLocation(52.5331, 13.3889);
+    dropTwo.AddLocationPhoto("https://example.invalid/drop/steel-bird-location-01.jpg");
+    dropTwo.AddItem("debug-drop-steel-bird-item-01");
+    dropTwo.AddItem("debug-drop-steel-bird-item-02");
+    dropTwo.Publish();
+
+    await dbContext.Drops.AddRangeAsync(dropOne, dropTwo);
+
+    await dbContext.DropComments.AddRangeAsync(
+        new DropComment
+        {
+            DropId = dropOne.Id,
+            AuthorUserId = hunter.Id,
+            Content = "Starker Spot, QR hat direkt funktioniert.",
+            CreatedAtUtc = DateTimeOffset.UtcNow.AddHours(-2)
+        },
+        new DropComment
+        {
+            DropId = dropTwo.Id,
+            AuthorUserId = artist.Id,
+            Content = "Bitte respektvoll mit dem stationaeren Drop umgehen.",
+            CreatedAtUtc = DateTimeOffset.UtcNow.AddHours(-1)
+        });
+
+    await dbContext.SaveChangesAsync();
 }
 
 static async Task<AppConfiguration> GetConfigurationAsync(UrbanArtDbContext dbContext, CancellationToken cancellationToken)

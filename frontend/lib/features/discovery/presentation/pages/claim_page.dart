@@ -13,21 +13,18 @@ class ClaimPage extends StatelessWidget {
 
     return PageShell(
       title: l10n.claimTitle,
-      body: Padding(
+      body: ListView(
         padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(l10n.claimInstruction),
-            const SizedBox(height: 12),
-            TextField(
-              controller: nicknameController,
-              decoration: InputDecoration(labelText: l10n.nicknameLabel),
-            ),
-            const SizedBox(height: 12),
-            FilledButton(onPressed: () {}, child: Text(l10n.claimButton)),
-          ],
-        ),
+        children: [
+          Text(l10n.claimInstruction),
+          const SizedBox(height: 12),
+          TextField(
+            controller: nicknameController,
+            decoration: InputDecoration(labelText: l10n.nicknameLabel),
+          ),
+          const SizedBox(height: 12),
+          FilledButton(onPressed: () {}, child: Text(l10n.claimButton)),
+        ],
       ),
     );
   }
