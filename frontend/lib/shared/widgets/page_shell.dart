@@ -11,6 +11,9 @@ class PageShell extends StatelessWidget {
     required this.body,
     this.actions = const <Widget>[],
     this.expandBodyToViewport = false,
+    this.drawerWidth,
+    this.minDrawerWidth = 280,
+    this.maxDrawerWidth = 420,
     this.floatingActionButton,
     super.key,
   });
@@ -19,7 +22,27 @@ class PageShell extends StatelessWidget {
   final Widget body;
   final List<Widget> actions;
   final bool expandBodyToViewport;
+  final double? drawerWidth;
+  final double minDrawerWidth;
+  final double maxDrawerWidth;
   final Widget? floatingActionButton;
+
+  double _resolveDrawerWidth(BuildContext context) {
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final availableWidth = (viewportWidth - 16).clamp(0.0, double.infinity);
+
+    if (drawerWidth != null) {
+      return drawerWidth!.clamp(0.0, availableWidth).toDouble();
+    }
+
+    final normalizedMin = minDrawerWidth.clamp(0.0, availableWidth).toDouble();
+    final normalizedMax = maxDrawerWidth
+        .clamp(normalizedMin, availableWidth)
+        .toDouble();
+    final responsiveWidth = viewportWidth < 720 ? viewportWidth * 0.9 : 360.0;
+
+    return responsiveWidth.clamp(normalizedMin, normalizedMax).toDouble();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +50,6 @@ class PageShell extends StatelessWidget {
 
     return BlocBuilder<AuthSessionCubit, AuthSessionState>(
       builder: (context, authState) {
-        final navigation = _buildNavigationEntries(l10n, authState);
         final path = GoRouterState.of(context).uri.path;
         final canNavigateBack = context.canPop();
 
@@ -45,9 +67,10 @@ class PageShell extends StatelessWidget {
           ),
           floatingActionButton: floatingActionButton,
           drawer: Drawer(
+            width: _resolveDrawerWidth(context),
             child: SafeArea(
               child: ListView(
-                children: navigation
+                children: _buildNavigationEntries(l10n, authState)
                     .map(
                       (entry) => entry.isDivider
                           ? const Divider(height: 24)
