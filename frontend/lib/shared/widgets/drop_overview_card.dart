@@ -19,6 +19,7 @@ class DropOverviewCard extends StatelessWidget {
     required this.longitude,
     this.distanceKm,
     this.onTap,
+    this.onMiniMapTap,
     this.trailing,
     super.key,
   });
@@ -35,6 +36,7 @@ class DropOverviewCard extends StatelessWidget {
   final double? longitude;
   final double? distanceKm;
   final VoidCallback? onTap;
+  final VoidCallback? onMiniMapTap;
   final Widget? trailing;
 
   @override
@@ -59,6 +61,7 @@ class DropOverviewCard extends StatelessWidget {
             l10n: l10n,
             latitude: latitude,
             longitude: longitude,
+            onTap: onMiniMapTap,
           );
 
           if (!isDesktop) {
@@ -391,11 +394,13 @@ class _DropMiniMap extends StatelessWidget {
     required this.l10n,
     required this.latitude,
     required this.longitude,
+    required this.onTap,
   });
 
   final AppLocalizations l10n;
   final double? latitude;
   final double? longitude;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -410,7 +415,7 @@ class _DropMiniMap extends StatelessWidget {
     }
 
     final point = LatLng(latitude!, longitude!);
-    return ClipRRect(
+    final map = ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: FlutterMap(
         options: MapOptions(
@@ -440,6 +445,19 @@ class _DropMiniMap extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+
+    if (onTap == null) {
+      return map;
+    }
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: IgnorePointer(child: map),
       ),
     );
   }

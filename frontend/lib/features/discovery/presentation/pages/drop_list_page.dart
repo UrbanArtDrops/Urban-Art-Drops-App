@@ -369,6 +369,14 @@ class _DropListPageState extends State<DropListPage> {
     });
   }
 
+  void _openDropOnMap(String dropId) {
+    final route = Uri(
+      path: "/",
+      queryParameters: {"focusDropId": dropId},
+    ).toString();
+    context.go(route);
+  }
+
   List<_DropListViewModel> _buildViewModels(AppLocalizations l10n) {
     final query = _searchController.text.trim().toLowerCase();
 
@@ -675,6 +683,11 @@ class _DropListPageState extends State<DropListPage> {
                                 distanceKm: viewModel.distanceKm,
                                 onTap: () =>
                                     context.go("/hunter/drops/${viewModel.id}"),
+                                onMiniMapTap:
+                                    viewModel.latitude != null &&
+                                        viewModel.longitude != null
+                                    ? () => _openDropOnMap(viewModel.id)
+                                    : null,
                               );
                             },
                           ),

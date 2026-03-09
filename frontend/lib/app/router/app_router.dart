@@ -20,7 +20,11 @@ import "../../features/moderation/presentation/pages/moderation_page.dart";
 final GoRouter appRouter = GoRouter(
   initialLocation: "/",
   routes: [
-    GoRoute(path: "/", builder: (context, state) => const MapPage()),
+    GoRoute(
+      path: "/",
+      builder: (context, state) =>
+          MapPage(focusDropId: state.uri.queryParameters["focusDropId"]),
+    ),
     GoRoute(path: "/hunter/map", redirect: (context, state) => "/"),
     GoRoute(
       path: "/hunter/drops",

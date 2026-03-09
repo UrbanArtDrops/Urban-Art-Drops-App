@@ -13,7 +13,9 @@ import "../../../../shared/services/app_api_client.dart";
 import "../../../../shared/widgets/page_shell.dart";
 
 class MapPage extends StatefulWidget {
-  const MapPage({super.key});
+  const MapPage({this.focusDropId, super.key});
+
+  final String? focusDropId;
 
   @override
   State<MapPage> createState() => _MapPageState();
@@ -145,7 +147,18 @@ class _MapPageState extends State<MapPage> {
       }
 
       final latestDrop = mappedDrops.isNotEmpty ? mappedDrops.last : null;
-      final selectedId = _selectedDrop?.id;
+      final requestedDropId = widget.focusDropId?.trim();
+      _MapDropViewModel? focusedDrop;
+      if (requestedDropId != null && requestedDropId.isNotEmpty) {
+        for (final drop in mappedDrops) {
+          if (drop.id == requestedDropId) {
+            focusedDrop = drop;
+            break;
+          }
+        }
+      }
+
+      final selectedId = focusedDrop?.id ?? _selectedDrop?.id;
       _MapDropViewModel? selected;
       if (selectedId != null) {
         for (final drop in mappedDrops) {
@@ -160,11 +173,26 @@ class _MapPageState extends State<MapPage> {
         _drops = mappedDrops;
         _latestDrop = latestDrop;
         _selectedDrop = selected;
-        _center = latestDrop?.position ?? _defaultCenter;
+        _center =
+            focusedDrop?.position ??
+            selected?.position ??
+            latestDrop?.position ??
+            _defaultCenter;
         _mainMapRadiusKm = appConfiguration.mainMapRadiusKm;
         _unclaimedDropRadiusKm = appConfiguration.unclaimedDropRadiusKm;
         _isLoadingDrops = false;
       });
+
+      final target = focusedDrop?.position ?? selected?.position;
+      if (target != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) {
+            return;
+          }
+
+          _mapController.move(target, 14.5);
+        });
+      }
     } catch (_) {
       if (!mounted) {
         return;
