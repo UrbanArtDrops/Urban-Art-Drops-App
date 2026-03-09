@@ -216,6 +216,11 @@ class AppApiClient {
     return data.map(LeaderboardEntry.fromJson).toList(growable: false);
   }
 
+  Future<AppConfigurationModel> getAppConfiguration() async {
+    final data = await _getObject("/api/admin/configuration");
+    return AppConfigurationModel.fromJson(data);
+  }
+
   Future<List<Map<String, dynamic>>> _getList(String path) async {
     final response = await _httpClient.get(_uri(path));
     _ensureSuccess(response, "Failed to load data.");

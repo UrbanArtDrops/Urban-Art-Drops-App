@@ -206,6 +206,48 @@ class LeaderboardEntry {
   final int claims;
 }
 
+class AppConfigurationModel {
+  const AppConfigurationModel({
+    required this.smtpHost,
+    required this.mainMapRadiusKm,
+    required this.miniMapRadiusKm,
+    required this.unclaimedDropRadiusKm,
+    required this.showExactPositionWhenFullyClaimed,
+  });
+
+  factory AppConfigurationModel.fromJson(Map<String, dynamic> json) {
+    return AppConfigurationModel(
+      smtpHost: _readString(json, "smtpHost", "SmtpHost"),
+      mainMapRadiusKm: _readInt(json, "mainMapRadiusKm", "MainMapRadiusKm"),
+      miniMapRadiusKm: _readInt(json, "miniMapRadiusKm", "MiniMapRadiusKm"),
+      unclaimedDropRadiusKm: _readInt(
+        json,
+        "unclaimedDropRadiusKm",
+        "UnclaimedDropRadiusKm",
+      ),
+      showExactPositionWhenFullyClaimed: _readBool(
+        json,
+        "showExactPositionWhenFullyClaimed",
+        "ShowExactPositionWhenFullyClaimed",
+      ),
+    );
+  }
+
+  static const AppConfigurationModel defaults = AppConfigurationModel(
+    smtpHost: "",
+    mainMapRadiusKm: 30,
+    miniMapRadiusKm: 5,
+    unclaimedDropRadiusKm: 3,
+    showExactPositionWhenFullyClaimed: true,
+  );
+
+  final String smtpHost;
+  final int mainMapRadiusKm;
+  final int miniMapRadiusKm;
+  final int unclaimedDropRadiusKm;
+  final bool showExactPositionWhenFullyClaimed;
+}
+
 class CreateDropInput {
   const CreateDropInput({
     required this.artPieceId,

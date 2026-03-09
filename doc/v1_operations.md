@@ -8,6 +8,10 @@
 - ConnectionStrings__SqlServer
 - SMTP host settings
 - Map radius configuration
+  - `MainMapRadiusKm` (default 30)
+  - `MiniMapRadiusKm` (default 5)
+  - `UnclaimedDropRadiusKm` (default 3)
+  - `ShowExactPositionWhenFullyClaimed`
 
 ## Backup
 - Daily backup job

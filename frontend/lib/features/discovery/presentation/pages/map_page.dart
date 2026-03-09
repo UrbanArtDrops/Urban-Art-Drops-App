@@ -26,11 +26,15 @@ class _MapPageState extends State<MapPage> {
       TextEditingController();
   final FocusNode _locationSearchFocusNode = FocusNode();
   static const LatLng _defaultCenter = LatLng(52.5208, 13.4095);
+  static const int _fallbackMainMapRadiusKm = 30;
+  static const int _fallbackUnclaimedRadiusKm = 3;
 
   LatLng _center = _defaultCenter;
   List<_MapDropViewModel> _drops = const [];
   _MapDropViewModel? _latestDrop;
   _MapDropViewModel? _selectedDrop;
+  int _mainMapRadiusKm = _fallbackMainMapRadiusKm;
+  int _unclaimedDropRadiusKm = _fallbackUnclaimedRadiusKm;
   Timer? _searchDebounceTimer;
   List<_LocationSuggestion> _locationSuggestions = const [];
   String _lastSearchQuery = "";
@@ -65,6 +69,13 @@ class _MapPageState extends State<MapPage> {
     });
 
     try {
+      var appConfiguration = AppConfigurationModel.defaults;
+      try {
+        appConfiguration = await _apiClient.getAppConfiguration();
+      } catch (_) {
+        appConfiguration = AppConfigurationModel.defaults;
+      }
+
       final results = await Future.wait([
         _apiClient.getDrops(),
         _apiClient.getArtPieces(),
@@ -150,6 +161,8 @@ class _MapPageState extends State<MapPage> {
         _latestDrop = latestDrop;
         _selectedDrop = selected;
         _center = latestDrop?.position ?? _defaultCenter;
+        _mainMapRadiusKm = appConfiguration.mainMapRadiusKm;
+        _unclaimedDropRadiusKm = appConfiguration.unclaimedDropRadiusKm;
         _isLoadingDrops = false;
       });
     } catch (_) {
@@ -162,6 +175,8 @@ class _MapPageState extends State<MapPage> {
         _latestDrop = null;
         _selectedDrop = null;
         _center = _defaultCenter;
+        _mainMapRadiusKm = _fallbackMainMapRadiusKm;
+        _unclaimedDropRadiusKm = _fallbackUnclaimedRadiusKm;
         _isLoadingDrops = false;
         _loadError = AppLocalizations.of(context)!.mapDataLoadFailed;
       });
@@ -358,6 +373,12 @@ class _MapPageState extends State<MapPage> {
         : _selectedDrop != null
         ? 322.0
         : 16.0;
+    final unclaimedFillColor = Theme.of(
+      context,
+    ).colorScheme.primary.withValues(alpha: 0.14);
+    final unclaimedBorderColor = Theme.of(
+      context,
+    ).colorScheme.primary.withValues(alpha: 0.72);
 
     return Stack(
       children: [
@@ -370,8 +391,24 @@ class _MapPageState extends State<MapPage> {
                 urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
                 userAgentPackageName: "urban.art.drops.app",
               ),
+              CircleLayer(
+                circles: _drops
+                    .where((drop) => !drop.isFullyClaimed)
+                    .map(
+                      (drop) => CircleMarker(
+                        point: drop.position,
+                        radius: _unclaimedDropRadiusKm * 1000,
+                        useRadiusInMeter: true,
+                        color: unclaimedFillColor,
+                        borderColor: unclaimedBorderColor,
+                        borderStrokeWidth: 2,
+                      ),
+                    )
+                    .toList(growable: false),
+              ),
               MarkerLayer(
                 markers: _drops
+                    .where((drop) => drop.isFullyClaimed)
                     .map(
                       (drop) => Marker(
                         point: drop.position,
@@ -619,9 +656,19 @@ class _MapPageState extends State<MapPage> {
                 padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: Text(
-                    l10n.mapRadiusLabel(l10n.defaultMainRadiusKm),
-                    style: Theme.of(context).textTheme.bodySmall,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.mapRadiusLabel(_mainMapRadiusKm),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        l10n.mapUnclaimedRadiusLabel(_unclaimedDropRadiusKm),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
                   ),
                 ),
               ),

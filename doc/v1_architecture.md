@@ -19,6 +19,11 @@
 - One claim per hunter per drop
 - Anonymous nickname cannot collide with registered usernames
 
+## Discovery and Map Rendering
+- Fully claimed drops are rendered as exact-position pins
+- Not fully claimed drops are rendered as map radius overlays (no pin)
+- The unclaimed drop radius is read from admin configuration (`UnclaimedDropRadiusKm`)
+
 ## Operations
 - Alerts via SMTP mail for reported content and account approval requests
 - Backup target: daily with 14-day retention
