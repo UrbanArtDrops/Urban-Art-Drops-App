@@ -1,0 +1,98 @@
+{
+  "appTitle": "Urban Art Drops",
+  "navMap": "Karte",
+  "navDrops": "Drops",
+  "navLeaderboard": "Rangliste",
+  "navLogin": "Anmeldung",
+  "navRegister": "Registrierung",
+  "navArtistArea": "Artist-Bereich",
+  "navDropMakerArea": "Drop-Maker-Bereich",
+  "navModeration": "Moderation",
+  "navAdminConfig": "Admin-Konfiguration",
+  "navAdminUsers": "Admin-Benutzer",
+  "navAdminContent": "Admin-Inhalte",
+  "defaultMainRadiusKm": "30",
+  "defaultUnclaimedRadiusKm": "3",
+  "mapRadiusLabel": "Hauptkartenausschnitt: {radiusKm} km",
+  "@mapRadiusLabel": {
+    "placeholders": {
+      "radiusKm": {}
+    }
+  },
+  "mapUnclaimedRadiusLabel": "Umkreis für unvollständig beanspruchte Drops: {radiusKm} km",
+  "@mapUnclaimedRadiusLabel": {
+    "placeholders": {
+      "radiusKm": {}
+    }
+  },
+  "mapPlaceholder": "Kartenvorschau (OpenStreetMap-Integration)",
+  "searchSortTitle": "Suche und Sortierung",
+  "manualLocationLabel": "Manueller Ort oder Gerätestandort",
+  "distanceColumnVisible": "Distanzsortierung ist aktiviert.",
+  "sampleDropTitle": "Neon Fox - Oststadt",
+  "sampleDropTitleTwo": "Steel Bird - Uferzone",
+  "sampleDropSubtitle": "Artist + Drop-Maker + Mini-Karte + beanspruchte Hunter",
+  "distanceValue": "{value} km",
+  "@distanceValue": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "dropDetailTitle": "Drop-Details",
+  "dropDetailDescription": "Beschreibung, Galerie, Maker-Kommentar und Claim-Status.",
+  "claimedHuntersTitle": "Beanspruchte Hunter",
+  "claimedHuntersValue": "HunterOne, HunterTwo",
+  "claimTitle": "Gegenstand beanspruchen",
+  "claimInstruction": "QR scannen und mit Nickname oder Konto beanspruchen.",
+  "nicknameLabel": "Nickname",
+  "claimButton": "Jetzt beanspruchen",
+  "rankEntry": "#{rank} - {name}",
+  "@rankEntry": {
+    "placeholders": {
+      "rank": {},
+      "name": {}
+    }
+  },
+  "emailLabel": "E-Mail",
+  "passwordLabel": "Passwort",
+  "providerLoginTitle": "Provider-Anmeldung",
+  "usernameLabel": "Benutzername",
+  "roleHunter": "Hunter",
+  "roleArtist": "Artist",
+  "roleDropMaker": "Drop-Maker",
+  "roleLabel": "Rolle",
+  "registerButton": "Konto erstellen",
+  "artistArtPiecesTitle": "Artist: Art Pieces",
+  "sampleArtPieceTitle": "Art Piece: Crystal Owl",
+  "sampleArtPieceSubtitle": "Bilder/3D-Modell + Veröffentlichungsstatus",
+  "artistDropManagerTitle": "Eigener Drop-Manager",
+  "artistDropManagerSubtitle": "Eigene Drops bearbeiten, löschen, depublizieren",
+  "dropMakerTitle": "Drop-Maker-Workspace",
+  "dropMakerArtPieceSelection": "Art Piece auswählen",
+  "dropMakerCreateDrop": "Drop mit Standort und Item-Anzahl erstellen",
+  "dropMakerPublishTitle": "Veröffentlichen und depublizieren",
+  "dropMakerPublishSubtitle": "Social-Kanäle und Claim-Override",
+  "moderationTitle": "Moderations-Queue",
+  "reportedCommentTitle": "Gemeldeter Kommentar",
+  "reportedCommentSubtitle": "Bis zur Entscheidung sichtbar",
+  "reportedArtPieceTitle": "Gemeldetes Art Piece",
+  "reportedArtPieceSubtitle": "Mail-Alert wird erzeugt",
+  "smtpLabel": "SMTP-Host",
+  "mainMapRadiusSetting": "Hauptkartenausschnitt (km)",
+  "miniMapRadiusSetting": "Mini-Kartenausschnitt (km)",
+  "unclaimedRadiusSetting": "Unclaimed-Umkreis (km)",
+  "showExactPositionSetting": "Exakte Position bei vollständig beanspruchtem Drop anzeigen",
+  "saveButton": "Speichern",
+  "userRow": "{email} ({role})",
+  "@userRow": {
+    "placeholders": {
+      "email": {},
+      "role": {}
+    }
+  },
+  "userRowActions": "Freigeben, sperren, Benutzername/E-Mail/Rolle bearbeiten",
+  "globalArtPieceModerationTitle": "Globale Art-Piece-Moderation",
+  "globalArtPieceModerationSubtitle": "Bearbeiten, löschen, veröffentlichen, depublizieren",
+  "globalDropModerationTitle": "Globale Drop-Moderation",
+  "globalDropModerationSubtitle": "Bearbeiten, löschen, veröffentlichen, depublizieren"
+}

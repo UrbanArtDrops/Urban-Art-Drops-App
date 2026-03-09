@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:?set_in_environment}"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/src/UrbanArtDropFinder.Api/Dockerfile
+    environment:
+      ConnectionStrings__SqlServer: "Server=sqlserver,1433;Database=UrbanArtDrops;User Id=sa;Password=${MSSQL_SA_PASSWORD:?set_in_environment};TrustServerCertificate=True;"
+      ASPNETCORE_ENVIRONMENT: "Production"
+    depends_on:
+      - sqlserver
+    ports:
+      - "8080:8080"
+
+volumes:
+  sqlserver-data:

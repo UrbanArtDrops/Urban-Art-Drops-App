@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option csharp_namespace = "UrbanArtDropFinder.Grpc";
+
+package urban_art_drop_finder;
+
+service HealthService {
+  rpc CheckHealth (HealthRequest) returns (HealthResponse);
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  string status = 1;
+  string utc_now = 2;
+}

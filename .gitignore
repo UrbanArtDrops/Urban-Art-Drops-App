@@ -121,3 +121,7 @@ app.*.symbols
 # OpenAI Codex Tools
 /node_modules/
 **/node_modules/
+
+# .NET build artifacts
+**/bin/
+**/obj/

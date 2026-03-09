@@ -1,0 +1,6 @@
+@UrbanArtDropFinder.Api_HostAddress = http://localhost:5143
+
+GET {{UrbanArtDropFinder.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

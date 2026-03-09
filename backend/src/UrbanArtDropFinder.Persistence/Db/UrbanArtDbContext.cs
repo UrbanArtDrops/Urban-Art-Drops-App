@@ -1,0 +1,94 @@
+using Microsoft.EntityFrameworkCore;
+using UrbanArtDropFinder.Domain.Art;
+using UrbanArtDropFinder.Domain.Comments;
+using UrbanArtDropFinder.Domain.Configuration;
+using UrbanArtDropFinder.Domain.Drops;
+using UrbanArtDropFinder.Domain.Users;
+
+namespace UrbanArtDropFinder.Persistence.Db;
+
+public sealed class UrbanArtDbContext : DbContext
+{
+    public UrbanArtDbContext(DbContextOptions<UrbanArtDbContext> options)
+        : base(options)
+    {
+    }
+
+    public DbSet<UserAccount> UserAccounts => Set<UserAccount>();
+    public DbSet<UserProviderLink> UserProviderLinks => Set<UserProviderLink>();
+    public DbSet<ArtPiece> ArtPieces => Set<ArtPiece>();
+    public DbSet<ArtPiecePhoto> ArtPiecePhotos => Set<ArtPiecePhoto>();
+    public DbSet<Drop> Drops => Set<Drop>();
+    public DbSet<DropItem> DropItems => Set<DropItem>();
+    public DbSet<DropLocationPhoto> DropLocationPhotos => Set<DropLocationPhoto>();
+    public DbSet<DropComment> DropComments => Set<DropComment>();
+    public DbSet<AppConfiguration> AppConfigurations => Set<AppConfiguration>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<UserAccount>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Email).IsRequired();
+            entity.Property(x => x.UserName).IsRequired();
+            entity.HasIndex(x => x.Email).IsUnique();
+            entity.HasIndex(x => x.UserName).IsUnique();
+        });
+
+        modelBuilder.Entity<UserProviderLink>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Provider).IsRequired();
+            entity.Property(x => x.ProviderSubject).IsRequired();
+            entity.HasIndex(x => new { x.Provider, x.ProviderSubject }).IsUnique();
+        });
+
+        modelBuilder.Entity<ArtPiece>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Title).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.Description).HasMaxLength(3000).IsRequired();
+            entity.HasMany(x => x.Photos).WithOne().HasForeignKey(x => x.ArtPieceId);
+        });
+
+        modelBuilder.Entity<ArtPiecePhoto>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Url).IsRequired().HasMaxLength(1000);
+        });
+
+        modelBuilder.Entity<Drop>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.HasMany(x => x.Items).WithOne().HasForeignKey(x => x.DropId);
+            entity.HasMany(x => x.LocationPhotos).WithOne().HasForeignKey(x => x.DropId);
+        });
+
+        modelBuilder.Entity<DropItem>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.QrToken).IsRequired().HasMaxLength(512);
+            entity.HasIndex(x => x.QrToken).IsUnique();
+        });
+
+        modelBuilder.Entity<DropLocationPhoto>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Url).IsRequired().HasMaxLength(1000);
+        });
+
+        modelBuilder.Entity<DropComment>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Content).IsRequired().HasMaxLength(2000);
+            entity.HasIndex(x => x.DropId);
+        });
+
+        modelBuilder.Entity<AppConfiguration>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+        });
+
+        base.OnModelCreating(modelBuilder);
+    }
+}
