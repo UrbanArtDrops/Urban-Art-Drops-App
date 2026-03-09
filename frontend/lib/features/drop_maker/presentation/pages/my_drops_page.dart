@@ -1,8 +1,10 @@
 import "package:flutter/material.dart";
+import "package:go_router/go_router.dart";
 import "package:urban_art_drops_app/l10n/app_localizations.dart";
 
 import "../../../../shared/models/app_models.dart";
 import "../../../../shared/services/app_api_client.dart";
+import "../../../../shared/widgets/drop_overview_card.dart";
 import "../../../../shared/widgets/page_shell.dart";
 
 class MyDropsPage extends StatefulWidget {
@@ -17,6 +19,7 @@ class _MyDropsPageState extends State<MyDropsPage> {
   List<DropModel> _drops = const [];
   List<ArtPieceModel> _artPieces = const [];
   List<ManagedUser> _dropMakers = const [];
+  Map<String, ManagedUser> _usersById = const {};
   bool _isLoading = true;
   bool _isSaving = false;
   String? _error;
@@ -46,11 +49,13 @@ class _MyDropsPageState extends State<MyDropsPage> {
       final users = (results[2] as List<ManagedUser>)
           .where((user) => user.role == 1 || user.role == 2)
           .toList(growable: false);
+      final allUsers = (results[2] as List<ManagedUser>);
 
       setState(() {
         _drops = (results[0] as List<DropModel>);
         _artPieces = (results[1] as List<ArtPieceModel>);
         _dropMakers = users;
+        _usersById = {for (final user in allUsers) user.id: user};
         _isLoading = false;
       });
     } catch (_) {
@@ -325,12 +330,60 @@ class _MyDropsPageState extends State<MyDropsPage> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+  List<_MyDropViewModel> _buildViewModels(AppLocalizations l10n) {
     final artById = <String, ArtPieceModel>{
       for (final artPiece in _artPieces) artPiece.id: artPiece,
     };
+
+    return _drops
+        .map((drop) {
+          final art = artById[drop.artPieceId];
+          final artistName =
+              _usersById[art?.artistId]?.userName ?? (art?.artistId ?? "-");
+          final dropMakerName =
+              _usersById[drop.dropMakerId]?.userName ?? drop.dropMakerId;
+          final claimedHunterNames = <String>[];
+          final seenClaimers = <String>{};
+          for (final item in drop.claimedItems) {
+            String hunterName = "";
+            if (item.claimedByUserId != null) {
+              hunterName =
+                  _usersById[item.claimedByUserId!]?.userName ??
+                  item.claimedByUserId!;
+            } else if (item.claimedByAnonymousNickname != null) {
+              hunterName = item.claimedByAnonymousNickname!;
+            }
+
+            final normalized = hunterName.trim().toLowerCase();
+            if (normalized.isEmpty || !seenClaimers.add(normalized)) {
+              continue;
+            }
+            claimedHunterNames.add(hunterName.trim());
+          }
+
+          return _MyDropViewModel(
+            drop: drop,
+            id: drop.id,
+            title: art?.title ?? l10n.dropFallbackTitle(drop.id),
+            subtitle:
+                "${l10n.mapArtistLabel}: $artistName · ${l10n.mapDropMakerLabel}: $dropMakerName",
+            description: art?.description ?? "",
+            galleryUrls: [...?art?.photoUrls, ...drop.locationPhotoUrls],
+            claimedHunterNames: claimedHunterNames,
+            latitude: drop.latitude,
+            longitude: drop.longitude,
+            claimedItemCount: drop.claimedItemCount,
+            itemCount: drop.itemCount,
+            isPublished: drop.isPublished,
+          );
+        })
+        .toList(growable: false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final viewModels = _buildViewModels(l10n);
 
     return PageShell(
       title: l10n.menuMyDrops,
@@ -371,42 +424,43 @@ class _MyDropsPageState extends State<MyDropsPage> {
                   ),
                 ),
                 Expanded(
-                  child: _drops.isEmpty
+                  child: viewModels.isEmpty
                       ? Center(child: Text(l10n.noDropsAvailable))
                       : RefreshIndicator(
                           onRefresh: _loadData,
                           child: ListView.builder(
-                            itemCount: _drops.length,
+                            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                            itemCount: viewModels.length,
                             itemBuilder: (context, index) {
-                              final drop = _drops[index];
-                              final art = artById[drop.artPieceId];
-                              final title =
-                                  art?.title ?? l10n.dropFallbackTitle(drop.id);
-                              final subtitle = [
-                                drop.isPublished
-                                    ? l10n.statusPublished
-                                    : l10n.statusUnpublished,
-                                l10n.claimedItemsValue(
-                                  "${drop.claimedItemCount}",
-                                  "${drop.itemCount}",
-                                ),
-                              ].join(" · ");
-
-                              return Card(
-                                child: ListTile(
-                                  title: Text(title),
-                                  subtitle: Text(subtitle),
+                              final viewModel = viewModels[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: DropOverviewCard(
+                                  l10n: l10n,
+                                  title: viewModel.title,
+                                  subtitle: viewModel.subtitle,
+                                  description: viewModel.description,
+                                  galleryUrls: viewModel.galleryUrls,
+                                  claimedHunterNames:
+                                      viewModel.claimedHunterNames,
+                                  claimedItemCount: viewModel.claimedItemCount,
+                                  itemCount: viewModel.itemCount,
+                                  latitude: viewModel.latitude,
+                                  longitude: viewModel.longitude,
+                                  onTap: () => context.go(
+                                    "/hunter/drops/${viewModel.id}",
+                                  ),
                                   trailing: PopupMenuButton<String>(
                                     onSelected: (value) {
                                       switch (value) {
                                         case "edit":
-                                          _openDropDialog(drop);
+                                          _openDropDialog(viewModel.drop);
                                           break;
                                         case "togglePublish":
-                                          _togglePublish(drop);
+                                          _togglePublish(viewModel.drop);
                                           break;
                                         case "delete":
-                                          _deleteDrop(drop);
+                                          _deleteDrop(viewModel.drop);
                                           break;
                                       }
                                     },
@@ -418,7 +472,7 @@ class _MyDropsPageState extends State<MyDropsPage> {
                                       PopupMenuItem(
                                         value: "togglePublish",
                                         child: Text(
-                                          drop.isPublished
+                                          viewModel.isPublished
                                               ? l10n.depublishAction
                                               : l10n.publishAction,
                                         ),
@@ -439,4 +493,34 @@ class _MyDropsPageState extends State<MyDropsPage> {
             ),
     );
   }
+}
+
+class _MyDropViewModel {
+  const _MyDropViewModel({
+    required this.drop,
+    required this.id,
+    required this.title,
+    required this.subtitle,
+    required this.description,
+    required this.galleryUrls,
+    required this.claimedHunterNames,
+    required this.latitude,
+    required this.longitude,
+    required this.claimedItemCount,
+    required this.itemCount,
+    required this.isPublished,
+  });
+
+  final DropModel drop;
+  final String id;
+  final String title;
+  final String subtitle;
+  final String description;
+  final List<String> galleryUrls;
+  final List<String> claimedHunterNames;
+  final double? latitude;
+  final double? longitude;
+  final int claimedItemCount;
+  final int itemCount;
+  final bool isPublished;
 }

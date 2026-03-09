@@ -3,7 +3,6 @@ import "dart:convert";
 
 import "package:flutter/material.dart";
 import "package:flutter_bloc/flutter_bloc.dart";
-import "package:flutter_map/flutter_map.dart";
 import "package:geolocator/geolocator.dart";
 import "package:go_router/go_router.dart";
 import "package:http/http.dart" as http;
@@ -13,6 +12,7 @@ import "package:urban_art_drops_app/l10n/app_localizations.dart";
 import "../../../authentication/presentation/bloc/auth_session_cubit.dart";
 import "../../../../shared/models/app_models.dart";
 import "../../../../shared/services/app_api_client.dart";
+import "../../../../shared/widgets/drop_overview_card.dart";
 import "../../../../shared/widgets/page_shell.dart";
 
 class DropListPage extends StatefulWidget {
@@ -660,9 +660,19 @@ class _DropListPageState extends State<DropListPage> {
                                 const SizedBox(height: 12),
                             itemBuilder: (context, index) {
                               final viewModel = viewModels[index];
-                              return _DropListCard(
+                              return DropOverviewCard(
                                 l10n: l10n,
-                                viewModel: viewModel,
+                                title: viewModel.title,
+                                subtitle: viewModel.subtitle,
+                                description: viewModel.description,
+                                galleryUrls: viewModel.galleryUrls,
+                                claimedHunterNames:
+                                    viewModel.claimedHunterNames,
+                                claimedItemCount: viewModel.claimedItemCount,
+                                itemCount: viewModel.itemCount,
+                                latitude: viewModel.latitude,
+                                longitude: viewModel.longitude,
+                                distanceKm: viewModel.distanceKm,
                                 onTap: () =>
                                     context.go("/hunter/drops/${viewModel.id}"),
                               );
@@ -672,354 +682,6 @@ class _DropListPageState extends State<DropListPage> {
                 ),
               ],
             ),
-    );
-  }
-}
-
-class _DropListCard extends StatelessWidget {
-  const _DropListCard({
-    required this.l10n,
-    required this.viewModel,
-    required this.onTap,
-  });
-
-  final AppLocalizations l10n;
-  final _DropListViewModel viewModel;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final isDesktop = constraints.maxWidth >= 980;
-
-              final centerContent = _DropListMainContent(
-                l10n: l10n,
-                viewModel: viewModel,
-              );
-              final miniMap = _DropMiniMap(
-                l10n: l10n,
-                latitude: viewModel.latitude,
-                longitude: viewModel.longitude,
-              );
-
-              if (!isDesktop) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _DropPhotoCarousel(
-                      imageUrls: viewModel.galleryUrls,
-                      fallbackLabel: viewModel.title,
-                    ),
-                    const SizedBox(height: 12),
-                    centerContent,
-                    const SizedBox(height: 12),
-                    SizedBox(height: 170, child: miniMap),
-                  ],
-                );
-              }
-
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: 320,
-                    child: _DropPhotoCarousel(
-                      imageUrls: viewModel.galleryUrls,
-                      fallbackLabel: viewModel.title,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(child: centerContent),
-                  const SizedBox(width: 16),
-                  SizedBox(width: 260, height: 200, child: miniMap),
-                ],
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DropListMainContent extends StatelessWidget {
-  const _DropListMainContent({required this.l10n, required this.viewModel});
-
-  final AppLocalizations l10n;
-  final _DropListViewModel viewModel;
-
-  @override
-  Widget build(BuildContext context) {
-    final claimsLabel = l10n.claimedItemsValue(
-      "${viewModel.claimedItemCount}",
-      "${viewModel.itemCount}",
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          viewModel.title,
-          style: Theme.of(context).textTheme.titleLarge,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          viewModel.subtitle,
-          style: Theme.of(context).textTheme.bodySmall,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
-        const SizedBox(height: 10),
-        Text(
-          viewModel.description.isEmpty ? "-" : viewModel.description,
-          maxLines: 4,
-          overflow: TextOverflow.ellipsis,
-        ),
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            Chip(
-              avatar: const Icon(Icons.qr_code_2_outlined, size: 18),
-              label: Text(claimsLabel),
-            ),
-            if (viewModel.distanceKm != null)
-              Chip(
-                avatar: const Icon(Icons.near_me_outlined, size: 18),
-                label: Text(
-                  l10n.distanceValue(viewModel.distanceKm!.toStringAsFixed(1)),
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Text(
-          l10n.claimedHuntersTitle,
-          style: Theme.of(context).textTheme.labelLarge,
-        ),
-        const SizedBox(height: 6),
-        if (viewModel.claimedHunterNames.isEmpty)
-          Text(l10n.mapUnclaimedLabel)
-        else
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: viewModel.claimedHunterNames
-                .map((name) => Chip(label: Text(name)))
-                .toList(growable: false),
-          ),
-      ],
-    );
-  }
-}
-
-class _DropPhotoCarousel extends StatefulWidget {
-  const _DropPhotoCarousel({
-    required this.imageUrls,
-    required this.fallbackLabel,
-  });
-
-  final List<String> imageUrls;
-  final String fallbackLabel;
-
-  @override
-  State<_DropPhotoCarousel> createState() => _DropPhotoCarouselState();
-}
-
-class _DropPhotoCarouselState extends State<_DropPhotoCarousel> {
-  late final PageController _controller;
-  int _activeIndex = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = PageController();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _goToPage(int index) {
-    _controller.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeOutCubic,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final photos = widget.imageUrls;
-    if (photos.isEmpty) {
-      return AspectRatio(
-        aspectRatio: 4 / 3,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Center(child: Icon(Icons.image_not_supported_outlined)),
-        ),
-      );
-    }
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: AspectRatio(
-        aspectRatio: 4 / 3,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            PageView.builder(
-              controller: _controller,
-              itemCount: photos.length,
-              onPageChanged: (value) => setState(() => _activeIndex = value),
-              itemBuilder: (context, index) => Image.network(
-                photos[index],
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => const ColoredBox(
-                  color: Color(0xFFE7ECEE),
-                  child: Center(
-                    child: Icon(Icons.image_not_supported_outlined),
-                  ),
-                ),
-              ),
-            ),
-            if (photos.length > 1)
-              Positioned(
-                left: 8,
-                right: 8,
-                bottom: 8,
-                child: Row(
-                  children: [
-                    _CarouselButton(
-                      icon: Icons.chevron_left,
-                      onPressed: _activeIndex > 0
-                          ? () => _goToPage(_activeIndex - 1)
-                          : null,
-                    ),
-                    const Spacer(),
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        child: Text(
-                          "${_activeIndex + 1}/${photos.length}",
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ),
-                    const Spacer(),
-                    _CarouselButton(
-                      icon: Icons.chevron_right,
-                      onPressed: _activeIndex < photos.length - 1
-                          ? () => _goToPage(_activeIndex + 1)
-                          : null,
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CarouselButton extends StatelessWidget {
-  const _CarouselButton({required this.icon, required this.onPressed});
-
-  final IconData icon;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.black54,
-      shape: const CircleBorder(),
-      child: IconButton(
-        visualDensity: VisualDensity.compact,
-        onPressed: onPressed,
-        icon: Icon(icon, color: Colors.white),
-      ),
-    );
-  }
-}
-
-class _DropMiniMap extends StatelessWidget {
-  const _DropMiniMap({
-    required this.l10n,
-    required this.latitude,
-    required this.longitude,
-  });
-
-  final AppLocalizations l10n;
-  final double? latitude;
-  final double? longitude;
-
-  @override
-  Widget build(BuildContext context) {
-    if (latitude == null || longitude == null) {
-      return DecoratedBox(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Center(child: Text(l10n.dropListLocationUnavailable)),
-      );
-    }
-
-    final point = LatLng(latitude!, longitude!);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: FlutterMap(
-        options: MapOptions(
-          initialCenter: point,
-          initialZoom: 14.5,
-          interactionOptions: const InteractionOptions(
-            flags: InteractiveFlag.none,
-          ),
-        ),
-        children: [
-          TileLayer(
-            urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-            userAgentPackageName: "urban.art.drops.app",
-          ),
-          MarkerLayer(
-            markers: [
-              Marker(
-                point: point,
-                width: 44,
-                height: 44,
-                child: const Icon(
-                  Icons.location_on,
-                  color: Colors.redAccent,
-                  size: 34,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 }
