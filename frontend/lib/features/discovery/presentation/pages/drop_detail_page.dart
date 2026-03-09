@@ -1,3 +1,5 @@
+import "dart:async";
+
 import "package:flutter/material.dart";
 import "package:flutter_map/flutter_map.dart";
 import "package:latlong2/latlong.dart";
@@ -205,19 +207,65 @@ class _DropDetailGallery extends StatefulWidget {
 }
 
 class _DropDetailGalleryState extends State<_DropDetailGallery> {
+  static const Duration _autoAdvanceInterval = Duration(seconds: 5);
+
   late final PageController _controller;
+  Timer? _autoAdvanceTimer;
   int _index = 0;
 
   @override
   void initState() {
     super.initState();
     _controller = PageController();
+    _configureAutoAdvance();
+  }
+
+  @override
+  void didUpdateWidget(covariant _DropDetailGallery oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (_index >= widget.imageUrls.length && widget.imageUrls.isNotEmpty) {
+      _index = widget.imageUrls.length - 1;
+      if (_controller.hasClients) {
+        _controller.jumpToPage(_index);
+      }
+    }
+
+    if (oldWidget.imageUrls.length != widget.imageUrls.length) {
+      _configureAutoAdvance();
+    }
   }
 
   @override
   void dispose() {
+    _autoAdvanceTimer?.cancel();
     _controller.dispose();
     super.dispose();
+  }
+
+  void _configureAutoAdvance() {
+    _autoAdvanceTimer?.cancel();
+    if (widget.imageUrls.length <= 1) {
+      return;
+    }
+
+    _autoAdvanceTimer = Timer.periodic(_autoAdvanceInterval, (_) {
+      if (!mounted || !_controller.hasClients) {
+        return;
+      }
+
+      final imageCount = widget.imageUrls.length;
+      if (imageCount <= 1) {
+        return;
+      }
+
+      final nextIndex = (_index + 1) % imageCount;
+      _controller.animateToPage(
+        nextIndex,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+      );
+    });
   }
 
   @override

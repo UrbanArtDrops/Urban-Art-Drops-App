@@ -1,3 +1,5 @@
+import "dart:async";
+
 import "package:flutter/material.dart";
 import "package:flutter_map/flutter_map.dart";
 import "package:latlong2/latlong.dart";
@@ -213,19 +215,62 @@ class _DropPhotoCarousel extends StatefulWidget {
 }
 
 class _DropPhotoCarouselState extends State<_DropPhotoCarousel> {
+  static const Duration _autoAdvanceInterval = Duration(seconds: 5);
+
   late final PageController _controller;
+  Timer? _autoAdvanceTimer;
   int _activeIndex = 0;
 
   @override
   void initState() {
     super.initState();
     _controller = PageController();
+    _configureAutoAdvance();
+  }
+
+  @override
+  void didUpdateWidget(covariant _DropPhotoCarousel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (_activeIndex >= widget.imageUrls.length &&
+        widget.imageUrls.isNotEmpty) {
+      _activeIndex = widget.imageUrls.length - 1;
+      if (_controller.hasClients) {
+        _controller.jumpToPage(_activeIndex);
+      }
+    }
+
+    if (oldWidget.imageUrls.length != widget.imageUrls.length) {
+      _configureAutoAdvance();
+    }
   }
 
   @override
   void dispose() {
+    _autoAdvanceTimer?.cancel();
     _controller.dispose();
     super.dispose();
+  }
+
+  void _configureAutoAdvance() {
+    _autoAdvanceTimer?.cancel();
+    if (widget.imageUrls.length <= 1) {
+      return;
+    }
+
+    _autoAdvanceTimer = Timer.periodic(_autoAdvanceInterval, (_) {
+      if (!mounted || !_controller.hasClients) {
+        return;
+      }
+
+      final imageCount = widget.imageUrls.length;
+      if (imageCount <= 1) {
+        return;
+      }
+
+      final nextIndex = (_activeIndex + 1) % imageCount;
+      _goToPage(nextIndex);
+    });
   }
 
   void _goToPage(int index) {
