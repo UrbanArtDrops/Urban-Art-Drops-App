@@ -165,12 +165,14 @@ Testing requirements:
 
 ## Git management
 - Protect `main`: direct commits to `main` are not allowed; use feature branches and merge through review.
+- Always use the `UrbanArtDrops` GitHub account for all repository operations (fetch, pull, push, merge, and branch cleanup).
 - Branch naming must follow: `feat/...`, `fix/...`, `refactor/...`, `chore/...`, `docs/...`, `test/...`.
 - Keep branches short-lived and scoped to one cohesive change.
 - Rebase branch on top of `origin/main` before merge to keep history linear.
 - Use small atomic commits with Conventional Commit messages.
 - After every completed run, create a commit and push it to the current remote branch.
 - Commit messages must summarize the implemented changes in 2-5 full sentences.
+- If the user confirms satisfaction with the result, merge the current branch into `main` and delete the current branch on `origin`.
 - Include test and documentation updates in the same branch when behavior changes.
 - Never commit secrets, credentials, personal data, local environment files, or generated coverage artifacts.
 - Before pushing, run formatting, static analysis, and relevant tests for changed areas.
