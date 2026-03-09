@@ -236,6 +236,12 @@ abstract class AppLocalizations {
   /// **'Retry'**
   String get retryButton;
 
+  /// No description provided for @backAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get backAction;
+
   /// No description provided for @refreshAction.
   ///
   /// In en, this message translates to:

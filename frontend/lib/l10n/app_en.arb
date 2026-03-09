@@ -27,6 +27,7 @@
   "logoutButton": "Logout",
   "loadingData": "Loading data...",
   "retryButton": "Retry",
+  "backAction": "Back",
   "refreshAction": "Refresh",
   "createAction": "Create",
   "editAction": "Edit",

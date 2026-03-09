@@ -27,6 +27,7 @@
   "logoutButton": "Abmelden",
   "loadingData": "Daten werden geladen...",
   "retryButton": "Erneut versuchen",
+  "backAction": "Zurück",
   "refreshAction": "Aktualisieren",
   "createAction": "Erstellen",
   "editAction": "Bearbeiten",

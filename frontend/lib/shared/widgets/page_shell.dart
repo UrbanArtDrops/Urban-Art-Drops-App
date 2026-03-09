@@ -27,9 +27,20 @@ class PageShell extends StatelessWidget {
       builder: (context, authState) {
         final navigation = _buildNavigationEntries(l10n, authState);
         final path = GoRouterState.of(context).uri.path;
+        final canNavigateBack = context.canPop();
 
         return Scaffold(
-          appBar: AppBar(title: Text(title), actions: actions),
+          appBar: AppBar(
+            title: Text(title),
+            actions: [
+              IconButton(
+                tooltip: l10n.backAction,
+                onPressed: canNavigateBack ? () => context.pop() : null,
+                icon: const Icon(Icons.arrow_back),
+              ),
+              ...actions,
+            ],
+          ),
           drawer: Drawer(
             child: SafeArea(
               child: ListView(

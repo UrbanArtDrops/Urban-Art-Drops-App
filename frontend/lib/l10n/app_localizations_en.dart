@@ -80,6 +80,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get retryButton => 'Retry';
 
   @override
+  String get backAction => 'Back';
+
+  @override
   String get refreshAction => 'Refresh';
 
   @override

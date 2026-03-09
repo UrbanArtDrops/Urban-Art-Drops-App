@@ -80,6 +80,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get retryButton => 'Erneut versuchen';
 
   @override
+  String get backAction => 'Zurück';
+
+  @override
   String get refreshAction => 'Aktualisieren';
 
   @override
