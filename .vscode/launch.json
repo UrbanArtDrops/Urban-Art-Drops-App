@@ -1,0 +1,35 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Backend (ASP.NET)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/backend/src/UrbanArtDropFinder.Api/bin/Debug/net9.0/UrbanArtDropFinder.Api.exe", // Pfad anpassen!
+            "args": [],
+            "cwd": "${workspaceFolder}/backend",
+            "stopAtEntry": false,
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+            }
+        },
+        {
+            "name": "Frontend (Flutter)",
+            "type": "dart",
+            "request": "launch",
+            "cwd": "frontend"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Full Stack (Backend + Frontend)",
+            "configurations": [
+                "Backend (ASP.NET)",
+                "Frontend (Flutter)"
+            ],
+            "stopAll": true
+        }
+    ]
+}
