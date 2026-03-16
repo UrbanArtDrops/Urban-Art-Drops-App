@@ -25,6 +25,10 @@
 ## Monitoring and alerts
 - Health endpoint: /api/health
 - Mail alerts for:
-  - account approval requests
-  - reported comments
-  - reported art pieces
+- account approval requests
+- reported comments
+- reported art pieces
+
+## Artist Workspace
+- Artists manage artworks end-to-end in the web client: create, inspect, edit, publish, depublish and delete
+- Artwork photos are selected locally in the client and stored as binary media in the backend database

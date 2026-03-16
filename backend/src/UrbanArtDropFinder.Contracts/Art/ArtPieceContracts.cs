@@ -9,4 +9,9 @@ public sealed record CreateArtPieceRequest(
     ArtPieceAssetKind AssetKind,
     IReadOnlyCollection<string> PhotoUrls);
 
-public sealed record UpdateArtPieceRequest(string Title, string Description, IReadOnlyCollection<string> PhotoUrls);
+public sealed record UpdateArtPieceRequest(
+    Guid ArtistId,
+    string Title,
+    string Description,
+    ArtPieceAssetKind AssetKind,
+    IReadOnlyCollection<string> PhotoUrls);

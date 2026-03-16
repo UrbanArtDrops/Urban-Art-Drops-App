@@ -98,11 +98,28 @@
   "artPieceEditTitle": "Edit art piece",
   "artPieceTitleLabel": "Title",
   "artPieceDescriptionLabel": "Description",
-  "artPiecePhotosLabel": "Photo URLs",
+  "artPiecePhotosLabel": "Photos",
   "artPieceArtistLabel": "Artist",
   "artPieceAssetTypeLabel": "Asset type",
   "artPieceAssetImage": "Image",
   "artPieceAssetModel3d": "3D model",
+  "artPieceUploadPhotosAction": "Add photos",
+  "artPiecePhotosHelp": "Select local image files. Existing photos stay attached until you remove them.",
+  "artPiecePhotosEmptyState": "No photos selected yet.",
+  "artPieceArtistRequiredError": "An artist must be selected.",
+  "artPieceTitleTooShortError": "The title must contain at least 3 characters.",
+  "artPieceDescriptionTooShortError": "The description must contain at least 20 characters.",
+  "artPieceDescriptionTooLongError": "The description can contain at most 3000 characters.",
+  "artPiecePhotosRequiredError": "At least one photo is required.",
+  "artPiecePhotoCount": "{count} photos",
+  "@artPiecePhotoCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "artPieceMetadataSection": "Metadata",
+  "artPieceNoSelectionTitle": "Select an artwork",
+  "artPieceNoSelectionSubtitle": "Choose an artwork from the list to inspect and manage it.",
   "artPieceDeleteConfirm": "Delete art piece \"{title}\"?",
   "@artPieceDeleteConfirm": {
     "placeholders": {

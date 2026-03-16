@@ -227,7 +227,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get artPieceDescriptionLabel => 'Beschreibung';
 
   @override
-  String get artPiecePhotosLabel => 'Foto-URLs';
+  String get artPiecePhotosLabel => 'Fotos';
 
   @override
   String get artPieceArtistLabel => 'Artist';
@@ -240,6 +240,51 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get artPieceAssetModel3d => '3D-Modell';
+
+  @override
+  String get artPieceUploadPhotosAction => 'Fotos hinzufügen';
+
+  @override
+  String get artPiecePhotosHelp =>
+      'Lokale Bilddateien auswählen. Bereits vorhandene Fotos bleiben erhalten, bis du sie entfernst.';
+
+  @override
+  String get artPiecePhotosEmptyState => 'Noch keine Fotos ausgewählt.';
+
+  @override
+  String get artPieceArtistRequiredError =>
+      'Es muss ein Artist ausgewählt werden.';
+
+  @override
+  String get artPieceTitleTooShortError =>
+      'Der Titel muss mindestens 3 Zeichen enthalten.';
+
+  @override
+  String get artPieceDescriptionTooShortError =>
+      'Die Beschreibung muss mindestens 20 Zeichen enthalten.';
+
+  @override
+  String get artPieceDescriptionTooLongError =>
+      'Die Beschreibung darf höchstens 3000 Zeichen enthalten.';
+
+  @override
+  String get artPiecePhotosRequiredError =>
+      'Mindestens ein Foto ist erforderlich.';
+
+  @override
+  String artPiecePhotoCount(Object count) {
+    return '$count Fotos';
+  }
+
+  @override
+  String get artPieceMetadataSection => 'Metadaten';
+
+  @override
+  String get artPieceNoSelectionTitle => 'Kunstwerk auswählen';
+
+  @override
+  String get artPieceNoSelectionSubtitle =>
+      'Wähle ein Kunstwerk aus der Liste, um es anzusehen und zu verwalten.';
 
   @override
   String artPieceDeleteConfirm(Object title) {

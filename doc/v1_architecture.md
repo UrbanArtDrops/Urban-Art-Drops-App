@@ -19,6 +19,8 @@
 - One claim per hunter per drop
 - Anonymous nickname cannot collide with registered usernames
 - Art piece photos and drop location photos are stored as binary payloads in the database and served through media endpoints
+- Art piece CRUD supports full metadata updates for artist assignment, asset type, title, description, publish state and photo set
+- The Flutter artist workspace uploads local artwork photos as data URLs, which the API resolves into persisted binary media records
 
 ## Discovery and Map Rendering
 - Fully claimed drops are rendered as exact-position pins

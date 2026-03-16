@@ -102,7 +102,7 @@ class AppApiClient {
     return data.map(ArtPieceModel.fromJson).toList(growable: false);
   }
 
-  Future<void> createArtPiece({
+  Future<ArtPieceModel> createArtPiece({
     required String artistId,
     required String title,
     required String description,
@@ -121,24 +121,30 @@ class AppApiClient {
       }),
     );
     _ensureSuccess(response, "Failed to create art piece.");
+    return ArtPieceModel.fromJson(_decodeObjectResponse(response));
   }
 
-  Future<void> updateArtPiece({
+  Future<ArtPieceModel> updateArtPiece({
     required String id,
+    required String artistId,
     required String title,
     required String description,
+    required int assetKind,
     required List<String> photoUrls,
   }) async {
     final response = await _httpClient.put(
       _uri("/api/art-pieces/$id"),
       headers: _jsonHeaders,
       body: jsonEncode({
+        "artistId": artistId,
         "title": title,
         "description": description,
+        "assetKind": assetKind,
         "photoUrls": photoUrls,
       }),
     );
     _ensureSuccess(response, "Failed to update art piece.");
+    return ArtPieceModel.fromJson(_decodeObjectResponse(response));
   }
 
   Future<void> deleteArtPiece(String id) async {
@@ -235,12 +241,7 @@ class AppApiClient {
   Future<Map<String, dynamic>> _getObject(String path) async {
     final response = await _httpClient.get(_uri(path));
     _ensureSuccess(response, "Failed to load data.");
-    final payload = jsonDecode(response.body);
-    if (payload is! Map<String, dynamic>) {
-      throw const ApiException("Unexpected API response format.");
-    }
-
-    return payload;
+    return _decodeObjectResponse(response);
   }
 
   Uri _uri(String path, [Map<String, String>? query]) {
@@ -263,6 +264,15 @@ class AppApiClient {
     }
 
     throw ApiException(message, statusCode: response.statusCode);
+  }
+
+  Map<String, dynamic> _decodeObjectResponse(http.Response response) {
+    final payload = jsonDecode(response.body);
+    if (payload is! Map<String, dynamic>) {
+      throw const ApiException("Unexpected API response format.");
+    }
+
+    return payload;
   }
 }
 

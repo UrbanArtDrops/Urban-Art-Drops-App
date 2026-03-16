@@ -509,7 +509,7 @@ abstract class AppLocalizations {
   /// No description provided for @artPiecePhotosLabel.
   ///
   /// In en, this message translates to:
-  /// **'Photo URLs'**
+  /// **'Photos'**
   String get artPiecePhotosLabel;
 
   /// No description provided for @artPieceArtistLabel.
@@ -535,6 +535,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'3D model'**
   String get artPieceAssetModel3d;
+
+  /// No description provided for @artPieceUploadPhotosAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Add photos'**
+  String get artPieceUploadPhotosAction;
+
+  /// No description provided for @artPiecePhotosHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Select local image files. Existing photos stay attached until you remove them.'**
+  String get artPiecePhotosHelp;
+
+  /// No description provided for @artPiecePhotosEmptyState.
+  ///
+  /// In en, this message translates to:
+  /// **'No photos selected yet.'**
+  String get artPiecePhotosEmptyState;
+
+  /// No description provided for @artPieceArtistRequiredError.
+  ///
+  /// In en, this message translates to:
+  /// **'An artist must be selected.'**
+  String get artPieceArtistRequiredError;
+
+  /// No description provided for @artPieceTitleTooShortError.
+  ///
+  /// In en, this message translates to:
+  /// **'The title must contain at least 3 characters.'**
+  String get artPieceTitleTooShortError;
+
+  /// No description provided for @artPieceDescriptionTooShortError.
+  ///
+  /// In en, this message translates to:
+  /// **'The description must contain at least 20 characters.'**
+  String get artPieceDescriptionTooShortError;
+
+  /// No description provided for @artPieceDescriptionTooLongError.
+  ///
+  /// In en, this message translates to:
+  /// **'The description can contain at most 3000 characters.'**
+  String get artPieceDescriptionTooLongError;
+
+  /// No description provided for @artPiecePhotosRequiredError.
+  ///
+  /// In en, this message translates to:
+  /// **'At least one photo is required.'**
+  String get artPiecePhotosRequiredError;
+
+  /// No description provided for @artPiecePhotoCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} photos'**
+  String artPiecePhotoCount(Object count);
+
+  /// No description provided for @artPieceMetadataSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Metadata'**
+  String get artPieceMetadataSection;
+
+  /// No description provided for @artPieceNoSelectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select an artwork'**
+  String get artPieceNoSelectionTitle;
+
+  /// No description provided for @artPieceNoSelectionSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an artwork from the list to inspect and manage it.'**
+  String get artPieceNoSelectionSubtitle;
 
   /// No description provided for @artPieceDeleteConfirm.
   ///

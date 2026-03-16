@@ -198,7 +198,7 @@ artGroup.MapPut("/{id:guid}", async (
     IHttpClientFactory httpClientFactory,
     CancellationToken cancellationToken) =>
 {
-    var artPiece = await dbContext.ArtPieces.Include(x => x.Photos).FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+    var artPiece = await dbContext.ArtPieces.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     if (artPiece is null)
     {
         return Results.NotFound();
@@ -206,10 +206,31 @@ artGroup.MapPut("/{id:guid}", async (
 
     try
     {
-        artPiece.UpdateDetails(request.Title, request.Description);
+        artPiece.UpdateDetails(request.ArtistId, request.Title, request.Description, request.AssetKind);
         var photoPayloads = await ResolvePhotoSourcesAsync(request.PhotoUrls, dbContext, httpClientFactory, cancellationToken);
-        artPiece.ReplacePhotos(photoPayloads.Select(photo => (photo.BinaryData, photo.ContentType)));
+        var existingPhotos = await dbContext.ArtPiecePhotos
+            .AsNoTracking()
+            .Where(photo => photo.ArtPieceId == id)
+            .ToListAsync(cancellationToken);
+        foreach (var existingPhoto in existingPhotos)
+        {
+            dbContext.Entry(existingPhoto).State = EntityState.Deleted;
+        }
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        foreach (var photoPayload in photoPayloads)
+        {
+            await dbContext.ArtPiecePhotos.AddAsync(
+                new ArtPiecePhoto
+                {
+                    ArtPieceId = artPiece.Id,
+                    BinaryData = photoPayload.BinaryData,
+                    ContentType = photoPayload.ContentType
+                },
+                cancellationToken);
+        }
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await dbContext.Entry(artPiece).Collection(x => x.Photos).LoadAsync(cancellationToken);
         return Results.Ok(ToArtPieceResponse(artPiece, httpContext.Request));
     }
     catch (DomainValidationException ex)
@@ -369,6 +390,8 @@ dropsGroup.MapPut("/{id:guid}", async (
             dbContext,
             httpClientFactory,
             cancellationToken);
+        var existingLocationPhotos = drop.LocationPhotos.ToList();
+        dbContext.DropLocationPhotos.RemoveRange(existingLocationPhotos);
         drop.ReplaceLocationPhotos(locationPhotoPayloads.Select(photo => (photo.BinaryData, photo.ContentType)));
 
         var tokens = Enumerable.Range(0, request.ItemCount).Select(_ => Guid.NewGuid().ToString("N"));

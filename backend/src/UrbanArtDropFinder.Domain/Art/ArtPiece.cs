@@ -75,8 +75,13 @@ public sealed class ArtPiece
         }
     }
 
-    public void UpdateDetails(string title, string description)
+    public void UpdateDetails(Guid artistId, string title, string description, ArtPieceAssetKind assetKind)
     {
+        if (artistId == Guid.Empty)
+        {
+            throw new DomainValidationException("Artist is required.");
+        }
+
         if (string.IsNullOrWhiteSpace(title) || title.Trim().Length < 3)
         {
             throw new DomainValidationException("Title must have at least 3 characters.");
@@ -88,8 +93,10 @@ public sealed class ArtPiece
             throw new DomainValidationException("Description length must be between 20 and 3000 characters.");
         }
 
+        ArtistId = artistId;
         Title = title.Trim();
         Description = normalizedDescription;
+        AssetKind = assetKind;
     }
 
     public bool CanBePublished() => Photos.Count >= 1;

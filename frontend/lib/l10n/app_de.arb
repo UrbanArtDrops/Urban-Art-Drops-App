@@ -98,11 +98,28 @@
   "artPieceEditTitle": "Art Piece bearbeiten",
   "artPieceTitleLabel": "Titel",
   "artPieceDescriptionLabel": "Beschreibung",
-  "artPiecePhotosLabel": "Foto-URLs",
+  "artPiecePhotosLabel": "Fotos",
   "artPieceArtistLabel": "Artist",
   "artPieceAssetTypeLabel": "Asset-Typ",
   "artPieceAssetImage": "Bild",
   "artPieceAssetModel3d": "3D-Modell",
+  "artPieceUploadPhotosAction": "Fotos hinzufügen",
+  "artPiecePhotosHelp": "Lokale Bilddateien auswählen. Bereits vorhandene Fotos bleiben erhalten, bis du sie entfernst.",
+  "artPiecePhotosEmptyState": "Noch keine Fotos ausgewählt.",
+  "artPieceArtistRequiredError": "Es muss ein Artist ausgewählt werden.",
+  "artPieceTitleTooShortError": "Der Titel muss mindestens 3 Zeichen enthalten.",
+  "artPieceDescriptionTooShortError": "Die Beschreibung muss mindestens 20 Zeichen enthalten.",
+  "artPieceDescriptionTooLongError": "Die Beschreibung darf höchstens 3000 Zeichen enthalten.",
+  "artPiecePhotosRequiredError": "Mindestens ein Foto ist erforderlich.",
+  "artPiecePhotoCount": "{count} Fotos",
+  "@artPiecePhotoCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "artPieceMetadataSection": "Metadaten",
+  "artPieceNoSelectionTitle": "Kunstwerk auswählen",
+  "artPieceNoSelectionSubtitle": "Wähle ein Kunstwerk aus der Liste, um es anzusehen und zu verwalten.",
   "artPieceDeleteConfirm": "Art Piece \"{title}\" wirklich löschen?",
   "@artPieceDeleteConfirm": {
     "placeholders": {
