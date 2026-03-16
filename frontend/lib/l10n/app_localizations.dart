@@ -1163,7 +1163,7 @@ abstract class AppLocalizations {
   /// No description provided for @makeDropStepDownloadDescription.
   ///
   /// In en, this message translates to:
-  /// **'Download the 3D model or asset file for production.'**
+  /// **'Use the stored artwork media as production reference and confirm the download step.'**
   String get makeDropStepDownloadDescription;
 
   /// No description provided for @makeDropDownloadAction.
@@ -1220,6 +1220,12 @@ abstract class AppLocalizations {
   /// **'The quantity must be at least 1.'**
   String get makeDropItemCountInvalid;
 
+  /// No description provided for @makeDropPortableItemCountInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'The portable count must be between 1 and the total quantity.'**
+  String get makeDropPortableItemCountInvalid;
+
   /// No description provided for @makeDropStepQrTitle.
   ///
   /// In en, this message translates to:
@@ -1229,7 +1235,7 @@ abstract class AppLocalizations {
   /// No description provided for @makeDropStepQrDescription.
   ///
   /// In en, this message translates to:
-  /// **'Generate QR codes for all drop items.'**
+  /// **'Once the draft is saved, the real QR tokens from the backend are shown here.'**
   String get makeDropStepQrDescription;
 
   /// No description provided for @makeDropGenerateQrAction.
@@ -1241,7 +1247,7 @@ abstract class AppLocalizations {
   /// No description provided for @makeDropGenerateQrFirst.
   ///
   /// In en, this message translates to:
-  /// **'Please generate QR codes first.'**
+  /// **'Please save the drop draft first so QR codes can be created.'**
   String get makeDropGenerateQrFirst;
 
   /// No description provided for @makeDropStepPlaceTitle.
@@ -1253,7 +1259,7 @@ abstract class AppLocalizations {
   /// No description provided for @makeDropStepPlaceDescription.
   ///
   /// In en, this message translates to:
-  /// **'Placing the drop is out of scope. Then enter the drop location.'**
+  /// **'Placing the drop is out of scope. Then capture the drop location and location photos.'**
   String get makeDropStepPlaceDescription;
 
   /// No description provided for @makeDropLocationLabel.
@@ -1268,10 +1274,82 @@ abstract class AppLocalizations {
   /// **'Please enter a location.'**
   String get makeDropLocationRequired;
 
+  /// No description provided for @makeDropLocationPhotosRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please add at least one location photo.'**
+  String get makeDropLocationPhotosRequired;
+
+  /// No description provided for @makeDropMissingCurrentUser.
+  ///
+  /// In en, this message translates to:
+  /// **'The signed-in user could not be matched to a drop-maker account.'**
+  String get makeDropMissingCurrentUser;
+
+  /// No description provided for @makeDropSourceMediaHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The media currently stored on the artwork act as the production reference here.'**
+  String get makeDropSourceMediaHint;
+
+  /// No description provided for @makeDropDraftSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop draft saved. {count} QR codes are ready.'**
+  String makeDropDraftSaved(Object count);
+
+  /// No description provided for @makeDropReadyWithId.
+  ///
+  /// In en, this message translates to:
+  /// **'Active draft: {id}'**
+  String makeDropReadyWithId(Object id);
+
+  /// No description provided for @makeDropQrCodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'QR code {index}'**
+  String makeDropQrCodeLabel(Object index);
+
+  /// No description provided for @makeDropCoordinatesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Coordinates: {latitude}, {longitude}'**
+  String makeDropCoordinatesLabel(Object latitude, Object longitude);
+
+  /// No description provided for @makeDropAddLocationPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Add location photos'**
+  String get makeDropAddLocationPhotos;
+
+  /// No description provided for @makeDropPhotosSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} location photos selected'**
+  String makeDropPhotosSelected(Object count);
+
+  /// No description provided for @makeDropNoLocationPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'No location photos selected yet.'**
+  String get makeDropNoLocationPhotos;
+
+  /// No description provided for @makeDropPublishAfterFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Publish drop immediately after finishing'**
+  String get makeDropPublishAfterFinish;
+
+  /// No description provided for @makeDropFinishedPublished.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop saved and published.'**
+  String get makeDropFinishedPublished;
+
   /// No description provided for @makeDropWizardFinished.
   ///
   /// In en, this message translates to:
-  /// **'Wizard completed. You can continue editing the drop now.'**
+  /// **'Wizard completed. The drop draft was saved.'**
   String get makeDropWizardFinished;
 
   /// No description provided for @makeDropNextAction.

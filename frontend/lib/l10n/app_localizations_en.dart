@@ -584,7 +584,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get makeDropStepDownloadDescription =>
-      'Download the 3D model or asset file for production.';
+      'Use the stored artwork media as production reference and confirm the download step.';
 
   @override
   String get makeDropDownloadAction => 'Download 3D model';
@@ -616,24 +616,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get makeDropItemCountInvalid => 'The quantity must be at least 1.';
 
   @override
+  String get makeDropPortableItemCountInvalid =>
+      'The portable count must be between 1 and the total quantity.';
+
+  @override
   String get makeDropStepQrTitle => '5. Show QR codes';
 
   @override
   String get makeDropStepQrDescription =>
-      'Generate QR codes for all drop items.';
+      'Once the draft is saved, the real QR tokens from the backend are shown here.';
 
   @override
   String get makeDropGenerateQrAction => 'Generate QR codes';
 
   @override
-  String get makeDropGenerateQrFirst => 'Please generate QR codes first.';
+  String get makeDropGenerateQrFirst =>
+      'Please save the drop draft first so QR codes can be created.';
 
   @override
   String get makeDropStepPlaceTitle => '6. Place drop + enter location';
 
   @override
   String get makeDropStepPlaceDescription =>
-      'Placing the drop is out of scope. Then enter the drop location.';
+      'Placing the drop is out of scope. Then capture the drop location and location photos.';
 
   @override
   String get makeDropLocationLabel => 'Drop location';
@@ -642,8 +647,58 @@ class AppLocalizationsEn extends AppLocalizations {
   String get makeDropLocationRequired => 'Please enter a location.';
 
   @override
+  String get makeDropLocationPhotosRequired =>
+      'Please add at least one location photo.';
+
+  @override
+  String get makeDropMissingCurrentUser =>
+      'The signed-in user could not be matched to a drop-maker account.';
+
+  @override
+  String get makeDropSourceMediaHint =>
+      'The media currently stored on the artwork act as the production reference here.';
+
+  @override
+  String makeDropDraftSaved(Object count) {
+    return 'Drop draft saved. $count QR codes are ready.';
+  }
+
+  @override
+  String makeDropReadyWithId(Object id) {
+    return 'Active draft: $id';
+  }
+
+  @override
+  String makeDropQrCodeLabel(Object index) {
+    return 'QR code $index';
+  }
+
+  @override
+  String makeDropCoordinatesLabel(Object latitude, Object longitude) {
+    return 'Coordinates: $latitude, $longitude';
+  }
+
+  @override
+  String get makeDropAddLocationPhotos => 'Add location photos';
+
+  @override
+  String makeDropPhotosSelected(Object count) {
+    return '$count location photos selected';
+  }
+
+  @override
+  String get makeDropNoLocationPhotos => 'No location photos selected yet.';
+
+  @override
+  String get makeDropPublishAfterFinish =>
+      'Publish drop immediately after finishing';
+
+  @override
+  String get makeDropFinishedPublished => 'Drop saved and published.';
+
+  @override
   String get makeDropWizardFinished =>
-      'Wizard completed. You can continue editing the drop now.';
+      'Wizard completed. The drop draft was saved.';
 
   @override
   String get makeDropNextAction => 'Next';

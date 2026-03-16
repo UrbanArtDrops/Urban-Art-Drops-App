@@ -250,27 +250,20 @@ class _MyDropsPageState extends State<MyDropsPage> {
     );
 
     await _withSaving(() async {
-      String? changedDropId = existing?.id;
+      DropModel savedDrop;
       if (existing == null) {
-        await _apiClient.createDrop(input);
+        savedDrop = await _apiClient.createDrop(input);
       } else {
-        await _apiClient.updateDrop(existing.id, input);
-      }
-      await _loadData();
-
-      if (changedDropId == null) {
-        for (final drop in _drops) {
-          if (drop.artPieceId == selectedArtPieceId &&
-              drop.dropMakerId == selectedDropMakerId) {
-            changedDropId = drop.id;
-          }
-        }
+        savedDrop = await _apiClient.updateDrop(existing.id, input);
       }
 
-      if (changedDropId != null) {
-        await _apiClient.setDropPublished(changedDropId, published);
+      if (savedDrop.isPublished != published) {
+        await _apiClient.setDropPublished(savedDrop.id, published);
         await _loadData();
+        return;
       }
+
+      await _loadData();
     });
   }
 
@@ -410,7 +403,9 @@ class _MyDropsPageState extends State<MyDropsPage> {
                   child: Row(
                     children: [
                       FilledButton.icon(
-                        onPressed: _isSaving ? null : () => _openDropDialog(),
+                        onPressed: _isSaving
+                            ? null
+                            : () => context.go("/drop-maker/make-drop-wizard"),
                         icon: const Icon(Icons.add_location_alt_outlined),
                         label: Text(l10n.createAction),
                       ),

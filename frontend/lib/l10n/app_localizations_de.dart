@@ -592,7 +592,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get makeDropStepDownloadDescription =>
-      'Lade das 3D-Modell oder die Asset-Datei für die Produktion herunter.';
+      'Nutze die hinterlegten Kunstwerk-Medien als Produktionsvorlage und bestätige den Download-Schritt.';
 
   @override
   String get makeDropDownloadAction => '3D-Modell herunterladen';
@@ -624,24 +624,29 @@ class AppLocalizationsDe extends AppLocalizations {
   String get makeDropItemCountInvalid => 'Die Anzahl muss mindestens 1 sein.';
 
   @override
+  String get makeDropPortableItemCountInvalid =>
+      'Die mitnehmbare Anzahl muss zwischen 1 und der Gesamtanzahl liegen.';
+
+  @override
   String get makeDropStepQrTitle => '5. QR-Codes anzeigen';
 
   @override
   String get makeDropStepQrDescription =>
-      'Erzeuge die QR-Codes für alle Gegenstände des Drops.';
+      'Nach dem Speichern des Drafts werden die echten QR-Tokens aus dem Backend angezeigt.';
 
   @override
   String get makeDropGenerateQrAction => 'QR-Codes generieren';
 
   @override
-  String get makeDropGenerateQrFirst => 'Bitte zuerst QR-Codes generieren.';
+  String get makeDropGenerateQrFirst =>
+      'Bitte speichere zuerst den Drop-Draft, damit QR-Codes erzeugt werden.';
 
   @override
   String get makeDropStepPlaceTitle => '6. Drop anbringen + Standort eintragen';
 
   @override
   String get makeDropStepPlaceDescription =>
-      'Drop anbringen ist out of scope. Trage danach den Standort des Drops ein.';
+      'Drop anbringen ist out of scope. Erfasse danach Standort und Standortfotos des Drops.';
 
   @override
   String get makeDropLocationLabel => 'Standort des Drops';
@@ -650,8 +655,59 @@ class AppLocalizationsDe extends AppLocalizations {
   String get makeDropLocationRequired => 'Bitte den Standort eintragen.';
 
   @override
+  String get makeDropLocationPhotosRequired =>
+      'Bitte mindestens ein Standortfoto hinzufügen.';
+
+  @override
+  String get makeDropMissingCurrentUser =>
+      'Der angemeldete Benutzer konnte keinem Drop-Maker-Konto zugeordnet werden.';
+
+  @override
+  String get makeDropSourceMediaHint =>
+      'Die aktuell zum Kunstwerk gespeicherten Medien dienen hier als Produktionsreferenz.';
+
+  @override
+  String makeDropDraftSaved(Object count) {
+    return 'Drop-Draft gespeichert. $count QR-Codes wurden vorbereitet.';
+  }
+
+  @override
+  String makeDropReadyWithId(Object id) {
+    return 'Aktiver Draft: $id';
+  }
+
+  @override
+  String makeDropQrCodeLabel(Object index) {
+    return 'QR-Code $index';
+  }
+
+  @override
+  String makeDropCoordinatesLabel(Object latitude, Object longitude) {
+    return 'Koordinaten: $latitude, $longitude';
+  }
+
+  @override
+  String get makeDropAddLocationPhotos => 'Standortfotos hinzufügen';
+
+  @override
+  String makeDropPhotosSelected(Object count) {
+    return '$count Standortfotos ausgewählt';
+  }
+
+  @override
+  String get makeDropNoLocationPhotos => 'Noch keine Standortfotos ausgewählt.';
+
+  @override
+  String get makeDropPublishAfterFinish =>
+      'Drop nach dem Abschluss direkt veröffentlichen';
+
+  @override
+  String get makeDropFinishedPublished =>
+      'Drop gespeichert und veröffentlicht.';
+
+  @override
   String get makeDropWizardFinished =>
-      'Wizard abgeschlossen. Du kannst den Drop jetzt weiterbearbeiten.';
+      'Wizard abgeschlossen. Der Drop-Draft wurde gespeichert.';
 
   @override
   String get makeDropNextAction => 'Weiter';

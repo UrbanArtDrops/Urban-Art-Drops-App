@@ -254,7 +254,7 @@
   "makeDropStepSelectTitle": "2. Select artwork",
   "makeDropStepSelectDescription": "Click an artwork that should be used for this drop.",
   "makeDropStepDownloadTitle": "3. Download 3D model",
-  "makeDropStepDownloadDescription": "Download the 3D model or asset file for production.",
+  "makeDropStepDownloadDescription": "Use the stored artwork media as production reference and confirm the download step.",
   "makeDropDownloadAction": "Download 3D model",
   "makeDropDownloadSet": "Download step marked as done.",
   "makeDropDownloadDone": "Download step completed.",
@@ -264,15 +264,54 @@
   "makeDropStepPrintDescription": "Printing the drop is out of scope. Enter the item quantity here.",
   "makeDropItemCountLabel": "Item quantity",
   "makeDropItemCountInvalid": "The quantity must be at least 1.",
+  "makeDropPortableItemCountInvalid": "The portable count must be between 1 and the total quantity.",
   "makeDropStepQrTitle": "5. Show QR codes",
-  "makeDropStepQrDescription": "Generate QR codes for all drop items.",
+  "makeDropStepQrDescription": "Once the draft is saved, the real QR tokens from the backend are shown here.",
   "makeDropGenerateQrAction": "Generate QR codes",
-  "makeDropGenerateQrFirst": "Please generate QR codes first.",
+  "makeDropGenerateQrFirst": "Please save the drop draft first so QR codes can be created.",
   "makeDropStepPlaceTitle": "6. Place drop + enter location",
-  "makeDropStepPlaceDescription": "Placing the drop is out of scope. Then enter the drop location.",
+  "makeDropStepPlaceDescription": "Placing the drop is out of scope. Then capture the drop location and location photos.",
   "makeDropLocationLabel": "Drop location",
   "makeDropLocationRequired": "Please enter a location.",
-  "makeDropWizardFinished": "Wizard completed. You can continue editing the drop now.",
+  "makeDropLocationPhotosRequired": "Please add at least one location photo.",
+  "makeDropMissingCurrentUser": "The signed-in user could not be matched to a drop-maker account.",
+  "makeDropSourceMediaHint": "The media currently stored on the artwork act as the production reference here.",
+  "makeDropDraftSaved": "Drop draft saved. {count} QR codes are ready.",
+  "@makeDropDraftSaved": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "makeDropReadyWithId": "Active draft: {id}",
+  "@makeDropReadyWithId": {
+    "placeholders": {
+      "id": {}
+    }
+  },
+  "makeDropQrCodeLabel": "QR code {index}",
+  "@makeDropQrCodeLabel": {
+    "placeholders": {
+      "index": {}
+    }
+  },
+  "makeDropCoordinatesLabel": "Coordinates: {latitude}, {longitude}",
+  "@makeDropCoordinatesLabel": {
+    "placeholders": {
+      "latitude": {},
+      "longitude": {}
+    }
+  },
+  "makeDropAddLocationPhotos": "Add location photos",
+  "makeDropPhotosSelected": "{count} location photos selected",
+  "@makeDropPhotosSelected": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "makeDropNoLocationPhotos": "No location photos selected yet.",
+  "makeDropPublishAfterFinish": "Publish drop immediately after finishing",
+  "makeDropFinishedPublished": "Drop saved and published.",
+  "makeDropWizardFinished": "Wizard completed. The drop draft was saved.",
   "makeDropNextAction": "Next",
   "makeDropBackAction": "Back",
   "makeDropFinishAction": "Finish",

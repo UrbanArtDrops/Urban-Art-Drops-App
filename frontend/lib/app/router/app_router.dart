@@ -69,7 +69,9 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: "/drop-maker/make-drop-wizard",
-      builder: (context, state) => const MakeDropWizardPage(),
+      builder: (context, state) => MakeDropWizardPage(
+        preselectedArtPieceId: state.uri.queryParameters["artPieceId"],
+      ),
     ),
     GoRoute(
       path: "/moderation/reports",

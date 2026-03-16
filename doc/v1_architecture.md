@@ -21,6 +21,8 @@
 - Art piece photos and drop location photos are stored as binary payloads in the database and served through media endpoints
 - Art piece CRUD supports full metadata updates for artist assignment, asset type, title, description, publish state and photo set
 - The Flutter artist workspace uploads local artwork photos as data URLs, which the API resolves into persisted binary media records
+- The Flutter drop-maker wizard creates a persisted draft drop before placement, so item quantities and backend-generated QR tokens are available mid-process
+- The drop-maker wizard finishes the flow by updating location coordinates, uploading local location photos as data URLs and optionally publishing the completed drop
 
 ## Discovery and Map Rendering
 - Fully claimed drops are rendered as exact-position pins

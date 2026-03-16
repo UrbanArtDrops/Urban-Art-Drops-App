@@ -254,7 +254,7 @@
   "makeDropStepSelectTitle": "2. Kunstwerk auswählen",
   "makeDropStepSelectDescription": "Klicke ein Kunstwerk an, das für den Drop verwendet werden soll.",
   "makeDropStepDownloadTitle": "3. 3D-Modell herunterladen",
-  "makeDropStepDownloadDescription": "Lade das 3D-Modell oder die Asset-Datei für die Produktion herunter.",
+  "makeDropStepDownloadDescription": "Nutze die hinterlegten Kunstwerk-Medien als Produktionsvorlage und bestätige den Download-Schritt.",
   "makeDropDownloadAction": "3D-Modell herunterladen",
   "makeDropDownloadSet": "Download-Schritt als erledigt markiert.",
   "makeDropDownloadDone": "Download-Schritt erledigt.",
@@ -264,15 +264,54 @@
   "makeDropStepPrintDescription": "Drop drucken ist out of scope. Trage hier die Anzahl der Gegenstände ein.",
   "makeDropItemCountLabel": "Anzahl Gegenstände",
   "makeDropItemCountInvalid": "Die Anzahl muss mindestens 1 sein.",
+  "makeDropPortableItemCountInvalid": "Die mitnehmbare Anzahl muss zwischen 1 und der Gesamtanzahl liegen.",
   "makeDropStepQrTitle": "5. QR-Codes anzeigen",
-  "makeDropStepQrDescription": "Erzeuge die QR-Codes für alle Gegenstände des Drops.",
+  "makeDropStepQrDescription": "Nach dem Speichern des Drafts werden die echten QR-Tokens aus dem Backend angezeigt.",
   "makeDropGenerateQrAction": "QR-Codes generieren",
-  "makeDropGenerateQrFirst": "Bitte zuerst QR-Codes generieren.",
+  "makeDropGenerateQrFirst": "Bitte speichere zuerst den Drop-Draft, damit QR-Codes erzeugt werden.",
   "makeDropStepPlaceTitle": "6. Drop anbringen + Standort eintragen",
-  "makeDropStepPlaceDescription": "Drop anbringen ist out of scope. Trage danach den Standort des Drops ein.",
+  "makeDropStepPlaceDescription": "Drop anbringen ist out of scope. Erfasse danach Standort und Standortfotos des Drops.",
   "makeDropLocationLabel": "Standort des Drops",
   "makeDropLocationRequired": "Bitte den Standort eintragen.",
-  "makeDropWizardFinished": "Wizard abgeschlossen. Du kannst den Drop jetzt weiterbearbeiten.",
+  "makeDropLocationPhotosRequired": "Bitte mindestens ein Standortfoto hinzufügen.",
+  "makeDropMissingCurrentUser": "Der angemeldete Benutzer konnte keinem Drop-Maker-Konto zugeordnet werden.",
+  "makeDropSourceMediaHint": "Die aktuell zum Kunstwerk gespeicherten Medien dienen hier als Produktionsreferenz.",
+  "makeDropDraftSaved": "Drop-Draft gespeichert. {count} QR-Codes wurden vorbereitet.",
+  "@makeDropDraftSaved": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "makeDropReadyWithId": "Aktiver Draft: {id}",
+  "@makeDropReadyWithId": {
+    "placeholders": {
+      "id": {}
+    }
+  },
+  "makeDropQrCodeLabel": "QR-Code {index}",
+  "@makeDropQrCodeLabel": {
+    "placeholders": {
+      "index": {}
+    }
+  },
+  "makeDropCoordinatesLabel": "Koordinaten: {latitude}, {longitude}",
+  "@makeDropCoordinatesLabel": {
+    "placeholders": {
+      "latitude": {},
+      "longitude": {}
+    }
+  },
+  "makeDropAddLocationPhotos": "Standortfotos hinzufügen",
+  "makeDropPhotosSelected": "{count} Standortfotos ausgewählt",
+  "@makeDropPhotosSelected": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "makeDropNoLocationPhotos": "Noch keine Standortfotos ausgewählt.",
+  "makeDropPublishAfterFinish": "Drop nach dem Abschluss direkt veröffentlichen",
+  "makeDropFinishedPublished": "Drop gespeichert und veröffentlicht.",
+  "makeDropWizardFinished": "Wizard abgeschlossen. Der Drop-Draft wurde gespeichert.",
   "makeDropNextAction": "Weiter",
   "makeDropBackAction": "Zurück",
   "makeDropFinishAction": "Abschließen",

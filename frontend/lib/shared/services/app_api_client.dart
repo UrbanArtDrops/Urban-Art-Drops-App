@@ -170,7 +170,9 @@ class AppApiClient {
     return DropModel.fromJson(data);
   }
 
-  Future<void> createDrop(CreateDropInput input) async {
+  String get baseUrl => _baseUrl;
+
+  Future<DropModel> createDrop(CreateDropInput input) async {
     final response = await _httpClient.post(
       _uri("/api/drops"),
       headers: _jsonHeaders,
@@ -186,9 +188,10 @@ class AppApiClient {
       }),
     );
     _ensureSuccess(response, "Failed to create drop.");
+    return DropModel.fromJson(_decodeObjectResponse(response));
   }
 
-  Future<void> updateDrop(String id, CreateDropInput input) async {
+  Future<DropModel> updateDrop(String id, CreateDropInput input) async {
     final response = await _httpClient.put(
       _uri("/api/drops/$id"),
       headers: _jsonHeaders,
@@ -204,6 +207,7 @@ class AppApiClient {
       }),
     );
     _ensureSuccess(response, "Failed to update drop.");
+    return DropModel.fromJson(_decodeObjectResponse(response));
   }
 
   Future<void> deleteDrop(String id) async {
