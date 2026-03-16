@@ -9,6 +9,9 @@
             "program": "${workspaceFolder}/backend/src/UrbanArtDropFinder.Api/bin/Debug/net9.0/UrbanArtDropFinder.Api.exe", // Pfad anpassen!
             "args": [],
             "cwd": "${workspaceFolder}/backend",
+            "env": {
+                "ASPNETCORE_URLS": "http://localhost:5143"
+            },
             "stopAtEntry": false,
             "serverReadyAction": {
                 "action": "openExternally",
@@ -19,7 +22,10 @@
             "name": "Frontend (Flutter)",
             "type": "dart",
             "request": "launch",
-            "cwd": "frontend"
+            "cwd": "frontend",
+            "toolArgs": [
+                "--dart-define=API_BASE_URL=http://localhost:5143"
+            ]
         }
     ],
     "compounds": [
