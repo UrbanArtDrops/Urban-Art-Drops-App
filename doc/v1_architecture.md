@@ -19,9 +19,12 @@
 - One claim per hunter per drop
 - Anonymous nickname cannot collide with registered usernames
 - Art piece photos and drop location photos are stored as binary payloads in the database and served through media endpoints
+- 3D artwork assets are stored as binary payloads in the database, exposed through dedicated media endpoints and surfaced to the Flutter client as downloadable asset references
 - Art piece CRUD supports full metadata updates for artist assignment, asset type, title, description, publish state and photo set
+- Art piece CRUD also supports 3D model upload, replacement and download, while model artworks require a stored asset before publish
 - The Flutter artist workspace uploads local artwork photos as data URLs, which the API resolves into persisted binary media records
 - The Flutter drop-maker wizard creates a persisted draft drop before placement, so item quantities and backend-generated QR tokens are available mid-process
+- Re-entering the quantity step of the drop-maker wizard preserves existing claimed and reusable QR items instead of recreating the entire item set on every update
 - The drop-maker wizard finishes the flow by updating location coordinates, uploading local location photos as data URLs and optionally publishing the completed drop
 
 ## Discovery and Map Rendering

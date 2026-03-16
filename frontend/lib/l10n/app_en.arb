@@ -103,6 +103,31 @@
   "artPieceAssetTypeLabel": "Asset type",
   "artPieceAssetImage": "Image",
   "artPieceAssetModel3d": "3D model",
+  "artPieceAssetSectionTitle": "Production asset",
+  "artPieceUploadAssetAction": "Upload 3D model",
+  "artPieceDownloadAssetAction": "Download file",
+  "artPieceAssetHelp": "Upload the 3D model used as the production asset for this artwork.",
+  "artPieceAssetEmptyState": "No 3D model uploaded yet.",
+  "artPieceAssetContentType": "File type: {value}",
+  "@artPieceAssetContentType": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "artPieceAssetSize": "File size: {value}",
+  "@artPieceAssetSize": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "artPieceModelAssetRequiredError": "A model upload is required for 3D artworks.",
+  "artPieceAssetDownloadStarted": "Started download for {fileName}.",
+  "@artPieceAssetDownloadStarted": {
+    "placeholders": {
+      "fileName": {}
+    }
+  },
+  "artPieceAssetDownloadFailed": "The production asset could not be downloaded.",
   "artPieceUploadPhotosAction": "Add photos",
   "artPiecePhotosHelp": "Select local image files. Existing photos stay attached until you remove them.",
   "artPiecePhotosEmptyState": "No photos selected yet.",
@@ -253,11 +278,13 @@
   "makeDropStepBrowseDescription": "Review the available artworks for the new drop.",
   "makeDropStepSelectTitle": "2. Select artwork",
   "makeDropStepSelectDescription": "Click an artwork that should be used for this drop.",
-  "makeDropStepDownloadTitle": "3. Download 3D model",
-  "makeDropStepDownloadDescription": "Use the stored artwork media as production reference and confirm the download step.",
-  "makeDropDownloadAction": "Download 3D model",
+  "makeDropStepDownloadTitle": "3. Download production asset",
+  "makeDropStepDownloadDescription": "Actually download the stored production asset for the artwork before you continue preparing the drop.",
+  "makeDropDownloadAction": "Download production asset",
   "makeDropDownloadSet": "Download step marked as done.",
   "makeDropDownloadDone": "Download step completed.",
+  "makeDropDownloadUnavailable": "No production asset is available for this artwork.",
+  "makeDropDownloadFailed": "The production asset download could not be started.",
   "makeDropSelectArtFirst": "Please select an artwork first.",
   "makeDropConfirmDownloadFirst": "Please complete the download step first.",
   "makeDropStepPrintTitle": "4. Print drop + enter quantity",
@@ -275,7 +302,7 @@
   "makeDropLocationRequired": "Please enter a location.",
   "makeDropLocationPhotosRequired": "Please add at least one location photo.",
   "makeDropMissingCurrentUser": "The signed-in user could not be matched to a drop-maker account.",
-  "makeDropSourceMediaHint": "The media currently stored on the artwork act as the production reference here.",
+  "makeDropSourceMediaHint": "Use the stored production asset or reference image from this artwork for manufacturing.",
   "makeDropDraftSaved": "Drop draft saved. {count} QR codes are ready.",
   "@makeDropDraftSaved": {
     "placeholders": {

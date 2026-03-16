@@ -9,6 +9,7 @@ import "package:urban_art_drops_app/l10n/app_localizations.dart";
 
 import "../../../../shared/models/app_models.dart";
 import "../../../../shared/services/app_api_client.dart";
+import "../../../../shared/services/external_download_launcher.dart";
 import "../../../../shared/services/local_photo_picker.dart";
 import "../../../../shared/services/location_lookup_service.dart";
 import "../../../../shared/widgets/page_shell.dart";
@@ -22,15 +23,18 @@ class MakeDropWizardPage extends StatefulWidget {
     AppApiClient? apiClient,
     LocalPhotoPicker? photoPicker,
     LocationLookupService? locationLookupService,
+    ExternalDownloadLauncher? downloadLauncher,
     super.key,
   }) : _apiClient = apiClient,
        _photoPicker = photoPicker,
-       _locationLookupService = locationLookupService;
+       _locationLookupService = locationLookupService,
+       _downloadLauncher = downloadLauncher;
 
   final String? preselectedArtPieceId;
   final AppApiClient? _apiClient;
   final LocalPhotoPicker? _photoPicker;
   final LocationLookupService? _locationLookupService;
+  final ExternalDownloadLauncher? _downloadLauncher;
 
   @override
   State<MakeDropWizardPage> createState() => _MakeDropWizardPageState();
@@ -42,6 +46,8 @@ class _MakeDropWizardPageState extends State<MakeDropWizardPage> {
       widget._photoPicker ?? const FilePickerLocalPhotoPicker();
   late final LocationLookupService _locationLookupService =
       widget._locationLookupService ?? OpenStreetMapLocationLookupService();
+  late final ExternalDownloadLauncher _downloadLauncher =
+      widget._downloadLauncher ?? const UrlLauncherExternalDownloadLauncher();
 
   final TextEditingController _itemCountController = TextEditingController(
     text: "1",
@@ -249,15 +255,43 @@ class _MakeDropWizardPageState extends State<MakeDropWizardPage> {
     });
   }
 
-  void _confirmDownload() {
+  Future<void> _downloadProductionReference() async {
+    final selectedArtPiece = _selectedArtPiece;
+    final l10n = AppLocalizations.of(context)!;
+    if (selectedArtPiece == null) {
+      return;
+    }
+
+    final downloadUrl =
+        selectedArtPiece.assetFile?.url ??
+        (selectedArtPiece.photoUrls.isEmpty
+            ? null
+            : selectedArtPiece.photoUrls.first);
+    if (downloadUrl == null || downloadUrl.trim().isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.makeDropDownloadUnavailable)));
+      return;
+    }
+
+    final started = await _downloadLauncher.launchDownload(downloadUrl);
+    if (!mounted) {
+      return;
+    }
+
+    if (!started) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.makeDropDownloadFailed)));
+      return;
+    }
+
     setState(() {
       _draft = _draft.copyWith(downloadConfirmed: true);
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(AppLocalizations.of(context)!.makeDropDownloadSet),
-      ),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(l10n.makeDropDownloadSet)));
   }
 
   void _syncCreationInputsIntoDraft() {
@@ -825,13 +859,49 @@ class _MakeDropWizardPageState extends State<MakeDropWizardPage> {
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 8),
+              if (_selectedArtPiece!.assetFile != null)
+                Card.outlined(
+                  margin: EdgeInsets.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.view_in_ar_outlined),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _selectedArtPiece!.assetFile!.fileName,
+                                style: Theme.of(context).textTheme.titleSmall,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                l10n.artPieceAssetContentType(
+                                  _selectedArtPiece!.assetFile!.contentType,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              if (_selectedArtPiece!.assetFile != null)
+                const SizedBox(height: 12),
               Text(l10n.makeDropSourceMediaHint),
             ],
             const SizedBox(height: 12),
             FilledButton.icon(
-              onPressed: _selectedArtPiece == null || _isSaving
+              onPressed:
+                  _selectedArtPiece == null ||
+                      _isSaving ||
+                      ((_selectedArtPiece!.assetFile == null) &&
+                          _selectedArtPiece!.photoUrls.isEmpty)
                   ? null
-                  : _confirmDownload,
+                  : () => _downloadProductionReference(),
               icon: const Icon(Icons.download_outlined),
               label: Text(l10n.makeDropDownloadAction),
             ),

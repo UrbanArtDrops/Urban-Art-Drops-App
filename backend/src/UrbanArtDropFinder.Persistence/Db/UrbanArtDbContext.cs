@@ -17,6 +17,7 @@ public sealed class UrbanArtDbContext : DbContext
     public DbSet<UserAccount> UserAccounts => Set<UserAccount>();
     public DbSet<UserProviderLink> UserProviderLinks => Set<UserProviderLink>();
     public DbSet<ArtPiece> ArtPieces => Set<ArtPiece>();
+    public DbSet<ArtPieceAssetFile> ArtPieceAssetFiles => Set<ArtPieceAssetFile>();
     public DbSet<ArtPiecePhoto> ArtPiecePhotos => Set<ArtPiecePhoto>();
     public DbSet<Drop> Drops => Set<Drop>();
     public DbSet<DropItem> DropItems => Set<DropItem>();
@@ -49,6 +50,16 @@ public sealed class UrbanArtDbContext : DbContext
             entity.Property(x => x.Title).HasMaxLength(200).IsRequired();
             entity.Property(x => x.Description).HasMaxLength(3000).IsRequired();
             entity.HasMany(x => x.Photos).WithOne().HasForeignKey(x => x.ArtPieceId);
+            entity.HasOne(x => x.AssetFile).WithOne().HasForeignKey<ArtPieceAssetFile>(x => x.ArtPieceId);
+        });
+
+        modelBuilder.Entity<ArtPieceAssetFile>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.BinaryData).IsRequired();
+            entity.Property(x => x.ContentType).IsRequired().HasMaxLength(255);
+            entity.Property(x => x.FileName).IsRequired().HasMaxLength(255);
+            entity.HasIndex(x => x.ArtPieceId).IsUnique();
         });
 
         modelBuilder.Entity<ArtPiecePhoto>(entity =>

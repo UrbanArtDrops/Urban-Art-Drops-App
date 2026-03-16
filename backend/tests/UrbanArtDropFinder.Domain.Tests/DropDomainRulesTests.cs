@@ -49,4 +49,40 @@ public sealed class DropDomainRulesTests
         Assert.Throws<DomainValidationException>(() =>
             DropClaimPolicy.ValidateClaim(drop, secondItem, hunterId, null, new HashSet<string>(StringComparer.OrdinalIgnoreCase)));
     }
+
+    [Fact]
+    public void ReconcileItemCount_WhenIncreasingAndThenReducing_PreservesExistingItems()
+    {
+        var drop = Drop.Create(Guid.NewGuid(), Guid.NewGuid(), true, null);
+        drop.AddItem("token-a");
+        drop.AddItem("token-b");
+
+        var removedAfterIncrease = drop.ReconcileItemCount(4, NextToken);
+        var tokensAfterIncrease = drop.Items.Select(item => item.QrToken).ToList();
+        var removedAfterReduce = drop.ReconcileItemCount(3, NextToken);
+        var tokensAfterReduce = drop.Items.Select(item => item.QrToken).ToList();
+
+        Assert.Empty(removedAfterIncrease);
+        Assert.Equal(4, tokensAfterIncrease.Count);
+        Assert.Contains("token-a", tokensAfterIncrease);
+        Assert.Contains("token-b", tokensAfterIncrease);
+        Assert.Single(removedAfterReduce);
+        Assert.Equal(3, tokensAfterReduce.Count);
+        Assert.Contains("token-a", tokensAfterReduce);
+        Assert.Contains("token-b", tokensAfterReduce);
+    }
+
+    [Fact]
+    public void ReconcileItemCount_WhenRemovingClaimedItemsWouldBeRequired_ThrowsValidationException()
+    {
+        var hunterId = Guid.NewGuid();
+        var drop = Drop.Create(Guid.NewGuid(), Guid.NewGuid(), true, null);
+        drop.AddItem("token-a");
+        drop.AddItem("token-b");
+        drop.Items.First().MarkClaimed(hunterId, null, DateTimeOffset.UtcNow);
+
+        Assert.Throws<DomainValidationException>(() => drop.ReconcileItemCount(0, NextToken));
+    }
+
+    private static string NextToken() => Guid.NewGuid().ToString("N");
 }

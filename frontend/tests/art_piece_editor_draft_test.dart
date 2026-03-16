@@ -4,9 +4,12 @@ import "package:urban_art_drops_app/shared/models/app_models.dart";
 
 void main() {
   test("validate returns expected errors for incomplete art piece draft", () {
-    final draft = ArtPieceEditorDraft.create(
-      artistId: "",
-    ).copyWith(title: "AB", description: "Too short", photos: const []);
+    final draft = ArtPieceEditorDraft.create(artistId: "").copyWith(
+      title: "AB",
+      description: "Too short",
+      photos: const [],
+      assetKind: 1,
+    );
 
     final errors = draft.validate();
 
@@ -14,6 +17,7 @@ void main() {
     expect(errors, contains(ArtPieceDraftValidationError.titleTooShort));
     expect(errors, contains(ArtPieceDraftValidationError.descriptionTooShort));
     expect(errors, contains(ArtPieceDraftValidationError.missingPhotos));
+    expect(errors, contains(ArtPieceDraftValidationError.missingModelAsset));
   });
 
   test("fromArtPiece keeps existing remote photos available for editing", () {
@@ -25,6 +29,13 @@ void main() {
       assetKind: 1,
       isPublished: true,
       photoUrls: ["http://localhost:5143/api/media/art-piece-photos/1"],
+      assetFile: BinaryAssetModel(
+        id: "asset-1",
+        url: "http://localhost:5143/api/media/art-piece-assets/1",
+        fileName: "owl.glb",
+        contentType: "model/gltf-binary",
+        sizeBytes: 4096,
+      ),
     );
 
     final draft = ArtPieceEditorDraft.fromArtPiece(artPiece);
@@ -34,5 +45,7 @@ void main() {
     expect(draft.assetKind, artPiece.assetKind);
     expect(draft.isPublished, isTrue);
     expect(draft.photoSources, artPiece.photoUrls);
+    expect(draft.assetFile?.source, artPiece.assetFile?.url);
+    expect(draft.assetFile?.fileName, artPiece.assetFile?.fileName);
   });
 }

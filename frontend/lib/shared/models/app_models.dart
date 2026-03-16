@@ -46,6 +46,7 @@ class ArtPieceModel {
     required this.assetKind,
     required this.isPublished,
     required this.photoUrls,
+    required this.assetFile,
   });
 
   factory ArtPieceModel.fromJson(Map<String, dynamic> json) {
@@ -55,6 +56,7 @@ class ArtPieceModel {
         .map((entry) => _readString(entry, "url", "Url"))
         .where((url) => url.isNotEmpty)
         .toList(growable: false);
+    final assetEntry = _readNullableMap(json, "assetFile", "AssetFile");
 
     return ArtPieceModel(
       id: _readString(json, "id", "Id"),
@@ -64,6 +66,9 @@ class ArtPieceModel {
       assetKind: _readInt(json, "assetKind", "AssetKind"),
       isPublished: _readBool(json, "isPublished", "IsPublished"),
       photoUrls: urls,
+      assetFile: assetEntry == null
+          ? null
+          : BinaryAssetModel.fromJson(assetEntry),
     );
   }
 
@@ -74,6 +79,33 @@ class ArtPieceModel {
   final int assetKind;
   final bool isPublished;
   final List<String> photoUrls;
+  final BinaryAssetModel? assetFile;
+}
+
+class BinaryAssetModel {
+  const BinaryAssetModel({
+    required this.id,
+    required this.url,
+    required this.fileName,
+    required this.contentType,
+    required this.sizeBytes,
+  });
+
+  factory BinaryAssetModel.fromJson(Map<String, dynamic> json) {
+    return BinaryAssetModel(
+      id: _readString(json, "id", "Id"),
+      url: _readString(json, "url", "Url"),
+      fileName: _readString(json, "fileName", "FileName"),
+      contentType: _readString(json, "contentType", "ContentType"),
+      sizeBytes: _readInt(json, "sizeBytes", "SizeBytes"),
+    );
+  }
+
+  final String id;
+  final String url;
+  final String fileName;
+  final String contentType;
+  final int sizeBytes;
 }
 
 class DropItemModel {
@@ -382,4 +414,17 @@ List<dynamic> _readList(
   }
 
   return const [];
+}
+
+Map<String, dynamic>? _readNullableMap(
+  Map<String, dynamic> json,
+  String key,
+  String fallbackKey,
+) {
+  final raw = json[key] ?? json[fallbackKey];
+  if (raw is Map<String, dynamic>) {
+    return raw;
+  }
+
+  return null;
 }

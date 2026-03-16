@@ -242,6 +242,45 @@ class AppLocalizationsDe extends AppLocalizations {
   String get artPieceAssetModel3d => '3D-Modell';
 
   @override
+  String get artPieceAssetSectionTitle => 'Produktionsdatei';
+
+  @override
+  String get artPieceUploadAssetAction => '3D-Modell hochladen';
+
+  @override
+  String get artPieceDownloadAssetAction => 'Datei herunterladen';
+
+  @override
+  String get artPieceAssetHelp =>
+      'Lade das 3D-Modell als Produktionsdatei fuer dieses Kunstwerk hoch.';
+
+  @override
+  String get artPieceAssetEmptyState => 'Noch kein 3D-Modell hochgeladen.';
+
+  @override
+  String artPieceAssetContentType(Object value) {
+    return 'Dateityp: $value';
+  }
+
+  @override
+  String artPieceAssetSize(Object value) {
+    return 'Dateigroesse: $value';
+  }
+
+  @override
+  String get artPieceModelAssetRequiredError =>
+      'Fuer 3D-Kunstwerke ist ein Modell-Upload erforderlich.';
+
+  @override
+  String artPieceAssetDownloadStarted(Object fileName) {
+    return 'Download fuer $fileName gestartet.';
+  }
+
+  @override
+  String get artPieceAssetDownloadFailed =>
+      'Die Produktionsdatei konnte nicht heruntergeladen werden.';
+
+  @override
   String get artPieceUploadPhotosAction => 'Fotos hinzufügen';
 
   @override
@@ -588,20 +627,28 @@ class AppLocalizationsDe extends AppLocalizations {
       'Klicke ein Kunstwerk an, das für den Drop verwendet werden soll.';
 
   @override
-  String get makeDropStepDownloadTitle => '3. 3D-Modell herunterladen';
+  String get makeDropStepDownloadTitle => '3. Produktionsdatei herunterladen';
 
   @override
   String get makeDropStepDownloadDescription =>
-      'Nutze die hinterlegten Kunstwerk-Medien als Produktionsvorlage und bestätige den Download-Schritt.';
+      'Lade die hinterlegte Produktionsdatei des Kunstwerks tatsaechlich herunter, bevor du den Drop weiter vorbereitest.';
 
   @override
-  String get makeDropDownloadAction => '3D-Modell herunterladen';
+  String get makeDropDownloadAction => 'Produktionsdatei herunterladen';
 
   @override
   String get makeDropDownloadSet => 'Download-Schritt als erledigt markiert.';
 
   @override
   String get makeDropDownloadDone => 'Download-Schritt erledigt.';
+
+  @override
+  String get makeDropDownloadUnavailable =>
+      'Fuer dieses Kunstwerk ist keine Produktionsdatei verfuegbar.';
+
+  @override
+  String get makeDropDownloadFailed =>
+      'Die Produktionsdatei konnte nicht gestartet werden.';
 
   @override
   String get makeDropSelectArtFirst => 'Bitte zuerst ein Kunstwerk auswählen.';
@@ -664,7 +711,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get makeDropSourceMediaHint =>
-      'Die aktuell zum Kunstwerk gespeicherten Medien dienen hier als Produktionsreferenz.';
+      'Nutze die hinterlegte Produktionsdatei oder das Referenzbild dieses Kunstwerks fuer die Herstellung.';
 
   @override
   String makeDropDraftSaved(Object count) {

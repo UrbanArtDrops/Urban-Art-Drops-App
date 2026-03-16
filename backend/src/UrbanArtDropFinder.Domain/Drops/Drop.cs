@@ -121,6 +121,43 @@ public sealed class Drop
         }
     }
 
+    public IReadOnlyList<DropItem> ReconcileItemCount(int itemCount, Func<string> nextQrToken)
+    {
+        if (itemCount < 1)
+        {
+            throw new DomainValidationException("Drop requires at least one item.");
+        }
+
+        var claimedItemCount = Items.Count(item => item.IsClaimed);
+        if (itemCount < claimedItemCount)
+        {
+            throw new DomainValidationException("Claimed drop items cannot be removed.");
+        }
+
+        var removedItems = new List<DropItem>();
+        var unclaimedItems = Items.Where(item => !item.IsClaimed).ToList();
+        while (Items.Count > itemCount)
+        {
+            var removableItem = unclaimedItems.LastOrDefault();
+            if (removableItem is null)
+            {
+                throw new DomainValidationException("Claimed drop items cannot be removed.");
+            }
+
+            Items.Remove(removableItem);
+            removedItems.Add(removableItem);
+            unclaimedItems.RemoveAt(unclaimedItems.Count - 1);
+        }
+
+        while (Items.Count < itemCount)
+        {
+            var nextToken = nextQrToken();
+            AddItem(nextToken);
+        }
+
+        return removedItems;
+    }
+
     public bool CanPublish() =>
         Latitude.HasValue &&
         Longitude.HasValue &&

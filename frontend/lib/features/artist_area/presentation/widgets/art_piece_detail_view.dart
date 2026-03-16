@@ -8,6 +8,7 @@ class ArtPieceDetailView extends StatelessWidget {
   const ArtPieceDetailView({
     required this.artPiece,
     required this.artistName,
+    required this.onDownloadAsset,
     required this.onEdit,
     required this.onDelete,
     required this.onTogglePublished,
@@ -17,6 +18,7 @@ class ArtPieceDetailView extends StatelessWidget {
 
   final ArtPieceModel artPiece;
   final String artistName;
+  final VoidCallback? onDownloadAsset;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
   final VoidCallback? onTogglePublished;
@@ -43,6 +45,12 @@ class ArtPieceDetailView extends StatelessWidget {
                 icon: const Icon(Icons.edit_outlined),
                 label: Text(l10n.editAction),
               ),
+              if (artPiece.assetFile != null)
+                OutlinedButton.icon(
+                  onPressed: onDownloadAsset,
+                  icon: const Icon(Icons.download_outlined),
+                  label: Text(l10n.artPieceDownloadAssetAction),
+                ),
               OutlinedButton.icon(
                 onPressed: onTogglePublished,
                 icon: Icon(
@@ -65,6 +73,64 @@ class ArtPieceDetailView extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           _ArtPiecePhotoGallery(photoUrls: artPiece.photoUrls),
+          if (artPiece.assetFile != null) ...[
+            const SizedBox(height: 20),
+            Text(
+              l10n.artPieceAssetSectionTitle,
+              style: theme.textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            Card.outlined(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.only(top: 2),
+                          child: Icon(Icons.view_in_ar_outlined),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                artPiece.assetFile!.fileName,
+                                style: theme.textTheme.titleSmall,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                l10n.artPieceAssetContentType(
+                                  artPiece.assetFile!.contentType,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                l10n.artPieceAssetSize(
+                                  _formatAssetSize(
+                                    artPiece.assetFile!.sizeBytes,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        FilledButton.tonalIcon(
+                          onPressed: onDownloadAsset,
+                          icon: const Icon(Icons.download_outlined),
+                          label: Text(l10n.artPieceDownloadAssetAction),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 20),
           Wrap(
             spacing: 8,
@@ -268,4 +334,15 @@ class _MetadataRow extends StatelessWidget {
 
 String _assetKindLabel(AppLocalizations l10n, int assetKind) {
   return assetKind == 1 ? l10n.artPieceAssetModel3d : l10n.artPieceAssetImage;
+}
+
+String _formatAssetSize(int sizeBytes) {
+  if (sizeBytes < 1024) {
+    return "$sizeBytes B";
+  }
+  if (sizeBytes < 1024 * 1024) {
+    return "${(sizeBytes / 1024).toStringAsFixed(1)} KB";
+  }
+
+  return "${(sizeBytes / (1024 * 1024)).toStringAsFixed(1)} MB";
 }

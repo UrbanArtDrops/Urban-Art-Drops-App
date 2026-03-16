@@ -11,6 +11,7 @@ public sealed class ArtPiece
     public ArtPieceAssetKind AssetKind { get; private set; }
     public bool IsPublished { get; private set; }
     public ICollection<ArtPiecePhoto> Photos { get; set; } = new List<ArtPiecePhoto>();
+    public ArtPieceAssetFile? AssetFile { get; private set; }
 
     private ArtPiece()
     {
@@ -75,6 +76,46 @@ public sealed class ArtPiece
         }
     }
 
+    public void SetAssetFile(byte[] binaryData, string contentType, string fileName)
+    {
+        if (binaryData is null || binaryData.Length == 0)
+        {
+            throw new DomainValidationException("Asset binary data is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(contentType))
+        {
+            throw new DomainValidationException("Asset content type is required.");
+        }
+
+        var normalizedFileName = fileName?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(normalizedFileName))
+        {
+            throw new DomainValidationException("Asset file name is required.");
+        }
+
+        if (AssetFile is null)
+        {
+            AssetFile = new ArtPieceAssetFile
+            {
+                ArtPieceId = Id,
+                BinaryData = binaryData,
+                ContentType = contentType.Trim(),
+                FileName = normalizedFileName
+            };
+            return;
+        }
+
+        AssetFile.BinaryData = binaryData;
+        AssetFile.ContentType = contentType.Trim();
+        AssetFile.FileName = normalizedFileName;
+    }
+
+    public void ClearAssetFile()
+    {
+        AssetFile = null;
+    }
+
     public void UpdateDetails(Guid artistId, string title, string description, ArtPieceAssetKind assetKind)
     {
         if (artistId == Guid.Empty)
@@ -97,15 +138,36 @@ public sealed class ArtPiece
         Title = title.Trim();
         Description = normalizedDescription;
         AssetKind = assetKind;
+
+        if (assetKind != ArtPieceAssetKind.Model3d)
+        {
+            ClearAssetFile();
+        }
     }
 
-    public bool CanBePublished() => Photos.Count >= 1;
+    public bool CanBePublished()
+    {
+        if (Photos.Count < 1)
+        {
+            return false;
+        }
+
+        if (AssetKind == ArtPieceAssetKind.Model3d)
+        {
+            return AssetFile is not null;
+        }
+
+        return true;
+    }
 
     public void Publish()
     {
         if (!CanBePublished())
         {
-            throw new DomainValidationException("At least one photo is required before publishing an art piece.");
+            throw new DomainValidationException(
+                AssetKind == ArtPieceAssetKind.Model3d
+                    ? "Model art pieces require at least one photo and a 3D asset before publishing."
+                    : "At least one photo is required before publishing an art piece.");
         }
 
         IsPublished = true;

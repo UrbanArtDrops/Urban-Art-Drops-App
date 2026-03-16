@@ -44,4 +44,35 @@ public sealed class ArtPieceDomainRulesTests
                 "This updated description is also long enough.",
                 ArtPieceAssetKind.Model3d));
     }
+
+    [Fact]
+    public void Publish_WhenModelArtPieceHasNoAssetFile_ThrowsValidationException()
+    {
+        var artPiece = ArtPiece.Create(
+            Guid.NewGuid(),
+            "Crystal Owl",
+            "This description is definitely long enough.",
+            ArtPieceAssetKind.Model3d);
+        artPiece.AddPhoto([1, 2, 3], "image/png");
+
+        Assert.Throws<DomainValidationException>(() => artPiece.Publish());
+    }
+
+    [Fact]
+    public void SetAssetFile_WhenAssetKindIsModel3d_AllowsPublishing()
+    {
+        var artPiece = ArtPiece.Create(
+            Guid.NewGuid(),
+            "Crystal Owl",
+            "This description is definitely long enough.",
+            ArtPieceAssetKind.Model3d);
+        artPiece.AddPhoto([1, 2, 3], "image/png");
+        artPiece.SetAssetFile([7, 8, 9], "model/gltf-binary", "crystal-owl.glb");
+
+        artPiece.Publish();
+
+        Assert.True(artPiece.IsPublished);
+        Assert.NotNull(artPiece.AssetFile);
+        Assert.Equal("crystal-owl.glb", artPiece.AssetFile!.FileName);
+    }
 }

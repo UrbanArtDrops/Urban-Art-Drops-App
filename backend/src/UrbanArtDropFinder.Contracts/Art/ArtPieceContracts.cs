@@ -7,11 +7,15 @@ public sealed record CreateArtPieceRequest(
     string Title,
     string Description,
     ArtPieceAssetKind AssetKind,
-    IReadOnlyCollection<string> PhotoUrls);
+    IReadOnlyCollection<string> PhotoUrls,
+    string? AssetSource,
+    string? AssetFileName);
 
 public sealed record UpdateArtPieceRequest(
     Guid ArtistId,
     string Title,
     string Description,
     ArtPieceAssetKind AssetKind,
-    IReadOnlyCollection<string> PhotoUrls);
+    IReadOnlyCollection<string> PhotoUrls,
+    string? AssetSource,
+    string? AssetFileName);

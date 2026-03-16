@@ -108,6 +108,8 @@ class AppApiClient {
     required String description,
     required int assetKind,
     required List<String> photoUrls,
+    String? assetSource,
+    String? assetFileName,
   }) async {
     final response = await _httpClient.post(
       _uri("/api/art-pieces"),
@@ -118,6 +120,8 @@ class AppApiClient {
         "description": description,
         "assetKind": assetKind,
         "photoUrls": photoUrls,
+        "assetSource": assetSource,
+        "assetFileName": assetFileName,
       }),
     );
     _ensureSuccess(response, "Failed to create art piece.");
@@ -131,6 +135,8 @@ class AppApiClient {
     required String description,
     required int assetKind,
     required List<String> photoUrls,
+    String? assetSource,
+    String? assetFileName,
   }) async {
     final response = await _httpClient.put(
       _uri("/api/art-pieces/$id"),
@@ -141,6 +147,8 @@ class AppApiClient {
         "description": description,
         "assetKind": assetKind,
         "photoUrls": photoUrls,
+        "assetSource": assetSource,
+        "assetFileName": assetFileName,
       }),
     );
     _ensureSuccess(response, "Failed to update art piece.");

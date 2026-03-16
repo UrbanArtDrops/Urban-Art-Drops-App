@@ -19,12 +19,36 @@ class ArtPiecePhotoDraft {
   final String label;
 }
 
+class ArtPieceAssetDraft {
+  const ArtPieceAssetDraft({
+    required this.source,
+    required this.fileName,
+    required this.contentType,
+    required this.sizeBytes,
+  });
+
+  factory ArtPieceAssetDraft.fromRemoteAsset(BinaryAssetModel asset) {
+    return ArtPieceAssetDraft(
+      source: asset.url,
+      fileName: asset.fileName,
+      contentType: asset.contentType,
+      sizeBytes: asset.sizeBytes,
+    );
+  }
+
+  final String source;
+  final String fileName;
+  final String contentType;
+  final int sizeBytes;
+}
+
 enum ArtPieceDraftValidationError {
   missingArtist,
   titleTooShort,
   descriptionTooShort,
   descriptionTooLong,
   missingPhotos,
+  missingModelAsset,
 }
 
 class ArtPieceEditorDraft {
@@ -36,6 +60,7 @@ class ArtPieceEditorDraft {
     required this.assetKind,
     required this.isPublished,
     required this.photos,
+    required this.assetFile,
   });
 
   factory ArtPieceEditorDraft.create({required String artistId}) {
@@ -47,6 +72,7 @@ class ArtPieceEditorDraft {
       assetKind: 0,
       isPublished: false,
       photos: const [],
+      assetFile: null,
     );
   }
 
@@ -61,6 +87,9 @@ class ArtPieceEditorDraft {
       photos: artPiece.photoUrls
           .map(ArtPiecePhotoDraft.fromRemoteUrl)
           .toList(growable: false),
+      assetFile: artPiece.assetFile == null
+          ? null
+          : ArtPieceAssetDraft.fromRemoteAsset(artPiece.assetFile!),
     );
   }
 
@@ -71,11 +100,15 @@ class ArtPieceEditorDraft {
   final int assetKind;
   final bool isPublished;
   final List<ArtPiecePhotoDraft> photos;
+  final ArtPieceAssetDraft? assetFile;
 
   bool get isEditMode => id != null;
 
   List<String> get photoSources =>
       photos.map((photo) => photo.source).toList(growable: false);
+
+  String? get assetSource => assetFile?.source;
+  String? get assetFileName => assetFile?.fileName;
 
   ArtPieceEditorDraft copyWith({
     String? id,
@@ -85,6 +118,8 @@ class ArtPieceEditorDraft {
     int? assetKind,
     bool? isPublished,
     List<ArtPiecePhotoDraft>? photos,
+    ArtPieceAssetDraft? assetFile,
+    bool clearAssetFile = false,
   }) {
     return ArtPieceEditorDraft(
       id: id ?? this.id,
@@ -94,6 +129,7 @@ class ArtPieceEditorDraft {
       assetKind: assetKind ?? this.assetKind,
       isPublished: isPublished ?? this.isPublished,
       photos: photos ?? this.photos,
+      assetFile: clearAssetFile ? null : assetFile ?? this.assetFile,
     );
   }
 
@@ -119,6 +155,10 @@ class ArtPieceEditorDraft {
 
     if (photos.isEmpty) {
       errors.add(ArtPieceDraftValidationError.missingPhotos);
+    }
+
+    if (assetKind == 1 && assetFile == null) {
+      errors.add(ArtPieceDraftValidationError.missingModelAsset);
     }
 
     return errors;

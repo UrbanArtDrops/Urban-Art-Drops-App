@@ -4,8 +4,10 @@ import "package:urban_art_drops_app/l10n/app_localizations.dart";
 
 import "../../../../shared/models/app_models.dart";
 import "../../../../shared/services/app_api_client.dart";
+import "../../../../shared/services/external_download_launcher.dart";
 import "../../../../shared/widgets/page_shell.dart";
 import "../../../authentication/presentation/bloc/auth_session_cubit.dart";
+import "../../application/art_piece_asset_picker.dart";
 import "../../application/art_piece_photo_picker.dart";
 import "../../domain/art_piece_editor_draft.dart";
 import "../widgets/art_piece_detail_view.dart";
@@ -16,12 +18,18 @@ class ArtistArtPiecesPage extends StatefulWidget {
   const ArtistArtPiecesPage({
     AppApiClient? apiClient,
     ArtPiecePhotoPicker? photoPicker,
+    ArtPieceAssetPicker? assetPicker,
+    ExternalDownloadLauncher? downloadLauncher,
     super.key,
   }) : _apiClient = apiClient,
-       _photoPicker = photoPicker;
+       _photoPicker = photoPicker,
+       _assetPicker = assetPicker,
+       _downloadLauncher = downloadLauncher;
 
   final AppApiClient? _apiClient;
   final ArtPiecePhotoPicker? _photoPicker;
+  final ArtPieceAssetPicker? _assetPicker;
+  final ExternalDownloadLauncher? _downloadLauncher;
 
   @override
   State<ArtistArtPiecesPage> createState() => _ArtistArtPiecesPageState();
@@ -31,6 +39,10 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
   late final AppApiClient _apiClient = widget._apiClient ?? AppApiClient();
   late final ArtPiecePhotoPicker _photoPicker =
       widget._photoPicker ?? const FilePickerArtPiecePhotoPicker();
+  late final ArtPieceAssetPicker _assetPicker =
+      widget._assetPicker ?? const FilePickerArtPieceAssetPicker();
+  late final ExternalDownloadLauncher _downloadLauncher =
+      widget._downloadLauncher ?? const UrlLauncherExternalDownloadLauncher();
 
   List<ArtPieceModel> _artPieces = const [];
   List<ManagedUser> _artists = const [];
@@ -179,6 +191,7 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
       artists: _artists,
       initialDraft: initialDraft,
       photoPicker: _photoPicker,
+      assetPicker: _assetPicker,
     );
     if (draft == null) {
       return;
@@ -192,6 +205,8 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
               description: draft.description.trim(),
               assetKind: draft.assetKind,
               photoUrls: draft.photoSources,
+              assetSource: draft.assetSource,
+              assetFileName: draft.assetFileName,
             )
           : await _apiClient.updateArtPiece(
               id: existing.id,
@@ -200,6 +215,8 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
               description: draft.description.trim(),
               assetKind: draft.assetKind,
               photoUrls: draft.photoSources,
+              assetSource: draft.assetSource,
+              assetFileName: draft.assetFileName,
             );
 
       if (savedArtPiece.isPublished != draft.isPublished) {
@@ -250,6 +267,29 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
     });
   }
 
+  Future<void> _downloadAsset(ArtPieceModel artPiece) async {
+    final asset = artPiece.assetFile;
+    if (asset == null) {
+      return;
+    }
+
+    final launched = await _downloadLauncher.launchDownload(asset.url);
+    if (!mounted) {
+      return;
+    }
+
+    final l10n = AppLocalizations.of(context)!;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          launched
+              ? l10n.artPieceAssetDownloadStarted(asset.fileName)
+              : l10n.artPieceAssetDownloadFailed,
+        ),
+      ),
+    );
+  }
+
   Future<void> _openMobileDetail(
     ArtPieceModel artPiece,
     AuthSessionState authState,
@@ -266,6 +306,12 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
             artPiece: artPiece,
             artistName: _artistLabel(artPiece.artistId),
             compact: true,
+            onDownloadAsset: artPiece.assetFile == null
+                ? null
+                : () {
+                    Navigator.of(sheetContext).pop();
+                    _downloadAsset(artPiece);
+                  },
             onEdit: () {
               Navigator.of(sheetContext).pop();
               _openArtPieceEditor(authState, artPiece);
@@ -432,6 +478,14 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
                                                   artistName: _artistLabel(
                                                     _selectedArtPiece!.artistId,
                                                   ),
+                                                  onDownloadAsset:
+                                                      _selectedArtPiece!
+                                                              .assetFile ==
+                                                          null
+                                                      ? null
+                                                      : () => _downloadAsset(
+                                                          _selectedArtPiece!,
+                                                        ),
                                                   onEdit: _isSaving
                                                       ? null
                                                       : () =>

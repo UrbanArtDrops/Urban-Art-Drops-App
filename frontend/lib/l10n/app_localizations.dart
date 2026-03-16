@@ -536,6 +536,66 @@ abstract class AppLocalizations {
   /// **'3D model'**
   String get artPieceAssetModel3d;
 
+  /// No description provided for @artPieceAssetSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Production asset'**
+  String get artPieceAssetSectionTitle;
+
+  /// No description provided for @artPieceUploadAssetAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload 3D model'**
+  String get artPieceUploadAssetAction;
+
+  /// No description provided for @artPieceDownloadAssetAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Download file'**
+  String get artPieceDownloadAssetAction;
+
+  /// No description provided for @artPieceAssetHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload the 3D model used as the production asset for this artwork.'**
+  String get artPieceAssetHelp;
+
+  /// No description provided for @artPieceAssetEmptyState.
+  ///
+  /// In en, this message translates to:
+  /// **'No 3D model uploaded yet.'**
+  String get artPieceAssetEmptyState;
+
+  /// No description provided for @artPieceAssetContentType.
+  ///
+  /// In en, this message translates to:
+  /// **'File type: {value}'**
+  String artPieceAssetContentType(Object value);
+
+  /// No description provided for @artPieceAssetSize.
+  ///
+  /// In en, this message translates to:
+  /// **'File size: {value}'**
+  String artPieceAssetSize(Object value);
+
+  /// No description provided for @artPieceModelAssetRequiredError.
+  ///
+  /// In en, this message translates to:
+  /// **'A model upload is required for 3D artworks.'**
+  String get artPieceModelAssetRequiredError;
+
+  /// No description provided for @artPieceAssetDownloadStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Started download for {fileName}.'**
+  String artPieceAssetDownloadStarted(Object fileName);
+
+  /// No description provided for @artPieceAssetDownloadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The production asset could not be downloaded.'**
+  String get artPieceAssetDownloadFailed;
+
   /// No description provided for @artPieceUploadPhotosAction.
   ///
   /// In en, this message translates to:
@@ -1157,19 +1217,19 @@ abstract class AppLocalizations {
   /// No description provided for @makeDropStepDownloadTitle.
   ///
   /// In en, this message translates to:
-  /// **'3. Download 3D model'**
+  /// **'3. Download production asset'**
   String get makeDropStepDownloadTitle;
 
   /// No description provided for @makeDropStepDownloadDescription.
   ///
   /// In en, this message translates to:
-  /// **'Use the stored artwork media as production reference and confirm the download step.'**
+  /// **'Actually download the stored production asset for the artwork before you continue preparing the drop.'**
   String get makeDropStepDownloadDescription;
 
   /// No description provided for @makeDropDownloadAction.
   ///
   /// In en, this message translates to:
-  /// **'Download 3D model'**
+  /// **'Download production asset'**
   String get makeDropDownloadAction;
 
   /// No description provided for @makeDropDownloadSet.
@@ -1183,6 +1243,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Download step completed.'**
   String get makeDropDownloadDone;
+
+  /// No description provided for @makeDropDownloadUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No production asset is available for this artwork.'**
+  String get makeDropDownloadUnavailable;
+
+  /// No description provided for @makeDropDownloadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The production asset download could not be started.'**
+  String get makeDropDownloadFailed;
 
   /// No description provided for @makeDropSelectArtFirst.
   ///
@@ -1289,7 +1361,7 @@ abstract class AppLocalizations {
   /// No description provided for @makeDropSourceMediaHint.
   ///
   /// In en, this message translates to:
-  /// **'The media currently stored on the artwork act as the production reference here.'**
+  /// **'Use the stored production asset or reference image from this artwork for manufacturing.'**
   String get makeDropSourceMediaHint;
 
   /// No description provided for @makeDropDraftSaved.

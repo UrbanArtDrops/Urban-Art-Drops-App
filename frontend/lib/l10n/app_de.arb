@@ -103,6 +103,31 @@
   "artPieceAssetTypeLabel": "Asset-Typ",
   "artPieceAssetImage": "Bild",
   "artPieceAssetModel3d": "3D-Modell",
+  "artPieceAssetSectionTitle": "Produktionsdatei",
+  "artPieceUploadAssetAction": "3D-Modell hochladen",
+  "artPieceDownloadAssetAction": "Datei herunterladen",
+  "artPieceAssetHelp": "Lade das 3D-Modell als Produktionsdatei fuer dieses Kunstwerk hoch.",
+  "artPieceAssetEmptyState": "Noch kein 3D-Modell hochgeladen.",
+  "artPieceAssetContentType": "Dateityp: {value}",
+  "@artPieceAssetContentType": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "artPieceAssetSize": "Dateigroesse: {value}",
+  "@artPieceAssetSize": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "artPieceModelAssetRequiredError": "Fuer 3D-Kunstwerke ist ein Modell-Upload erforderlich.",
+  "artPieceAssetDownloadStarted": "Download fuer {fileName} gestartet.",
+  "@artPieceAssetDownloadStarted": {
+    "placeholders": {
+      "fileName": {}
+    }
+  },
+  "artPieceAssetDownloadFailed": "Die Produktionsdatei konnte nicht heruntergeladen werden.",
   "artPieceUploadPhotosAction": "Fotos hinzufügen",
   "artPiecePhotosHelp": "Lokale Bilddateien auswählen. Bereits vorhandene Fotos bleiben erhalten, bis du sie entfernst.",
   "artPiecePhotosEmptyState": "Noch keine Fotos ausgewählt.",
@@ -253,11 +278,13 @@
   "makeDropStepBrowseDescription": "Sichte die verfügbaren Kunstwerke für den neuen Drop.",
   "makeDropStepSelectTitle": "2. Kunstwerk auswählen",
   "makeDropStepSelectDescription": "Klicke ein Kunstwerk an, das für den Drop verwendet werden soll.",
-  "makeDropStepDownloadTitle": "3. 3D-Modell herunterladen",
-  "makeDropStepDownloadDescription": "Nutze die hinterlegten Kunstwerk-Medien als Produktionsvorlage und bestätige den Download-Schritt.",
-  "makeDropDownloadAction": "3D-Modell herunterladen",
+  "makeDropStepDownloadTitle": "3. Produktionsdatei herunterladen",
+  "makeDropStepDownloadDescription": "Lade die hinterlegte Produktionsdatei des Kunstwerks tatsaechlich herunter, bevor du den Drop weiter vorbereitest.",
+  "makeDropDownloadAction": "Produktionsdatei herunterladen",
   "makeDropDownloadSet": "Download-Schritt als erledigt markiert.",
   "makeDropDownloadDone": "Download-Schritt erledigt.",
+  "makeDropDownloadUnavailable": "Fuer dieses Kunstwerk ist keine Produktionsdatei verfuegbar.",
+  "makeDropDownloadFailed": "Die Produktionsdatei konnte nicht gestartet werden.",
   "makeDropSelectArtFirst": "Bitte zuerst ein Kunstwerk auswählen.",
   "makeDropConfirmDownloadFirst": "Bitte zuerst den Download-Schritt abschließen.",
   "makeDropStepPrintTitle": "4. Drop drucken + Anzahl eingeben",
@@ -275,7 +302,7 @@
   "makeDropLocationRequired": "Bitte den Standort eintragen.",
   "makeDropLocationPhotosRequired": "Bitte mindestens ein Standortfoto hinzufügen.",
   "makeDropMissingCurrentUser": "Der angemeldete Benutzer konnte keinem Drop-Maker-Konto zugeordnet werden.",
-  "makeDropSourceMediaHint": "Die aktuell zum Kunstwerk gespeicherten Medien dienen hier als Produktionsreferenz.",
+  "makeDropSourceMediaHint": "Nutze die hinterlegte Produktionsdatei oder das Referenzbild dieses Kunstwerks fuer die Herstellung.",
   "makeDropDraftSaved": "Drop-Draft gespeichert. {count} QR-Codes wurden vorbereitet.",
   "@makeDropDraftSaved": {
     "placeholders": {

@@ -241,6 +241,45 @@ class AppLocalizationsEn extends AppLocalizations {
   String get artPieceAssetModel3d => '3D model';
 
   @override
+  String get artPieceAssetSectionTitle => 'Production asset';
+
+  @override
+  String get artPieceUploadAssetAction => 'Upload 3D model';
+
+  @override
+  String get artPieceDownloadAssetAction => 'Download file';
+
+  @override
+  String get artPieceAssetHelp =>
+      'Upload the 3D model used as the production asset for this artwork.';
+
+  @override
+  String get artPieceAssetEmptyState => 'No 3D model uploaded yet.';
+
+  @override
+  String artPieceAssetContentType(Object value) {
+    return 'File type: $value';
+  }
+
+  @override
+  String artPieceAssetSize(Object value) {
+    return 'File size: $value';
+  }
+
+  @override
+  String get artPieceModelAssetRequiredError =>
+      'A model upload is required for 3D artworks.';
+
+  @override
+  String artPieceAssetDownloadStarted(Object fileName) {
+    return 'Started download for $fileName.';
+  }
+
+  @override
+  String get artPieceAssetDownloadFailed =>
+      'The production asset could not be downloaded.';
+
+  @override
   String get artPieceUploadPhotosAction => 'Add photos';
 
   @override
@@ -580,20 +619,28 @@ class AppLocalizationsEn extends AppLocalizations {
       'Click an artwork that should be used for this drop.';
 
   @override
-  String get makeDropStepDownloadTitle => '3. Download 3D model';
+  String get makeDropStepDownloadTitle => '3. Download production asset';
 
   @override
   String get makeDropStepDownloadDescription =>
-      'Use the stored artwork media as production reference and confirm the download step.';
+      'Actually download the stored production asset for the artwork before you continue preparing the drop.';
 
   @override
-  String get makeDropDownloadAction => 'Download 3D model';
+  String get makeDropDownloadAction => 'Download production asset';
 
   @override
   String get makeDropDownloadSet => 'Download step marked as done.';
 
   @override
   String get makeDropDownloadDone => 'Download step completed.';
+
+  @override
+  String get makeDropDownloadUnavailable =>
+      'No production asset is available for this artwork.';
+
+  @override
+  String get makeDropDownloadFailed =>
+      'The production asset download could not be started.';
 
   @override
   String get makeDropSelectArtFirst => 'Please select an artwork first.';
@@ -656,7 +703,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get makeDropSourceMediaHint =>
-      'The media currently stored on the artwork act as the production reference here.';
+      'Use the stored production asset or reference image from this artwork for manufacturing.';
 
   @override
   String makeDropDraftSaved(Object count) {

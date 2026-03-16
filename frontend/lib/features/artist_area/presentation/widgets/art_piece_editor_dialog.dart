@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 import "package:urban_art_drops_app/l10n/app_localizations.dart";
 
 import "../../../../shared/models/app_models.dart";
+import "../../application/art_piece_asset_picker.dart";
 import "../../application/art_piece_photo_picker.dart";
 import "../../domain/art_piece_editor_draft.dart";
 import "art_piece_source_image.dart";
@@ -11,6 +12,7 @@ Future<ArtPieceEditorDraft?> showArtPieceEditorDialog(
   required List<ManagedUser> artists,
   required ArtPieceEditorDraft initialDraft,
   required ArtPiecePhotoPicker photoPicker,
+  required ArtPieceAssetPicker assetPicker,
 }) {
   return showDialog<ArtPieceEditorDraft>(
     context: context,
@@ -18,6 +20,7 @@ Future<ArtPieceEditorDraft?> showArtPieceEditorDialog(
       artists: artists,
       initialDraft: initialDraft,
       photoPicker: photoPicker,
+      assetPicker: assetPicker,
     ),
   );
 }
@@ -27,11 +30,13 @@ class _ArtPieceEditorDialog extends StatefulWidget {
     required this.artists,
     required this.initialDraft,
     required this.photoPicker,
+    required this.assetPicker,
   });
 
   final List<ManagedUser> artists;
   final ArtPieceEditorDraft initialDraft;
   final ArtPiecePhotoPicker photoPicker;
+  final ArtPieceAssetPicker assetPicker;
 
   @override
   State<_ArtPieceEditorDialog> createState() => _ArtPieceEditorDialogState();
@@ -42,6 +47,7 @@ class _ArtPieceEditorDialogState extends State<_ArtPieceEditorDialog> {
   late final TextEditingController _descriptionController;
   late ArtPieceEditorDraft _draft;
   List<ArtPieceDraftValidationError> _validationErrors = const [];
+  bool _isPickingAsset = false;
   bool _isPickingPhotos = false;
 
   @override
@@ -79,6 +85,26 @@ class _ArtPieceEditorDialogState extends State<_ArtPieceEditorDialog> {
     }
   }
 
+  Future<void> _pickAsset() async {
+    setState(() => _isPickingAsset = true);
+
+    try {
+      final asset = await widget.assetPicker.pickAsset();
+      if (!mounted || asset == null) {
+        return;
+      }
+
+      setState(() {
+        _draft = _draft.copyWith(assetFile: asset);
+        _validationErrors = const [];
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _isPickingAsset = false);
+      }
+    }
+  }
+
   void _removePhoto(ArtPiecePhotoDraft photo) {
     setState(() {
       _draft = _draft.copyWith(
@@ -86,6 +112,12 @@ class _ArtPieceEditorDialogState extends State<_ArtPieceEditorDialog> {
             .where((candidate) => candidate != photo)
             .toList(growable: false),
       );
+    });
+  }
+
+  void _removeAsset() {
+    setState(() {
+      _draft = _draft.copyWith(clearAssetFile: true);
     });
   }
 
@@ -142,7 +174,7 @@ class _ArtPieceEditorDialogState extends State<_ArtPieceEditorDialog> {
                           final isCompact = constraints.maxWidth < 640;
                           final formChildren = [
                             _buildPrimaryFields(l10n),
-                            _buildPhotoSection(l10n),
+                            _buildMediaSection(l10n),
                           ];
 
                           if (isCompact) {
@@ -259,6 +291,103 @@ class _ArtPieceEditorDialogState extends State<_ArtPieceEditorDialog> {
             _draft.isPublished ? l10n.statusPublished : l10n.statusUnpublished,
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildMediaSection(AppLocalizations l10n) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_draft.assetKind == 1) ...[
+          _buildAssetSection(l10n),
+          const SizedBox(height: 24),
+        ],
+        _buildPhotoSection(l10n),
+      ],
+    );
+  }
+
+  Widget _buildAssetSection(AppLocalizations l10n) {
+    final asset = _draft.assetFile;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                l10n.artPieceAssetSectionTitle,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+            FilledButton.icon(
+              onPressed: _isPickingAsset ? null : _pickAsset,
+              icon: _isPickingAsset
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.precision_manufacturing_outlined),
+              label: Text(l10n.artPieceUploadAssetAction),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          l10n.artPieceAssetHelp,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 12),
+        if (asset == null)
+          Card.outlined(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(l10n.artPieceAssetEmptyState),
+            ),
+          )
+        else
+          Card.outlined(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.only(top: 2),
+                    child: Icon(Icons.view_in_ar_outlined),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          asset.fileName,
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(l10n.artPieceAssetContentType(asset.contentType)),
+                        const SizedBox(height: 4),
+                        Text(
+                          l10n.artPieceAssetSize(
+                            _formatAssetSize(asset.sizeBytes),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: l10n.deleteAction,
+                    onPressed: _removeAsset,
+                    icon: const Icon(Icons.delete_outline),
+                  ),
+                ],
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -398,5 +527,18 @@ String _validationMessage(
       return l10n.artPieceDescriptionTooLongError;
     case ArtPieceDraftValidationError.missingPhotos:
       return l10n.artPiecePhotosRequiredError;
+    case ArtPieceDraftValidationError.missingModelAsset:
+      return l10n.artPieceModelAssetRequiredError;
   }
+}
+
+String _formatAssetSize(int sizeBytes) {
+  if (sizeBytes < 1024) {
+    return "$sizeBytes B";
+  }
+  if (sizeBytes < 1024 * 1024) {
+    return "${(sizeBytes / 1024).toStringAsFixed(1)} KB";
+  }
+
+  return "${(sizeBytes / (1024 * 1024)).toStringAsFixed(1)} MB";
 }
