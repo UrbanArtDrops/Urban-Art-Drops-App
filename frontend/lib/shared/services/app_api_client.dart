@@ -28,6 +28,46 @@ class AppApiClient {
   final http.Client _httpClient;
   final String _baseUrl;
 
+  Future<AuthResultModel> registerLocal({
+    required String email,
+    required String userName,
+    required String password,
+    required int role,
+  }) async {
+    final response = await _httpClient.post(
+      _uri("/api/auth/register-local"),
+      headers: _jsonHeaders,
+      body: jsonEncode({
+        "email": email,
+        "userName": userName,
+        "password": password,
+        "role": role,
+      }),
+    );
+    _ensureSuccess(response, "Failed to register account.");
+    return AuthResultModel.fromJson(_decodeObjectResponse(response));
+  }
+
+  Future<AuthResultModel> loginLocal({
+    required String email,
+    required String password,
+  }) async {
+    final response = await _httpClient.post(
+      _uri("/api/auth/login-local"),
+      headers: _jsonHeaders,
+      body: jsonEncode({"email": email, "password": password}),
+    );
+    _ensureSuccess(response, "Failed to login.");
+    return AuthResultModel.fromJson(_decodeObjectResponse(response));
+  }
+
+  Future<void> verifyEmail(String userId) async {
+    final response = await _httpClient.post(
+      _uri("/api/auth/verify-email/$userId"),
+    );
+    _ensureSuccess(response, "Failed to verify email.");
+  }
+
   Future<List<ManagedUser>> getUsers() async {
     final data = await _getList("/api/admin/users");
     return data.map(ManagedUser.fromJson).toList(growable: false);
@@ -272,7 +312,23 @@ class AppApiClient {
 
     var message = fallbackMessage;
     if (response.body.isNotEmpty) {
-      message = response.body;
+      try {
+        final payload = jsonDecode(response.body);
+        if (payload is Map<String, dynamic>) {
+          final structuredMessage =
+              payload["message"]?.toString() ?? payload["error"]?.toString();
+          if (structuredMessage != null &&
+              structuredMessage.trim().isNotEmpty) {
+            message = structuredMessage.trim();
+          } else {
+            message = response.body;
+          }
+        } else {
+          message = response.body;
+        }
+      } on FormatException {
+        message = response.body;
+      }
     }
 
     throw ApiException(message, statusCode: response.statusCode);

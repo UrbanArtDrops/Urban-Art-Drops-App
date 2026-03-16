@@ -157,6 +157,13 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
   }
 
   String _preferredArtistId(AuthSessionState authState) {
+    final authenticatedUserId = authState.userId?.trim();
+    if (authenticatedUserId != null &&
+        authenticatedUserId.isNotEmpty &&
+        _artists.any((artist) => artist.id == authenticatedUserId)) {
+      return authenticatedUserId;
+    }
+
     final displayName = authState.displayName?.trim().toLowerCase();
     if (displayName != null && displayName.isNotEmpty) {
       for (final artist in _artists) {
@@ -440,6 +447,12 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
                                                       artPiece.id,
                                                 );
                                               },
+                                              onOpenDetails: () {
+                                                setState(
+                                                  () => _selectedArtPieceId =
+                                                      artPiece.id,
+                                                );
+                                              },
                                               onEdit: _isSaving
                                                   ? null
                                                   : () => _openArtPieceEditor(
@@ -533,6 +546,10 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
                                           artPiece,
                                           authState,
                                         ),
+                                        onOpenDetails: () => _openMobileDetail(
+                                          artPiece,
+                                          authState,
+                                        ),
                                         onEdit: _isSaving
                                             ? null
                                             : () => _openArtPieceEditor(
@@ -566,6 +583,7 @@ class _ArtPieceListCard extends StatelessWidget {
     required this.artistName,
     required this.isSelected,
     required this.onTap,
+    required this.onOpenDetails,
     required this.onEdit,
     required this.onDelete,
     required this.onTogglePublished,
@@ -575,6 +593,7 @@ class _ArtPieceListCard extends StatelessWidget {
   final String artistName;
   final bool isSelected;
   final VoidCallback onTap;
+  final VoidCallback onOpenDetails;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
   final VoidCallback? onTogglePublished;
@@ -705,6 +724,12 @@ class _ArtPieceListCard extends StatelessWidget {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: onOpenDetails,
+                      icon: const Icon(Icons.visibility_outlined),
+                      label: Text(l10n.detailsAction),
                     ),
                   ],
                 ),

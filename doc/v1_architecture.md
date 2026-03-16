@@ -11,6 +11,8 @@
 - Provider login (Google, Facebook, Instagram, TikTok)
 - MFA for Admin and Moderator (planned app-based challenge in auth boundary)
 - Exponential login backoff: 15s, 30s, 60s, 120s
+- Local self-registration stores the requested account role in the database at creation time; Hunters are auto-approved while Artist and Drop-Maker accounts remain pending until an admin approves them
+- Local login no longer asks the client to pick a role; the API returns the stored role and identity payload for the session
 
 ## Core Domain Rules
 - Art piece requires title, description and at least one photo before publish
@@ -24,6 +26,7 @@
 - Art piece CRUD also supports 3D model upload, replacement and download, while model artworks require a stored asset before publish
 - The Flutter artist workspace uploads local artwork photos as data URLs, which the API resolves into persisted binary media records
 - The Flutter drop-maker wizard creates a persisted draft drop before placement, so item quantities and backend-generated QR tokens are available mid-process
+- Persisted draft drops can be paused after QR generation and resumed later from the My Drops list by reopening the wizard with the stored drop identifier
 - Re-entering the quantity step of the drop-maker wizard preserves existing claimed and reusable QR items instead of recreating the entire item set on every update
 - The drop-maker wizard finishes the flow by updating location coordinates, uploading local location photos as data URLs and optionally publishing the completed drop
 

@@ -89,6 +89,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get createAction => 'Create';
 
   @override
+  String get detailsAction => 'Details';
+
+  @override
   String get editAction => 'Edit';
 
   @override
@@ -542,6 +545,45 @@ class AppLocalizationsEn extends AppLocalizations {
   String get passwordLabel => 'Password';
 
   @override
+  String get authFillCredentialsHint => 'Enter email and password.';
+
+  @override
+  String get authFillRegistrationHint =>
+      'Fill in username, email, and password.';
+
+  @override
+  String get authRoleManagedAtRegistration =>
+      'The account type is stored when the account is created. You do not select it again during login.';
+
+  @override
+  String get authProviderLoginComingSoon =>
+      'Provider login is prepared in the product, but not wired into this local screen yet.';
+
+  @override
+  String get authHunterRegistrationSuccess =>
+      'Hunter account created. The verification step was simulated for local development. You can sign in now.';
+
+  @override
+  String get authApprovalRequestSubmitted =>
+      'Account created. Email verification was simulated for local development. Approval is now pending.';
+
+  @override
+  String get authHunterSelfServiceHint =>
+      'Hunters can register directly and start signing in after verification.';
+
+  @override
+  String get authArtistApprovalHint =>
+      'Artists can request an account. An admin must approve the account before login is allowed.';
+
+  @override
+  String get authDropMakerApprovalHint =>
+      'Drop-makers can request an account. An admin must approve the account before login is allowed.';
+
+  @override
+  String get authAdminRegistrationManaged =>
+      'Admin accounts are never self-registered here. They can only be created or assigned in user management.';
+
+  @override
   String get boolYes => 'Yes';
 
   @override
@@ -727,6 +769,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get makeDropAddLocationPhotos => 'Add location photos';
+
+  @override
+  String get makeDropPauseAction => 'Pause';
+
+  @override
+  String get makeDropPaused =>
+      'Wizard paused. Continue it later from My Drops.';
+
+  @override
+  String get makeDropResumeAction => 'Resume wizard';
 
   @override
   String makeDropPhotosSelected(Object count) {

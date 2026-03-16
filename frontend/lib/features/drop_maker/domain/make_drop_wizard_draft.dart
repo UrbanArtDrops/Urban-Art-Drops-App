@@ -49,6 +49,25 @@ class MakeDropWizardDraft {
     );
   }
 
+  factory MakeDropWizardDraft.fromPersistedDrop(DropModel drop) {
+    return MakeDropWizardDraft(
+      dropId: drop.id,
+      artPieceId: drop.artPieceId,
+      dropMakerId: drop.dropMakerId,
+      isStationary: drop.isStationary,
+      portableItemCount: drop.portableItemCount,
+      itemCount: drop.itemCount,
+      downloadConfirmed: true,
+      locationLabel: _buildLocationLabel(drop),
+      latitude: drop.latitude,
+      longitude: drop.longitude,
+      locationPhotoSources: drop.locationPhotoUrls,
+      locationPhotoLabels: _buildLocationPhotoLabels(drop.locationPhotoUrls),
+      items: drop.items,
+      publishAfterFinish: drop.isPublished,
+    );
+  }
+
   final String? dropId;
   final String artPieceId;
   final String dropMakerId;
@@ -65,6 +84,11 @@ class MakeDropWizardDraft {
   final bool publishAfterFinish;
 
   bool get hasPersistedDrop => dropId != null && dropId!.trim().isNotEmpty;
+
+  bool get hasPlacementData =>
+      latitude != null && longitude != null && locationPhotoSources.isNotEmpty;
+
+  int get resumeStepIndex => hasPlacementData ? 5 : 4;
 
   List<String> get qrTokens =>
       items.map((item) => item.qrToken).toList(growable: false);
@@ -157,5 +181,38 @@ class MakeDropWizardDraft {
       locationPhotoUrls: locationPhotoSources,
       itemCount: itemCount,
     );
+  }
+
+  static String _buildLocationLabel(DropModel drop) {
+    if (drop.latitude == null || drop.longitude == null) {
+      return "";
+    }
+
+    return "${drop.latitude!.toStringAsFixed(5)}, ${drop.longitude!.toStringAsFixed(5)}";
+  }
+
+  static List<String> _buildLocationPhotoLabels(List<String> photoUrls) {
+    return photoUrls
+        .asMap()
+        .entries
+        .map((entry) => _labelForPhotoSource(entry.key, entry.value))
+        .toList(growable: false);
+  }
+
+  static String _labelForPhotoSource(int index, String source) {
+    final uri = Uri.tryParse(source);
+    final fileName = uri?.pathSegments.isNotEmpty == true
+        ? uri!.pathSegments.last
+        : "";
+    if (fileName.trim().isNotEmpty) {
+      return fileName;
+    }
+
+    final trimmedSource = source.trim();
+    if (trimmedSource.isNotEmpty) {
+      return trimmedSource;
+    }
+
+    return "#${index + 1}";
   }
 }

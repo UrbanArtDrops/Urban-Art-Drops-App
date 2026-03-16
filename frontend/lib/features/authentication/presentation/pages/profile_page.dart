@@ -25,10 +25,13 @@ class ProfilePage extends StatelessWidget {
             children: [
               Card(
                 child: ListTile(
-                  title: Text(state.displayName ?? "User"),
-                  subtitle: Text(
-                    l10n.profileRoleLabel(_roleLabel(l10n, state.role!)),
+                  title: Text(
+                    state.displayName ?? state.email ?? l10n.menuProfile,
                   ),
+                  subtitle: Text(
+                    "${l10n.profileRoleLabel(_roleLabel(l10n, state.role!))}\n${state.email ?? ""}",
+                  ),
+                  isThreeLine: true,
                 ),
               ),
               const SizedBox(height: 8),

@@ -20,6 +20,44 @@ public sealed class AuthApplicationServiceTests
     }
 
     [Fact]
+    public async Task RegisterLocalAsync_WithHunterRole_AutoApprovesAndReturnsStoredIdentity()
+    {
+        var store = new InMemoryUserAccountStore();
+        var service = CreateService(store, new FakePasswordHasher(), new FixedClock());
+
+        var result = await service.RegisterLocalAsync(
+            new RegisterLocalRequest("hunter@example.com", "hunter", "Aaaaaaaaaaaaaaa!", UserRole.Hunter),
+            CancellationToken.None);
+
+        Assert.True(result.Success);
+        Assert.Equal(UserRole.Hunter, result.Role);
+        Assert.Equal("hunter", result.UserName);
+        Assert.Equal("hunter@example.com", result.Email);
+
+        var createdUser = await store.GetByEmailAsync("hunter@example.com", CancellationToken.None);
+        Assert.NotNull(createdUser);
+        Assert.True(createdUser!.IsApproved);
+    }
+
+    [Fact]
+    public async Task RegisterLocalAsync_WithArtistRole_CreatesPendingApprovalAccount()
+    {
+        var store = new InMemoryUserAccountStore();
+        var service = CreateService(store, new FakePasswordHasher(), new FixedClock());
+
+        var result = await service.RegisterLocalAsync(
+            new RegisterLocalRequest("artist@example.com", "artist", "Aaaaaaaaaaaaaaa!", UserRole.Artist),
+            CancellationToken.None);
+
+        Assert.True(result.Success);
+        Assert.Equal(UserRole.Artist, result.Role);
+
+        var createdUser = await store.GetByEmailAsync("artist@example.com", CancellationToken.None);
+        Assert.NotNull(createdUser);
+        Assert.False(createdUser!.IsApproved);
+    }
+
+    [Fact]
     public async Task LoginLocalAsync_AfterFailedAttempt_SetsRetryAfter()
     {
         var store = new InMemoryUserAccountStore();
@@ -35,6 +73,29 @@ public sealed class AuthApplicationServiceTests
 
         Assert.False(result.Success);
         Assert.NotNull(result.RetryAfterUtc);
+    }
+
+    [Fact]
+    public async Task LoginLocalAsync_WithValidCredentials_ReturnsStoredRoleAndIdentity()
+    {
+        var store = new InMemoryUserAccountStore();
+        var hasher = new FakePasswordHasher();
+        var service = CreateService(store, hasher, new FixedClock());
+
+        var user = UserAccount.CreateLocal("maker@example.com", "maker", UserRole.DropMaker, hasher.Hash("Aaaaaaaaaaaaaaa!"), approved: true);
+        user.MarkEmailVerified();
+        await store.AddAsync(user, null, CancellationToken.None);
+
+        var result = await service.LoginLocalAsync(
+            new LoginLocalRequest("maker@example.com", "Aaaaaaaaaaaaaaa!"),
+            CancellationToken.None);
+
+        Assert.True(result.Success);
+        Assert.Equal(user.Id, result.UserId);
+        Assert.Equal(UserRole.DropMaker, result.Role);
+        Assert.Equal("maker", result.UserName);
+        Assert.Equal("maker@example.com", result.Email);
+        Assert.Null(result.RetryAfterUtc);
     }
 
     private static AuthApplicationService CreateService(IUserAccountStore store, IPasswordHasher hasher, IClock clock)

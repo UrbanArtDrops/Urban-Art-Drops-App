@@ -71,6 +71,7 @@ final GoRouter appRouter = GoRouter(
       path: "/drop-maker/make-drop-wizard",
       builder: (context, state) => MakeDropWizardPage(
         preselectedArtPieceId: state.uri.queryParameters["artPieceId"],
+        resumeDropId: state.uri.queryParameters["dropId"],
       ),
     ),
     GoRoute(

@@ -20,6 +20,7 @@ import "../../domain/make_drop_wizard_draft.dart";
 class MakeDropWizardPage extends StatefulWidget {
   const MakeDropWizardPage({
     this.preselectedArtPieceId,
+    this.resumeDropId,
     AppApiClient? apiClient,
     LocalPhotoPicker? photoPicker,
     LocationLookupService? locationLookupService,
@@ -31,6 +32,7 @@ class MakeDropWizardPage extends StatefulWidget {
        _downloadLauncher = downloadLauncher;
 
   final String? preselectedArtPieceId;
+  final String? resumeDropId;
   final AppApiClient? _apiClient;
   final LocalPhotoPicker? _photoPicker;
   final LocationLookupService? _locationLookupService;
@@ -117,10 +119,16 @@ class _MakeDropWizardPageState extends State<MakeDropWizardPage> {
     }
 
     try {
-      final results = await Future.wait<Object>([
+      final requests = <Future<Object>>[
         _apiClient.getArtPieces(),
         _apiClient.getUsers(),
-      ]);
+      ];
+      final resumeDropId = widget.resumeDropId?.trim();
+      if (resumeDropId != null && resumeDropId.isNotEmpty) {
+        requests.add(_apiClient.getDropById(resumeDropId));
+      }
+
+      final results = await Future.wait<Object>(requests);
       if (!mounted) {
         return;
       }
@@ -140,16 +148,21 @@ class _MakeDropWizardPageState extends State<MakeDropWizardPage> {
         currentUserId: currentUser.id,
         artPieces: (results[0] as List<ArtPieceModel>),
       );
+      final resumedDrop = results.length > 2 ? results[2] as DropModel : null;
       final selectedArtPieceId = _resolveSelectedArtPieceId(
         visibleArtPieces,
-        widget.preselectedArtPieceId,
+        resumedDrop?.artPieceId ?? widget.preselectedArtPieceId,
         _draft.artPieceId,
       );
 
-      final nextDraft = _draft.copyWith(
-        artPieceId: selectedArtPieceId ?? "",
-        dropMakerId: currentUser.id,
-      );
+      final nextDraft =
+          (resumedDrop == null
+                  ? _draft
+                  : MakeDropWizardDraft.fromPersistedDrop(resumedDrop))
+              .copyWith(
+                artPieceId: selectedArtPieceId ?? "",
+                dropMakerId: currentUser.id,
+              );
 
       _itemCountController.text = nextDraft.itemCount.toString();
       _portableItemCountController.text =
@@ -159,6 +172,7 @@ class _MakeDropWizardPageState extends State<MakeDropWizardPage> {
       setState(() {
         _artPieces = visibleArtPieces;
         _draft = nextDraft;
+        _currentStep = resumedDrop == null ? 0 : nextDraft.resumeStepIndex;
         _isLoading = false;
       });
     } catch (_) {
@@ -177,6 +191,15 @@ class _MakeDropWizardPageState extends State<MakeDropWizardPage> {
     AuthSessionState authState,
     List<ManagedUser> users,
   ) {
+    final userId = authState.userId?.trim();
+    if (userId != null && userId.isNotEmpty) {
+      for (final user in users) {
+        if (user.id == userId) {
+          return user;
+        }
+      }
+    }
+
     final displayName = authState.displayName?.trim().toLowerCase();
     if (displayName == null || displayName.isEmpty) {
       return null;
@@ -292,6 +315,18 @@ class _MakeDropWizardPageState extends State<MakeDropWizardPage> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(l10n.makeDropDownloadSet)));
+  }
+
+  void _pauseWizard() {
+    final dropId = _draft.dropId;
+    if (dropId == null || dropId.trim().isEmpty) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context)!.makeDropPaused)),
+    );
+    context.go("/drop-maker/drops");
   }
 
   void _syncCreationInputsIntoDraft() {
@@ -1216,6 +1251,13 @@ class _MakeDropWizardPageState extends State<MakeDropWizardPage> {
                           onPressed: _isSaving ? null : details.onStepCancel,
                           child: Text(l10n.makeDropBackAction),
                         ),
+                      if (_currentStep == 4 && _draft.hasPersistedDrop) ...[
+                        const SizedBox(width: 8),
+                        OutlinedButton(
+                          onPressed: _isSaving ? null : _pauseWizard,
+                          child: Text(l10n.makeDropPauseAction),
+                        ),
+                      ],
                     ],
                   );
                 },

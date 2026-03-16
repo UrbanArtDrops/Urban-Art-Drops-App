@@ -1,7 +1,9 @@
 import "package:flutter/material.dart";
+import "package:flutter_bloc/flutter_bloc.dart";
 import "package:go_router/go_router.dart";
 import "package:urban_art_drops_app/l10n/app_localizations.dart";
 
+import "../../../authentication/presentation/bloc/auth_session_cubit.dart";
 import "../../../../shared/models/app_models.dart";
 import "../../../../shared/services/app_api_client.dart";
 import "../../../../shared/widgets/drop_overview_card.dart";
@@ -50,9 +52,19 @@ class _MyDropsPageState extends State<MyDropsPage> {
           .where((user) => user.role == 1 || user.role == 2)
           .toList(growable: false);
       final allUsers = (results[2] as List<ManagedUser>);
+      final currentUserId = context
+          .read<AuthSessionCubit>()
+          .state
+          .userId
+          ?.trim();
+      final visibleDrops = currentUserId == null || currentUserId.isEmpty
+          ? const <DropModel>[]
+          : (results[0] as List<DropModel>)
+                .where((drop) => drop.dropMakerId == currentUserId)
+                .toList(growable: false);
 
       setState(() {
-        _drops = (results[0] as List<DropModel>);
+        _drops = visibleDrops;
         _artPieces = (results[1] as List<ArtPieceModel>);
         _dropMakers = users;
         _usersById = {for (final user in allUsers) user.id: user};
@@ -304,6 +316,10 @@ class _MyDropsPageState extends State<MyDropsPage> {
     });
   }
 
+  void _resumeDropWizard(DropModel drop) {
+    context.go("/drop-maker/make-drop-wizard?dropId=${drop.id}");
+  }
+
   Future<void> _withSaving(Future<void> Function() action) async {
     setState(() => _isSaving = true);
     try {
@@ -368,6 +384,7 @@ class _MyDropsPageState extends State<MyDropsPage> {
             claimedItemCount: drop.claimedItemCount,
             itemCount: drop.itemCount,
             isPublished: drop.isPublished,
+            canResumeWizard: drop.canResumeWizard,
           );
         })
         .toList(growable: false);
@@ -448,6 +465,9 @@ class _MyDropsPageState extends State<MyDropsPage> {
                                   trailing: PopupMenuButton<String>(
                                     onSelected: (value) {
                                       switch (value) {
+                                        case "resume":
+                                          _resumeDropWizard(viewModel.drop);
+                                          break;
                                         case "edit":
                                           _openDropDialog(viewModel.drop);
                                           break;
@@ -460,6 +480,13 @@ class _MyDropsPageState extends State<MyDropsPage> {
                                       }
                                     },
                                     itemBuilder: (_) => [
+                                      if (viewModel.canResumeWizard)
+                                        PopupMenuItem(
+                                          value: "resume",
+                                          child: Text(
+                                            l10n.makeDropResumeAction,
+                                          ),
+                                        ),
                                       PopupMenuItem(
                                         value: "edit",
                                         child: Text(l10n.editAction),
@@ -504,6 +531,7 @@ class _MyDropViewModel {
     required this.claimedItemCount,
     required this.itemCount,
     required this.isPublished,
+    required this.canResumeWizard,
   });
 
   final DropModel drop;
@@ -518,4 +546,5 @@ class _MyDropViewModel {
   final int claimedItemCount;
   final int itemCount;
   final bool isPublished;
+  final bool canResumeWizard;
 }

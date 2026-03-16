@@ -19,6 +19,12 @@
 - Clients receive media URLs from API responses and load image content through `/api/media/*` endpoints
 - Artwork detail screens and the drop-maker wizard use the asset media URL to trigger real client-side downloads for 3D production files
 
+## Authentication
+- Local registration persists the selected account type directly on the user account record
+- Hunters are approved immediately after registration, while Artist and Drop-Maker accounts remain pending until admin approval
+- Local login consumes the stored backend role and identity payload instead of accepting a client-side role selection
+- Admin accounts are only created or assigned through the user-management flow
+
 ## Backup
 - Daily backup job
 - 14-day retention
@@ -39,5 +45,6 @@
 ## Drop-Maker Wizard
 - Drop creation in the web client is a multi-step process: artwork review, artwork selection, production confirmation, quantity capture, QR review, placement and optional publish
 - The wizard persists a draft drop through `POST /api/drops` before the QR step so the backend becomes the source of truth for item and token generation
+- After the QR step, the wizard can be paused and later resumed from My Drops by reopening the stored draft drop
 - Returning to the quantity step updates the draft by preserving claimed items and keeping existing reusable QR tokens whenever possible
 - Final placement writes coordinates and location photos through `PUT /api/drops/{id}` and can publish the drop immediately afterwards

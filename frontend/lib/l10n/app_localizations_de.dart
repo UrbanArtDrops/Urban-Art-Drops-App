@@ -89,6 +89,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get createAction => 'Erstellen';
 
   @override
+  String get detailsAction => 'Details';
+
+  @override
   String get editAction => 'Bearbeiten';
 
   @override
@@ -547,6 +550,45 @@ class AppLocalizationsDe extends AppLocalizations {
   String get passwordLabel => 'Passwort';
 
   @override
+  String get authFillCredentialsHint => 'Bitte E-Mail und Passwort eingeben.';
+
+  @override
+  String get authFillRegistrationHint =>
+      'Bitte Benutzername, E-Mail und Passwort ausfuellen.';
+
+  @override
+  String get authRoleManagedAtRegistration =>
+      'Der Account-Typ wird bei der Registrierung gespeichert und beim Login nicht erneut ausgewaehlt.';
+
+  @override
+  String get authProviderLoginComingSoon =>
+      'Provider-Anmeldung ist fachlich vorgesehen, aber in diesem lokalen Screen noch nicht verdrahtet.';
+
+  @override
+  String get authHunterRegistrationSuccess =>
+      'Hunter-Konto erstellt. Die Verifikation wurde fuer die lokale Entwicklung simuliert. Du kannst dich jetzt anmelden.';
+
+  @override
+  String get authApprovalRequestSubmitted =>
+      'Konto erstellt. Die Verifikation wurde fuer die lokale Entwicklung simuliert. Die Freigabe ist jetzt ausstehend.';
+
+  @override
+  String get authHunterSelfServiceHint =>
+      'Hunter koennen sich selbst registrieren und sich nach der Verifikation direkt anmelden.';
+
+  @override
+  String get authArtistApprovalHint =>
+      'Artists koennen eine Freigabe anfordern. Ein Admin muss das Konto vor dem Login freigeben.';
+
+  @override
+  String get authDropMakerApprovalHint =>
+      'Drop-Maker koennen eine Freigabe anfordern. Ein Admin muss das Konto vor dem Login freigeben.';
+
+  @override
+  String get authAdminRegistrationManaged =>
+      'Admin-Konten werden hier nie selbst registriert. Sie duerfen nur in der Benutzerverwaltung erstellt oder zugewiesen werden.';
+
+  @override
   String get boolYes => 'Ja';
 
   @override
@@ -735,6 +777,16 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get makeDropAddLocationPhotos => 'Standortfotos hinzufügen';
+
+  @override
+  String get makeDropPauseAction => 'Pausieren';
+
+  @override
+  String get makeDropPaused =>
+      'Wizard pausiert. Du kannst ihn spaeter in Meine Drops fortsetzen.';
+
+  @override
+  String get makeDropResumeAction => 'Wizard fortsetzen';
 
   @override
   String makeDropPhotosSelected(Object count) {

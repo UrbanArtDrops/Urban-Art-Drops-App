@@ -254,6 +254,12 @@ abstract class AppLocalizations {
   /// **'Create'**
   String get createAction;
 
+  /// No description provided for @detailsAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get detailsAction;
+
   /// No description provided for @editAction.
   ///
   /// In en, this message translates to:
@@ -1064,6 +1070,66 @@ abstract class AppLocalizations {
   /// **'Password'**
   String get passwordLabel;
 
+  /// No description provided for @authFillCredentialsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter email and password.'**
+  String get authFillCredentialsHint;
+
+  /// No description provided for @authFillRegistrationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill in username, email, and password.'**
+  String get authFillRegistrationHint;
+
+  /// No description provided for @authRoleManagedAtRegistration.
+  ///
+  /// In en, this message translates to:
+  /// **'The account type is stored when the account is created. You do not select it again during login.'**
+  String get authRoleManagedAtRegistration;
+
+  /// No description provided for @authProviderLoginComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider login is prepared in the product, but not wired into this local screen yet.'**
+  String get authProviderLoginComingSoon;
+
+  /// No description provided for @authHunterRegistrationSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Hunter account created. The verification step was simulated for local development. You can sign in now.'**
+  String get authHunterRegistrationSuccess;
+
+  /// No description provided for @authApprovalRequestSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Account created. Email verification was simulated for local development. Approval is now pending.'**
+  String get authApprovalRequestSubmitted;
+
+  /// No description provided for @authHunterSelfServiceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Hunters can register directly and start signing in after verification.'**
+  String get authHunterSelfServiceHint;
+
+  /// No description provided for @authArtistApprovalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Artists can request an account. An admin must approve the account before login is allowed.'**
+  String get authArtistApprovalHint;
+
+  /// No description provided for @authDropMakerApprovalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop-makers can request an account. An admin must approve the account before login is allowed.'**
+  String get authDropMakerApprovalHint;
+
+  /// No description provided for @authAdminRegistrationManaged.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin accounts are never self-registered here. They can only be created or assigned in user management.'**
+  String get authAdminRegistrationManaged;
+
   /// No description provided for @boolYes.
   ///
   /// In en, this message translates to:
@@ -1393,6 +1459,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add location photos'**
   String get makeDropAddLocationPhotos;
+
+  /// No description provided for @makeDropPauseAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get makeDropPauseAction;
+
+  /// No description provided for @makeDropPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Wizard paused. Continue it later from My Drops.'**
+  String get makeDropPaused;
+
+  /// No description provided for @makeDropResumeAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume wizard'**
+  String get makeDropResumeAction;
 
   /// No description provided for @makeDropPhotosSelected.
   ///

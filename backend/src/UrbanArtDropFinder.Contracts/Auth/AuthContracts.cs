@@ -10,4 +10,11 @@ public sealed record LoginLocalRequest(string Email, string Password);
 
 public sealed record LoginProviderRequest(string Provider, string ProviderSubject, string Email);
 
-public sealed record AuthResult(bool Success, string Message, Guid? UserId = null, DateTimeOffset? RetryAfterUtc = null);
+public sealed record AuthResult(
+    bool Success,
+    string Message,
+    Guid? UserId = null,
+    UserRole? Role = null,
+    string? UserName = null,
+    string? Email = null,
+    DateTimeOffset? RetryAfterUtc = null);

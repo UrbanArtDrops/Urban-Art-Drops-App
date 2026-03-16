@@ -5,40 +5,88 @@ enum AppUserRole { hunter, artist, dropMaker, moderator, admin }
 class AuthSessionState {
   const AuthSessionState({
     required this.isAuthenticated,
+    this.userId,
+    this.email,
+    this.userName,
     this.role,
-    this.displayName,
   });
 
   const AuthSessionState.anonymous()
     : isAuthenticated = false,
-      role = null,
-      displayName = null;
+      userId = null,
+      email = null,
+      userName = null,
+      role = null;
 
   final bool isAuthenticated;
+  final String? userId;
+  final String? email;
+  final String? userName;
   final AppUserRole? role;
-  final String? displayName;
+
+  String? get displayName {
+    final trimmedUserName = userName?.trim();
+    if (trimmedUserName != null && trimmedUserName.isNotEmpty) {
+      return trimmedUserName;
+    }
+
+    final trimmedEmail = email?.trim();
+    if (trimmedEmail != null && trimmedEmail.isNotEmpty) {
+      return trimmedEmail;
+    }
+
+    return null;
+  }
 
   AuthSessionState authenticated({
+    required String userId,
+    required String email,
+    required String userName,
     required AppUserRole role,
-    required String displayName,
   }) => AuthSessionState(
     isAuthenticated: true,
+    userId: userId.trim(),
+    email: email.trim(),
+    userName: userName.trim(),
     role: role,
-    displayName: displayName,
   );
 }
 
 class AuthSessionCubit extends Cubit<AuthSessionState> {
   AuthSessionCubit() : super(const AuthSessionState.anonymous());
 
-  void signIn({required AppUserRole role, required String displayName}) {
+  void signIn({
+    required String userId,
+    required String email,
+    required String userName,
+    required AppUserRole role,
+  }) {
     emit(
       state.authenticated(
+        userId: userId,
+        email: email,
+        userName: userName.trim().isEmpty ? email : userName,
         role: role,
-        displayName: displayName.trim().isEmpty ? "User" : displayName.trim(),
       ),
     );
   }
 
   void signOut() => emit(const AuthSessionState.anonymous());
+}
+
+AppUserRole? appUserRoleFromApiValue(int? value) {
+  switch (value) {
+    case 0:
+      return AppUserRole.hunter;
+    case 1:
+      return AppUserRole.artist;
+    case 2:
+      return AppUserRole.dropMaker;
+    case 3:
+      return AppUserRole.moderator;
+    case 4:
+      return AppUserRole.admin;
+    default:
+      return null;
+  }
 }

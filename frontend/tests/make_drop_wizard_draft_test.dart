@@ -104,4 +104,69 @@ void main() {
     expect(draft.hasPersistedDrop, isTrue);
     expect(draft.qrTokens, ["token-1", "token-2"]);
   });
+
+  test("fromPersistedDrop restores paused qr stage drafts", () {
+    const drop = DropModel(
+      id: "drop-2",
+      artPieceId: "art-9",
+      dropMakerId: "maker-9",
+      isStationary: false,
+      portableItemCount: 2,
+      latitude: null,
+      longitude: null,
+      isPublished: false,
+      locationPhotoUrls: [],
+      itemCount: 3,
+      claimedItemCount: 0,
+      items: [
+        DropItemModel(
+          id: "item-1",
+          qrToken: "token-1",
+          isClaimed: false,
+          claimedByUserId: null,
+          claimedByAnonymousNickname: null,
+          claimedAtUtc: null,
+        ),
+      ],
+    );
+
+    final draft = MakeDropWizardDraft.fromPersistedDrop(drop);
+
+    expect(draft.dropId, "drop-2");
+    expect(draft.artPieceId, "art-9");
+    expect(draft.dropMakerId, "maker-9");
+    expect(draft.isStationary, isFalse);
+    expect(draft.portableItemCount, 2);
+    expect(draft.itemCount, 3);
+    expect(draft.qrTokens, ["token-1"]);
+    expect(draft.resumeStepIndex, 4);
+  });
+
+  test("resumeStepIndex advances to placement for partially placed drops", () {
+    const drop = DropModel(
+      id: "drop-3",
+      artPieceId: "art-9",
+      dropMakerId: "maker-9",
+      isStationary: true,
+      portableItemCount: null,
+      latitude: 50.1,
+      longitude: 8.6,
+      isPublished: false,
+      locationPhotoUrls: ["https://example.com/location.png"],
+      itemCount: 1,
+      claimedItemCount: 0,
+      items: [
+        DropItemModel(
+          id: "item-1",
+          qrToken: "token-1",
+          isClaimed: false,
+          claimedByUserId: null,
+          claimedByAnonymousNickname: null,
+          claimedAtUtc: null,
+        ),
+      ],
+    );
+
+    expect(MakeDropWizardDraft.fromPersistedDrop(drop).resumeStepIndex, 5);
+  });
 }

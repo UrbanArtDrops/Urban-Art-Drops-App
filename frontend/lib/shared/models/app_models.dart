@@ -37,6 +37,46 @@ class ManagedUser {
   final bool isProviderAccount;
 }
 
+class AuthResultModel {
+  const AuthResultModel({
+    required this.success,
+    required this.message,
+    required this.userId,
+    required this.role,
+    required this.userName,
+    required this.email,
+    required this.retryAfterUtc,
+  });
+
+  factory AuthResultModel.fromJson(Map<String, dynamic> json) {
+    final retryAfterRaw = _readNullableString(
+      json,
+      "retryAfterUtc",
+      "RetryAfterUtc",
+    );
+
+    return AuthResultModel(
+      success: _readBool(json, "success", "Success"),
+      message: _readString(json, "message", "Message"),
+      userId: _readNullableString(json, "userId", "UserId"),
+      role: _readNullableInt(json, "role", "Role"),
+      userName: _readNullableString(json, "userName", "UserName"),
+      email: _readNullableString(json, "email", "Email"),
+      retryAfterUtc: retryAfterRaw == null
+          ? null
+          : DateTime.tryParse(retryAfterRaw),
+    );
+  }
+
+  final bool success;
+  final String message;
+  final String? userId;
+  final int? role;
+  final String? userName;
+  final String? email;
+  final DateTime? retryAfterUtc;
+}
+
 class ArtPieceModel {
   const ArtPieceModel({
     required this.id,
@@ -222,6 +262,13 @@ class DropModel {
 
   List<DropItemModel> get claimedItems =>
       items.where((item) => item.isClaimed).toList(growable: false);
+
+  bool get hasLocation => latitude != null && longitude != null;
+
+  bool get hasLocationPhotos => locationPhotoUrls.isNotEmpty;
+
+  bool get canResumeWizard =>
+      itemCount > 0 && !isPublished && (!hasLocation || !hasLocationPhotos);
 }
 
 class LeaderboardEntry {

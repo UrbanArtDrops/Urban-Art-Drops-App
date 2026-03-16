@@ -54,7 +54,7 @@ public sealed class AuthApplicationService
             ? "Registration successful. Verify your email to continue."
             : "Registration successful. Account requires approval and email verification.";
 
-        return new AuthResult(true, message, user.Id);
+        return CreateSuccessResult(message, user);
     }
 
     public async Task<AuthResult> RegisterProviderAsync(RegisterProviderRequest request, CancellationToken cancellationToken)
@@ -67,7 +67,7 @@ public sealed class AuthApplicationService
         var existing = await _userAccountStore.GetByProviderSubjectAsync(request.Provider, request.ProviderSubject, cancellationToken);
         if (existing is not null)
         {
-            return new AuthResult(true, "Already registered.", existing.Id);
+            return CreateSuccessResult("Already registered.", existing);
         }
 
         if (await _userAccountStore.UserNameExistsAsync(request.UserName, cancellationToken))
@@ -81,7 +81,7 @@ public sealed class AuthApplicationService
         await _userAccountStore.AddAsync(user, request.ProviderSubject, cancellationToken);
         await _userAccountStore.SaveChangesAsync(cancellationToken);
 
-        return new AuthResult(true, "Provider registration successful.", user.Id);
+        return CreateSuccessResult("Provider registration successful.", user);
     }
 
     public async Task<AuthResult> LoginLocalAsync(LoginLocalRequest request, CancellationToken cancellationToken)
@@ -94,14 +94,20 @@ public sealed class AuthApplicationService
 
         if (!user.CanAttemptLogin(_clock.UtcNow))
         {
-            return new AuthResult(false, "Login is temporarily delayed due to failed attempts.", null, user.NextLoginAllowedAtUtc);
+            return new AuthResult(
+                false,
+                "Login is temporarily delayed due to failed attempts.",
+                RetryAfterUtc: user.NextLoginAllowedAtUtc);
         }
 
         if (!_passwordHasher.Verify(user.PasswordHash, request.Password))
         {
             user.RegisterFailedLogin(_clock.UtcNow);
             await _userAccountStore.SaveChangesAsync(cancellationToken);
-            return new AuthResult(false, "Invalid credentials.", null, user.NextLoginAllowedAtUtc);
+            return new AuthResult(
+                false,
+                "Invalid credentials.",
+                RetryAfterUtc: user.NextLoginAllowedAtUtc);
         }
 
         if (!user.IsApproved)
@@ -122,6 +128,17 @@ public sealed class AuthApplicationService
         user.RegisterSuccessfulLogin();
         await _userAccountStore.SaveChangesAsync(cancellationToken);
 
-        return new AuthResult(true, "Login successful.", user.Id);
+        return CreateSuccessResult("Login successful.", user);
+    }
+
+    private static AuthResult CreateSuccessResult(string message, UserAccount user)
+    {
+        return new AuthResult(
+            true,
+            message,
+            user.Id,
+            user.Role,
+            user.UserName,
+            user.Email);
     }
 }
