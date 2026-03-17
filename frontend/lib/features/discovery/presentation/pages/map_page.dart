@@ -395,12 +395,6 @@ class _MapPageState extends State<MapPage> {
         _locationSearchController.text.trim().length >= 2 &&
         _locationSuggestions.isEmpty &&
         _lastSearchQuery == _locationSearchController.text.trim();
-
-    final locationButtonBottom = isDesktop
-        ? 16.0
-        : _selectedDrop != null
-        ? 322.0
-        : 16.0;
     final unclaimedFillColor = Theme.of(
       context,
     ).colorScheme.primary.withValues(alpha: 0.14);
@@ -466,7 +460,7 @@ class _MapPageState extends State<MapPage> {
           right: 12,
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 560),
+              constraints: const BoxConstraints(maxWidth: 720),
               child: Material(
                 elevation: 5,
                 borderRadius: BorderRadius.circular(14),
@@ -478,34 +472,61 @@ class _MapPageState extends State<MapPage> {
                   children: [
                     Padding(
                       padding: const EdgeInsets.all(8),
-                      child: TextField(
-                        controller: _locationSearchController,
-                        focusNode: _locationSearchFocusNode,
-                        onChanged: _onLocationSearchChanged,
-                        decoration: InputDecoration(
-                          hintText: l10n.mapSearchLocationHint,
-                          prefixIcon: const Icon(Icons.search),
-                          suffixIcon: _isSearchingLocations
-                              ? const Padding(
-                                  padding: EdgeInsets.all(12),
-                                  child: SizedBox(
-                                    height: 16,
-                                    width: 16,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _locationSearchController,
+                              focusNode: _locationSearchFocusNode,
+                              onChanged: _onLocationSearchChanged,
+                              decoration: InputDecoration(
+                                hintText: l10n.mapSearchLocationHint,
+                                prefixIcon: const Icon(Icons.search),
+                                suffixIcon: _isSearchingLocations
+                                    ? const Padding(
+                                        padding: EdgeInsets.all(12),
+                                        child: SizedBox(
+                                          height: 16,
+                                          width: 16,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        ),
+                                      )
+                                    : _locationSearchController.text.isNotEmpty
+                                    ? IconButton(
+                                        icon: const Icon(Icons.close),
+                                        onPressed: () {
+                                          _locationSearchController.clear();
+                                          _onLocationSearchChanged("");
+                                        },
+                                      )
+                                    : null,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton.filledTonal(
+                            tooltip: l10n.centerOnMyLocation,
+                            onPressed: _isCenteringOnUser
+                                ? null
+                                : () => _centerOnUserLocation(l10n),
+                            icon: _isCenteringOnUser
+                                ? const SizedBox(
+                                    height: 18,
+                                    width: 18,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
                                     ),
-                                  ),
-                                )
-                              : _locationSearchController.text.isNotEmpty
-                              ? IconButton(
-                                  icon: const Icon(Icons.close),
-                                  onPressed: () {
-                                    _locationSearchController.clear();
-                                    _onLocationSearchChanged("");
-                                  },
-                                )
-                              : null,
-                        ),
+                                  )
+                                : const Icon(Icons.my_location_outlined),
+                          ),
+                          IconButton.filledTonal(
+                            tooltip: l10n.refreshAction,
+                            onPressed: _isLoadingDrops ? null : _loadMapData,
+                            icon: const Icon(Icons.refresh),
+                          ),
+                        ],
                       ),
                     ),
                     if (_locationSuggestions.isNotEmpty)
@@ -547,23 +568,6 @@ class _MapPageState extends State<MapPage> {
                 ),
               ),
             ),
-          ),
-        ),
-        Positioned(
-          right: 12,
-          bottom: locationButtonBottom,
-          child: FloatingActionButton.small(
-            heroTag: "map-location-fab",
-            onPressed: _isCenteringOnUser
-                ? null
-                : () => _centerOnUserLocation(l10n),
-            child: _isCenteringOnUser
-                ? const SizedBox(
-                    height: 18,
-                    width: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.my_location_outlined),
           ),
         ),
         if (!isDesktop && _selectedDrop == null)
@@ -623,11 +627,6 @@ class _MapPageState extends State<MapPage> {
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ),
-                    IconButton(
-                      tooltip: l10n.refreshAction,
-                      onPressed: _loadMapData,
-                      icon: const Icon(Icons.refresh),
-                    ),
                   ],
                 ),
               ),
