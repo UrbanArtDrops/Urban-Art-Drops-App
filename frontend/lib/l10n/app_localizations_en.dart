@@ -812,6 +812,61 @@ class AppLocalizationsEn extends AppLocalizations {
   String get moderationTitle => 'Moderation queue';
 
   @override
+  String get moderationLoadFailed => 'Moderation reports could not be loaded.';
+
+  @override
+  String get moderationActionFailed =>
+      'The moderation action could not be completed.';
+
+  @override
+  String get moderationRestricted =>
+      'This view is only available to moderators and admins.';
+
+  @override
+  String get moderationEmpty => 'There are no reported items right now.';
+
+  @override
+  String get moderationCommentSectionTitle => 'Reported comments';
+
+  @override
+  String get moderationArtPieceSectionTitle => 'Reported art pieces';
+
+  @override
+  String get moderationOpenDropAction => 'Open drop';
+
+  @override
+  String get moderationHideCommentAction => 'Hide comment';
+
+  @override
+  String get moderationDismissReportAction => 'Dismiss report';
+
+  @override
+  String get moderationDepublishArtPieceAction => 'Depublish art piece';
+
+  @override
+  String get moderationNoReasonProvided => 'No report reason provided.';
+
+  @override
+  String moderationReportedBy(Object value) {
+    return 'Reported for: $value';
+  }
+
+  @override
+  String moderationArtistLabel(Object value) {
+    return 'Artist: $value';
+  }
+
+  @override
+  String moderationReportReason(Object value) {
+    return 'Report reason: $value';
+  }
+
+  @override
+  String moderationReportedAt(Object value) {
+    return 'Reported at: $value';
+  }
+
+  @override
   String get reportedCommentTitle => 'Reported comment';
 
   @override
@@ -822,6 +877,72 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reportedArtPieceSubtitle => 'Mail alert is generated';
+
+  @override
+  String get dropDetailCommentsSection => 'Comments';
+
+  @override
+  String get dropDetailCommentsEmpty =>
+      'There are no comments for this drop yet.';
+
+  @override
+  String get dropDetailCommentComposerTitle => 'Write a comment';
+
+  @override
+  String get dropDetailCommentPlaceholder =>
+      'Write your comment about this drop.';
+
+  @override
+  String get dropDetailCommentSubmit => 'Send comment';
+
+  @override
+  String get dropDetailCommentCreated => 'Comment saved.';
+
+  @override
+  String get dropDetailCommentCreateFailed => 'Comment could not be saved.';
+
+  @override
+  String get dropDetailCommentLoginHint =>
+      'Only signed-in hunters, artists, drop-makers, and moderators can post comments.';
+
+  @override
+  String get dropDetailReportCommentAction => 'Report comment';
+
+  @override
+  String get dropDetailReportArtPieceAction => 'Report art piece';
+
+  @override
+  String get dropDetailAlreadyReported => 'Already reported';
+
+  @override
+  String get dropDetailReportDialogDescription =>
+      'Enter an optional reason for the moderation report.';
+
+  @override
+  String get dropDetailReportReasonLabel => 'Report reason';
+
+  @override
+  String get dropDetailReportReasonHint =>
+      'Why should this content be reviewed?';
+
+  @override
+  String get dropDetailSubmitReportAction => 'Report';
+
+  @override
+  String get dropDetailReportSubmitted => 'Report saved.';
+
+  @override
+  String get dropDetailReportFailed => 'Report could not be saved.';
+
+  @override
+  String dropDetailReportReason(Object value) {
+    return 'Report reason: $value';
+  }
+
+  @override
+  String dropDetailReportedAt(Object value) {
+    return 'Reported at: $value';
+  }
 
   @override
   String get smtpLabel => 'SMTP host';

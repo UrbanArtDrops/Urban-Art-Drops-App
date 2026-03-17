@@ -1532,6 +1532,96 @@ abstract class AppLocalizations {
   /// **'Moderation queue'**
   String get moderationTitle;
 
+  /// No description provided for @moderationLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Moderation reports could not be loaded.'**
+  String get moderationLoadFailed;
+
+  /// No description provided for @moderationActionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The moderation action could not be completed.'**
+  String get moderationActionFailed;
+
+  /// No description provided for @moderationRestricted.
+  ///
+  /// In en, this message translates to:
+  /// **'This view is only available to moderators and admins.'**
+  String get moderationRestricted;
+
+  /// No description provided for @moderationEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'There are no reported items right now.'**
+  String get moderationEmpty;
+
+  /// No description provided for @moderationCommentSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reported comments'**
+  String get moderationCommentSectionTitle;
+
+  /// No description provided for @moderationArtPieceSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reported art pieces'**
+  String get moderationArtPieceSectionTitle;
+
+  /// No description provided for @moderationOpenDropAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Open drop'**
+  String get moderationOpenDropAction;
+
+  /// No description provided for @moderationHideCommentAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide comment'**
+  String get moderationHideCommentAction;
+
+  /// No description provided for @moderationDismissReportAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss report'**
+  String get moderationDismissReportAction;
+
+  /// No description provided for @moderationDepublishArtPieceAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Depublish art piece'**
+  String get moderationDepublishArtPieceAction;
+
+  /// No description provided for @moderationNoReasonProvided.
+  ///
+  /// In en, this message translates to:
+  /// **'No report reason provided.'**
+  String get moderationNoReasonProvided;
+
+  /// No description provided for @moderationReportedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Reported for: {value}'**
+  String moderationReportedBy(Object value);
+
+  /// No description provided for @moderationArtistLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Artist: {value}'**
+  String moderationArtistLabel(Object value);
+
+  /// No description provided for @moderationReportReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Report reason: {value}'**
+  String moderationReportReason(Object value);
+
+  /// No description provided for @moderationReportedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Reported at: {value}'**
+  String moderationReportedAt(Object value);
+
   /// No description provided for @reportedCommentTitle.
   ///
   /// In en, this message translates to:
@@ -1555,6 +1645,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Mail alert is generated'**
   String get reportedArtPieceSubtitle;
+
+  /// No description provided for @dropDetailCommentsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Comments'**
+  String get dropDetailCommentsSection;
+
+  /// No description provided for @dropDetailCommentsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'There are no comments for this drop yet.'**
+  String get dropDetailCommentsEmpty;
+
+  /// No description provided for @dropDetailCommentComposerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Write a comment'**
+  String get dropDetailCommentComposerTitle;
+
+  /// No description provided for @dropDetailCommentPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Write your comment about this drop.'**
+  String get dropDetailCommentPlaceholder;
+
+  /// No description provided for @dropDetailCommentSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Send comment'**
+  String get dropDetailCommentSubmit;
+
+  /// No description provided for @dropDetailCommentCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Comment saved.'**
+  String get dropDetailCommentCreated;
+
+  /// No description provided for @dropDetailCommentCreateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Comment could not be saved.'**
+  String get dropDetailCommentCreateFailed;
+
+  /// No description provided for @dropDetailCommentLoginHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only signed-in hunters, artists, drop-makers, and moderators can post comments.'**
+  String get dropDetailCommentLoginHint;
+
+  /// No description provided for @dropDetailReportCommentAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Report comment'**
+  String get dropDetailReportCommentAction;
+
+  /// No description provided for @dropDetailReportArtPieceAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Report art piece'**
+  String get dropDetailReportArtPieceAction;
+
+  /// No description provided for @dropDetailAlreadyReported.
+  ///
+  /// In en, this message translates to:
+  /// **'Already reported'**
+  String get dropDetailAlreadyReported;
+
+  /// No description provided for @dropDetailReportDialogDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an optional reason for the moderation report.'**
+  String get dropDetailReportDialogDescription;
+
+  /// No description provided for @dropDetailReportReasonLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Report reason'**
+  String get dropDetailReportReasonLabel;
+
+  /// No description provided for @dropDetailReportReasonHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Why should this content be reviewed?'**
+  String get dropDetailReportReasonHint;
+
+  /// No description provided for @dropDetailSubmitReportAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Report'**
+  String get dropDetailSubmitReportAction;
+
+  /// No description provided for @dropDetailReportSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Report saved.'**
+  String get dropDetailReportSubmitted;
+
+  /// No description provided for @dropDetailReportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Report could not be saved.'**
+  String get dropDetailReportFailed;
+
+  /// No description provided for @dropDetailReportReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Report reason: {value}'**
+  String dropDetailReportReason(Object value);
+
+  /// No description provided for @dropDetailReportedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Reported at: {value}'**
+  String dropDetailReportedAt(Object value);
 
   /// No description provided for @smtpLabel.
   ///

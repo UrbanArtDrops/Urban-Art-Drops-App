@@ -10,6 +10,9 @@ public sealed class ArtPiece
     public string Description { get; private set; }
     public ArtPieceAssetKind AssetKind { get; private set; }
     public bool IsPublished { get; private set; }
+    public bool IsReported { get; private set; }
+    public string? ReportReason { get; private set; }
+    public DateTimeOffset? ReportedAtUtc { get; private set; }
     public ICollection<ArtPiecePhoto> Photos { get; set; } = new List<ArtPiecePhoto>();
     public ArtPieceAssetFile? AssetFile { get; private set; }
 
@@ -174,4 +177,18 @@ public sealed class ArtPiece
     }
 
     public void Depublish() => IsPublished = false;
+
+    public void Report(string? reason, DateTimeOffset utcNow)
+    {
+        IsReported = true;
+        ReportReason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim();
+        ReportedAtUtc = utcNow;
+    }
+
+    public void DismissReport()
+    {
+        IsReported = false;
+        ReportReason = null;
+        ReportedAtUtc = null;
+    }
 }

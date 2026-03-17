@@ -75,4 +75,24 @@ public sealed class ArtPieceDomainRulesTests
         Assert.NotNull(artPiece.AssetFile);
         Assert.Equal("crystal-owl.glb", artPiece.AssetFile!.FileName);
     }
+
+    [Fact]
+    public void ReportAndDismissReport_UpdateModerationFlags()
+    {
+        var artPiece = ArtPiece.Create(
+            Guid.NewGuid(),
+            "Crystal Owl",
+            "This description is definitely long enough.",
+            ArtPieceAssetKind.Image);
+
+        artPiece.Report("Needs review", DateTimeOffset.UtcNow);
+        Assert.True(artPiece.IsReported);
+        Assert.Equal("Needs review", artPiece.ReportReason);
+        Assert.NotNull(artPiece.ReportedAtUtc);
+
+        artPiece.DismissReport();
+        Assert.False(artPiece.IsReported);
+        Assert.Null(artPiece.ReportReason);
+        Assert.Null(artPiece.ReportedAtUtc);
+    }
 }

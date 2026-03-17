@@ -85,6 +85,9 @@ class ArtPieceModel {
     required this.description,
     required this.assetKind,
     required this.isPublished,
+    required this.isReported,
+    required this.reportReason,
+    required this.reportedAtUtc,
     required this.photoUrls,
     required this.assetFile,
   });
@@ -97,6 +100,11 @@ class ArtPieceModel {
         .where((url) => url.isNotEmpty)
         .toList(growable: false);
     final assetEntry = _readNullableMap(json, "assetFile", "AssetFile");
+    final reportedAtRaw = _readNullableString(
+      json,
+      "reportedAtUtc",
+      "ReportedAtUtc",
+    );
 
     return ArtPieceModel(
       id: _readString(json, "id", "Id"),
@@ -105,6 +113,11 @@ class ArtPieceModel {
       description: _readString(json, "description", "Description"),
       assetKind: _readInt(json, "assetKind", "AssetKind"),
       isPublished: _readBool(json, "isPublished", "IsPublished"),
+      isReported: _readBool(json, "isReported", "IsReported"),
+      reportReason: _readNullableString(json, "reportReason", "ReportReason"),
+      reportedAtUtc: reportedAtRaw == null
+          ? null
+          : DateTime.tryParse(reportedAtRaw),
       photoUrls: urls,
       assetFile: assetEntry == null
           ? null
@@ -118,6 +131,9 @@ class ArtPieceModel {
   final String description;
   final int assetKind;
   final bool isPublished;
+  final bool isReported;
+  final String? reportReason;
+  final DateTime? reportedAtUtc;
   final List<String> photoUrls;
   final BinaryAssetModel? assetFile;
 }
@@ -283,6 +299,218 @@ class LeaderboardEntry {
 
   final String hunter;
   final int claims;
+}
+
+class DropCommentModel {
+  const DropCommentModel({
+    required this.id,
+    required this.dropId,
+    required this.authorUserId,
+    required this.authorDisplayName,
+    required this.anonymousNickname,
+    required this.content,
+    required this.isReported,
+    required this.isHidden,
+    required this.reportReason,
+    required this.createdAtUtc,
+    required this.reportedAtUtc,
+  });
+
+  factory DropCommentModel.fromJson(Map<String, dynamic> json) {
+    final createdAtRaw = _readNullableString(
+      json,
+      "createdAtUtc",
+      "CreatedAtUtc",
+    );
+    final reportedAtRaw = _readNullableString(
+      json,
+      "reportedAtUtc",
+      "ReportedAtUtc",
+    );
+
+    return DropCommentModel(
+      id: _readString(json, "id", "Id"),
+      dropId: _readString(json, "dropId", "DropId"),
+      authorUserId: _readNullableString(json, "authorUserId", "AuthorUserId"),
+      authorDisplayName: _readNullableString(
+        json,
+        "authorDisplayName",
+        "AuthorDisplayName",
+      ),
+      anonymousNickname: _readNullableString(
+        json,
+        "anonymousNickname",
+        "AnonymousNickname",
+      ),
+      content: _readString(json, "content", "Content"),
+      isReported: _readBool(json, "isReported", "IsReported"),
+      isHidden: _readBool(json, "isHidden", "IsHidden"),
+      reportReason: _readNullableString(json, "reportReason", "ReportReason"),
+      createdAtUtc: createdAtRaw == null
+          ? null
+          : DateTime.tryParse(createdAtRaw),
+      reportedAtUtc: reportedAtRaw == null
+          ? null
+          : DateTime.tryParse(reportedAtRaw),
+    );
+  }
+
+  final String id;
+  final String dropId;
+  final String? authorUserId;
+  final String? authorDisplayName;
+  final String? anonymousNickname;
+  final String content;
+  final bool isReported;
+  final bool isHidden;
+  final String? reportReason;
+  final DateTime? createdAtUtc;
+  final DateTime? reportedAtUtc;
+
+  String get displayName {
+    final preferred = authorDisplayName?.trim();
+    if (preferred != null && preferred.isNotEmpty) {
+      return preferred;
+    }
+
+    final nickname = anonymousNickname?.trim();
+    if (nickname != null && nickname.isNotEmpty) {
+      return nickname;
+    }
+
+    return "Anonym";
+  }
+}
+
+class ModerationQueueModel {
+  const ModerationQueueModel({required this.comments, required this.artPieces});
+
+  factory ModerationQueueModel.fromJson(Map<String, dynamic> json) {
+    final commentEntries = _readList(json, "comments", "Comments");
+    final artPieceEntries = _readList(json, "artPieces", "ArtPieces");
+
+    return ModerationQueueModel(
+      comments: commentEntries
+          .whereType<Map<String, dynamic>>()
+          .map(ReportedCommentModel.fromJson)
+          .toList(growable: false),
+      artPieces: artPieceEntries
+          .whereType<Map<String, dynamic>>()
+          .map(ReportedArtPieceModel.fromJson)
+          .toList(growable: false),
+    );
+  }
+
+  final List<ReportedCommentModel> comments;
+  final List<ReportedArtPieceModel> artPieces;
+}
+
+class ReportedCommentModel {
+  const ReportedCommentModel({
+    required this.id,
+    required this.dropId,
+    required this.dropTitle,
+    required this.authorUserId,
+    required this.authorDisplayName,
+    required this.content,
+    required this.reportReason,
+    required this.createdAtUtc,
+    required this.reportedAtUtc,
+  });
+
+  factory ReportedCommentModel.fromJson(Map<String, dynamic> json) {
+    final createdAtRaw = _readNullableString(
+      json,
+      "createdAtUtc",
+      "CreatedAtUtc",
+    );
+    final reportedAtRaw = _readNullableString(
+      json,
+      "reportedAtUtc",
+      "ReportedAtUtc",
+    );
+
+    return ReportedCommentModel(
+      id: _readString(json, "id", "Id"),
+      dropId: _readString(json, "dropId", "DropId"),
+      dropTitle: _readString(json, "dropTitle", "DropTitle"),
+      authorUserId: _readNullableString(json, "authorUserId", "AuthorUserId"),
+      authorDisplayName: _readString(
+        json,
+        "authorDisplayName",
+        "AuthorDisplayName",
+      ),
+      content: _readString(json, "content", "Content"),
+      reportReason: _readNullableString(json, "reportReason", "ReportReason"),
+      createdAtUtc: createdAtRaw == null
+          ? null
+          : DateTime.tryParse(createdAtRaw),
+      reportedAtUtc: reportedAtRaw == null
+          ? null
+          : DateTime.tryParse(reportedAtRaw),
+    );
+  }
+
+  final String id;
+  final String dropId;
+  final String dropTitle;
+  final String? authorUserId;
+  final String authorDisplayName;
+  final String content;
+  final String? reportReason;
+  final DateTime? createdAtUtc;
+  final DateTime? reportedAtUtc;
+}
+
+class ReportedArtPieceModel {
+  const ReportedArtPieceModel({
+    required this.id,
+    required this.artistId,
+    required this.title,
+    required this.artistDisplayName,
+    required this.isPublished,
+    required this.reportReason,
+    required this.reportedAtUtc,
+    required this.previewImageUrl,
+  });
+
+  factory ReportedArtPieceModel.fromJson(Map<String, dynamic> json) {
+    final reportedAtRaw = _readNullableString(
+      json,
+      "reportedAtUtc",
+      "ReportedAtUtc",
+    );
+
+    return ReportedArtPieceModel(
+      id: _readString(json, "id", "Id"),
+      artistId: _readString(json, "artistId", "ArtistId"),
+      title: _readString(json, "title", "Title"),
+      artistDisplayName: _readString(
+        json,
+        "artistDisplayName",
+        "ArtistDisplayName",
+      ),
+      isPublished: _readBool(json, "isPublished", "IsPublished"),
+      reportReason: _readNullableString(json, "reportReason", "ReportReason"),
+      reportedAtUtc: reportedAtRaw == null
+          ? null
+          : DateTime.tryParse(reportedAtRaw),
+      previewImageUrl: _readNullableString(
+        json,
+        "previewImageUrl",
+        "PreviewImageUrl",
+      ),
+    );
+  }
+
+  final String id;
+  final String artistId;
+  final String title;
+  final String artistDisplayName;
+  final bool isPublished;
+  final String? reportReason;
+  final DateTime? reportedAtUtc;
+  final String? previewImageUrl;
 }
 
 class AppConfigurationModel {

@@ -821,6 +821,63 @@ class AppLocalizationsDe extends AppLocalizations {
   String get moderationTitle => 'Moderations-Queue';
 
   @override
+  String get moderationLoadFailed =>
+      'Moderationsmeldungen konnten nicht geladen werden.';
+
+  @override
+  String get moderationActionFailed =>
+      'Die Moderationsaktion konnte nicht ausgeführt werden.';
+
+  @override
+  String get moderationRestricted =>
+      'Diese Ansicht ist nur für Moderatoren und Admins verfügbar.';
+
+  @override
+  String get moderationEmpty =>
+      'Es liegen derzeit keine gemeldeten Inhalte vor.';
+
+  @override
+  String get moderationCommentSectionTitle => 'Gemeldete Kommentare';
+
+  @override
+  String get moderationArtPieceSectionTitle => 'Gemeldete Kunstwerke';
+
+  @override
+  String get moderationOpenDropAction => 'Drop öffnen';
+
+  @override
+  String get moderationHideCommentAction => 'Kommentar ausblenden';
+
+  @override
+  String get moderationDismissReportAction => 'Meldung verwerfen';
+
+  @override
+  String get moderationDepublishArtPieceAction => 'Kunstwerk depublizieren';
+
+  @override
+  String get moderationNoReasonProvided => 'Kein Meldungsgrund angegeben.';
+
+  @override
+  String moderationReportedBy(Object value) {
+    return 'Gemeldet für: $value';
+  }
+
+  @override
+  String moderationArtistLabel(Object value) {
+    return 'Artist: $value';
+  }
+
+  @override
+  String moderationReportReason(Object value) {
+    return 'Meldungsgrund: $value';
+  }
+
+  @override
+  String moderationReportedAt(Object value) {
+    return 'Gemeldet am: $value';
+  }
+
+  @override
   String get reportedCommentTitle => 'Gemeldeter Kommentar';
 
   @override
@@ -831,6 +888,74 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get reportedArtPieceSubtitle => 'Mail-Alert wird erzeugt';
+
+  @override
+  String get dropDetailCommentsSection => 'Kommentare';
+
+  @override
+  String get dropDetailCommentsEmpty =>
+      'Für diesen Drop gibt es noch keine Kommentare.';
+
+  @override
+  String get dropDetailCommentComposerTitle => 'Kommentar verfassen';
+
+  @override
+  String get dropDetailCommentPlaceholder =>
+      'Schreibe deinen Kommentar zu diesem Drop.';
+
+  @override
+  String get dropDetailCommentSubmit => 'Kommentar senden';
+
+  @override
+  String get dropDetailCommentCreated => 'Kommentar gespeichert.';
+
+  @override
+  String get dropDetailCommentCreateFailed =>
+      'Kommentar konnte nicht gespeichert werden.';
+
+  @override
+  String get dropDetailCommentLoginHint =>
+      'Nur angemeldete Hunter, Artists, Drop-Maker und Moderatoren können Kommentare verfassen.';
+
+  @override
+  String get dropDetailReportCommentAction => 'Kommentar melden';
+
+  @override
+  String get dropDetailReportArtPieceAction => 'Kunstwerk melden';
+
+  @override
+  String get dropDetailAlreadyReported => 'Bereits gemeldet';
+
+  @override
+  String get dropDetailReportDialogDescription =>
+      'Optionalen Grund für die Moderationsmeldung eingeben.';
+
+  @override
+  String get dropDetailReportReasonLabel => 'Meldungsgrund';
+
+  @override
+  String get dropDetailReportReasonHint =>
+      'Warum soll dieser Inhalt geprüft werden?';
+
+  @override
+  String get dropDetailSubmitReportAction => 'Melden';
+
+  @override
+  String get dropDetailReportSubmitted => 'Meldung wurde gespeichert.';
+
+  @override
+  String get dropDetailReportFailed =>
+      'Meldung konnte nicht gespeichert werden.';
+
+  @override
+  String dropDetailReportReason(Object value) {
+    return 'Meldungsgrund: $value';
+  }
+
+  @override
+  String dropDetailReportedAt(Object value) {
+    return 'Gemeldet am: $value';
+  }
 
   @override
   String get smtpLabel => 'SMTP-Host';

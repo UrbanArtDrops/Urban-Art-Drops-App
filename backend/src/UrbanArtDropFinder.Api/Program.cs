@@ -9,6 +9,7 @@ using UrbanArtDropFinder.Contracts.Art;
 using UrbanArtDropFinder.Contracts.Auth;
 using UrbanArtDropFinder.Contracts.Comments;
 using UrbanArtDropFinder.Contracts.Drops;
+using UrbanArtDropFinder.Contracts.Moderation;
 using UrbanArtDropFinder.Domain.Art;
 using UrbanArtDropFinder.Domain.Comments;
 using UrbanArtDropFinder.Domain.Configuration;
@@ -349,6 +350,23 @@ artGroup.MapPost("/{id:guid}/depublish", async (Guid id, UrbanArtDbContext dbCon
     return Results.Ok();
 });
 
+artGroup.MapPost("/{id:guid}/report", async (
+    Guid id,
+    ReportArtPieceRequest request,
+    UrbanArtDbContext dbContext,
+    CancellationToken cancellationToken) =>
+{
+    var artPiece = await dbContext.ArtPieces.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+    if (artPiece is null)
+    {
+        return Results.NotFound();
+    }
+
+    artPiece.Report(request.Reason, DateTimeOffset.UtcNow);
+    await dbContext.SaveChangesAsync(cancellationToken);
+    return Results.Ok(new { mailAlertTriggered = true });
+});
+
 artGroup.MapDelete("/{id:guid}", async (Guid id, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
 {
     var artPiece = await dbContext.ArtPieces.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
@@ -651,11 +669,24 @@ dropsGroup.MapPost("/{dropId:guid}/items/{itemId:guid}/claim", async (
 
 var commentsGroup = app.MapGroup("/api/comments");
 commentsGroup.MapGet("/drop/{dropId:guid}", async (Guid dropId, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
-    Results.Ok(await dbContext.DropComments
+{
+    var comments = await dbContext.DropComments
         .AsNoTracking()
         .Where(x => x.DropId == dropId && !x.IsHidden)
         .OrderByDescending(x => x.CreatedAtUtc)
-        .ToListAsync(cancellationToken)));
+        .ToListAsync(cancellationToken);
+    var authorIds = comments
+        .Where(comment => comment.AuthorUserId.HasValue)
+        .Select(comment => comment.AuthorUserId!.Value)
+        .Distinct()
+        .ToList();
+    var usersById = await dbContext.UserAccounts
+        .AsNoTracking()
+        .Where(user => authorIds.Contains(user.Id))
+        .ToDictionaryAsync(user => user.Id, cancellationToken);
+
+    return Results.Ok(comments.Select(comment => ToCommentResponse(comment, usersById)).ToList());
+});
 
 commentsGroup.MapPost("/", async (CreateCommentRequest request, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
 {
@@ -680,10 +711,21 @@ commentsGroup.MapPost("/", async (CreateCommentRequest request, UrbanArtDbContex
 
     await dbContext.DropComments.AddAsync(comment, cancellationToken);
     await dbContext.SaveChangesAsync(cancellationToken);
-    return Results.Created($"/api/comments/{comment.Id}", comment);
+    var usersById = request.AuthorUserId.HasValue
+        ? await dbContext.UserAccounts
+            .AsNoTracking()
+            .Where(user => user.Id == request.AuthorUserId.Value)
+            .ToDictionaryAsync(user => user.Id, cancellationToken)
+        : new Dictionary<Guid, UserAccount>();
+
+    return Results.Created($"/api/comments/{comment.Id}", ToCommentResponse(comment, usersById));
 });
 
-commentsGroup.MapPost("/{id:guid}/report", async (Guid id, ReportCommentRequest _, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+commentsGroup.MapPost("/{id:guid}/report", async (
+    Guid id,
+    ReportCommentRequest request,
+    UrbanArtDbContext dbContext,
+    CancellationToken cancellationToken) =>
 {
     var comment = await dbContext.DropComments.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     if (comment is null)
@@ -691,7 +733,7 @@ commentsGroup.MapPost("/{id:guid}/report", async (Guid id, ReportCommentRequest 
         return Results.NotFound();
     }
 
-    comment.Report();
+    comment.Report(request.Reason, DateTimeOffset.UtcNow);
     await dbContext.SaveChangesAsync(cancellationToken);
     return Results.Ok(new { mailAlertTriggered = true });
 });
@@ -704,7 +746,176 @@ commentsGroup.MapPost("/{id:guid}/hide", async (Guid id, UrbanArtDbContext dbCon
         return Results.NotFound();
     }
 
-    comment.Hide();
+    comment.Hide(DateTimeOffset.UtcNow);
+    await dbContext.SaveChangesAsync(cancellationToken);
+    return Results.Ok();
+});
+
+commentsGroup.MapPost("/{id:guid}/dismiss-report", async (Guid id, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+{
+    var comment = await dbContext.DropComments.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+    if (comment is null)
+    {
+        return Results.NotFound();
+    }
+
+    comment.DismissReport();
+    await dbContext.SaveChangesAsync(cancellationToken);
+    return Results.Ok();
+});
+
+var moderationGroup = app.MapGroup("/api/moderation");
+moderationGroup.MapGet("/reports", async (
+    HttpContext httpContext,
+    UrbanArtDbContext dbContext,
+    CancellationToken cancellationToken) =>
+{
+    var reportedComments = await dbContext.DropComments
+        .AsNoTracking()
+        .Where(comment => comment.IsReported)
+        .OrderByDescending(comment => comment.ReportedAtUtc ?? comment.CreatedAtUtc)
+        .ToListAsync(cancellationToken);
+    var reportedArtPieces = await dbContext.ArtPieces
+        .Include(artPiece => artPiece.Photos)
+        .AsNoTracking()
+        .Where(artPiece => artPiece.IsReported)
+        .OrderByDescending(artPiece => artPiece.ReportedAtUtc)
+        .ToListAsync(cancellationToken);
+
+    var commentAuthorIds = reportedComments
+        .Where(comment => comment.AuthorUserId.HasValue)
+        .Select(comment => comment.AuthorUserId!.Value);
+    var artistIds = reportedArtPieces.Select(artPiece => artPiece.ArtistId);
+    var userIds = commentAuthorIds
+        .Concat(artistIds)
+        .Distinct()
+        .ToList();
+    var usersById = await dbContext.UserAccounts
+        .AsNoTracking()
+        .Where(user => userIds.Contains(user.Id))
+        .ToDictionaryAsync(user => user.Id, cancellationToken);
+
+    var reportedCommentDropIds = reportedComments
+        .Select(comment => comment.DropId)
+        .Distinct()
+        .ToList();
+    var dropsById = await dbContext.Drops
+        .AsNoTracking()
+        .Where(drop => reportedCommentDropIds.Contains(drop.Id))
+        .ToDictionaryAsync(drop => drop.Id, cancellationToken);
+
+    var dropArtPieceIds = dropsById.Values.Select(drop => drop.ArtPieceId);
+    var requiredArtPieceIds = reportedArtPieces
+        .Select(artPiece => artPiece.Id)
+        .Concat(dropArtPieceIds)
+        .Distinct()
+        .ToList();
+    var artPiecesById = await dbContext.ArtPieces
+        .Include(artPiece => artPiece.Photos)
+        .AsNoTracking()
+        .Where(artPiece => requiredArtPieceIds.Contains(artPiece.Id))
+        .ToDictionaryAsync(artPiece => artPiece.Id, cancellationToken);
+
+    var baseUri = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
+    var commentResponses = reportedComments
+        .Select(comment =>
+        {
+            string dropTitle;
+            if (dropsById.TryGetValue(comment.DropId, out var drop) &&
+                artPiecesById.TryGetValue(drop.ArtPieceId, out var artPieceForDrop))
+            {
+                dropTitle = artPieceForDrop.Title;
+            }
+            else
+            {
+                dropTitle = comment.DropId.ToString();
+            }
+
+            return new ReportedCommentResponse(
+                comment.Id,
+                comment.DropId,
+                dropTitle,
+                comment.AuthorUserId,
+                ResolveCommentAuthorDisplayName(comment, usersById),
+                comment.Content,
+                comment.ReportReason,
+                comment.CreatedAtUtc,
+                comment.ReportedAtUtc);
+        })
+        .ToList();
+    var artPieceResponses = reportedArtPieces
+        .Select(artPiece =>
+        {
+            string? previewImageUrl = artPiece.Photos
+                .Select(photo => $"{baseUri}/api/media/art-piece-photos/{photo.Id}")
+                .FirstOrDefault();
+
+            return new ReportedArtPieceResponse(
+                artPiece.Id,
+                artPiece.ArtistId,
+                artPiece.Title,
+                usersById.TryGetValue(artPiece.ArtistId, out var artist)
+                    ? artist.UserName
+                    : artPiece.ArtistId.ToString(),
+                artPiece.IsPublished,
+                artPiece.ReportReason,
+                artPiece.ReportedAtUtc,
+                previewImageUrl);
+        })
+        .ToList();
+
+    return Results.Ok(new ModerationQueueResponse(commentResponses, artPieceResponses));
+});
+
+moderationGroup.MapPost("/comments/{id:guid}/hide", async (Guid id, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+{
+    var comment = await dbContext.DropComments.FirstOrDefaultAsync(entry => entry.Id == id, cancellationToken);
+    if (comment is null)
+    {
+        return Results.NotFound();
+    }
+
+    comment.Hide(DateTimeOffset.UtcNow);
+    await dbContext.SaveChangesAsync(cancellationToken);
+    return Results.Ok();
+});
+
+moderationGroup.MapPost("/comments/{id:guid}/dismiss-report", async (Guid id, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+{
+    var comment = await dbContext.DropComments.FirstOrDefaultAsync(entry => entry.Id == id, cancellationToken);
+    if (comment is null)
+    {
+        return Results.NotFound();
+    }
+
+    comment.DismissReport();
+    await dbContext.SaveChangesAsync(cancellationToken);
+    return Results.Ok();
+});
+
+moderationGroup.MapPost("/art-pieces/{id:guid}/depublish", async (Guid id, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+{
+    var artPiece = await dbContext.ArtPieces.FirstOrDefaultAsync(entry => entry.Id == id, cancellationToken);
+    if (artPiece is null)
+    {
+        return Results.NotFound();
+    }
+
+    artPiece.Depublish();
+    artPiece.DismissReport();
+    await dbContext.SaveChangesAsync(cancellationToken);
+    return Results.Ok();
+});
+
+moderationGroup.MapPost("/art-pieces/{id:guid}/dismiss-report", async (Guid id, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+{
+    var artPiece = await dbContext.ArtPieces.FirstOrDefaultAsync(entry => entry.Id == id, cancellationToken);
+    if (artPiece is null)
+    {
+        return Results.NotFound();
+    }
+
+    artPiece.DismissReport();
     await dbContext.SaveChangesAsync(cancellationToken);
     return Results.Ok();
 });
@@ -1021,6 +1232,7 @@ static async Task SeedDebugDataAsync(IServiceProvider services)
     AddSeedPhoto(artPieceTwo);
     AddSeedPhoto(artPieceTwo);
     artPieceTwo.Publish();
+    artPieceTwo.Report("Beispielmeldung fuer Moderation im Debug-Modus.", DateTimeOffset.UtcNow.AddMinutes(-30));
 
     await dbContext.ArtPieces.AddRangeAsync(artPieceOne, artPieceTwo);
 
@@ -1044,21 +1256,25 @@ static async Task SeedDebugDataAsync(IServiceProvider services)
 
     await dbContext.Drops.AddRangeAsync(dropOne, dropTwo);
 
+    var debugCommentOne = new DropComment
+    {
+        DropId = dropOne.Id,
+        AuthorUserId = hunter.Id,
+        Content = "Starker Spot, QR hat direkt funktioniert.",
+        CreatedAtUtc = DateTimeOffset.UtcNow.AddHours(-2)
+    };
+    var debugCommentTwo = new DropComment
+    {
+        DropId = dropTwo.Id,
+        AuthorUserId = artist.Id,
+        Content = "Bitte respektvoll mit dem stationaeren Drop umgehen.",
+        CreatedAtUtc = DateTimeOffset.UtcNow.AddHours(-1)
+    };
+    debugCommentTwo.Report("Enthaelt eine Beispielmeldung fuer die Queue.", DateTimeOffset.UtcNow.AddMinutes(-20));
+
     await dbContext.DropComments.AddRangeAsync(
-        new DropComment
-        {
-            DropId = dropOne.Id,
-            AuthorUserId = hunter.Id,
-            Content = "Starker Spot, QR hat direkt funktioniert.",
-            CreatedAtUtc = DateTimeOffset.UtcNow.AddHours(-2)
-        },
-        new DropComment
-        {
-            DropId = dropTwo.Id,
-            AuthorUserId = artist.Id,
-            Content = "Bitte respektvoll mit dem stationaeren Drop umgehen.",
-            CreatedAtUtc = DateTimeOffset.UtcNow.AddHours(-1)
-        });
+        debugCommentOne,
+        debugCommentTwo);
 
     await dbContext.SaveChangesAsync();
 }
@@ -1101,8 +1317,37 @@ static ArtPieceResponseDto ToArtPieceResponse(ArtPiece artPiece, HttpRequest req
         artPiece.Description,
         artPiece.AssetKind,
         artPiece.IsPublished,
+        artPiece.IsReported,
+        artPiece.ReportReason,
+        artPiece.ReportedAtUtc,
         photos,
         assetFile);
+}
+
+static CommentResponse ToCommentResponse(DropComment comment, IReadOnlyDictionary<Guid, UserAccount> usersById)
+    => new(
+        comment.Id,
+        comment.DropId,
+        comment.AuthorUserId,
+        ResolveCommentAuthorDisplayName(comment, usersById),
+        comment.AnonymousNickname,
+        comment.Content,
+        comment.IsReported,
+        comment.IsHidden,
+        comment.ReportReason,
+        comment.CreatedAtUtc,
+        comment.ReportedAtUtc);
+
+static string ResolveCommentAuthorDisplayName(DropComment comment, IReadOnlyDictionary<Guid, UserAccount> usersById)
+{
+    if (comment.AuthorUserId.HasValue &&
+        usersById.TryGetValue(comment.AuthorUserId.Value, out var user))
+    {
+        return user.UserName;
+    }
+
+    var nickname = comment.AnonymousNickname?.Trim();
+    return string.IsNullOrWhiteSpace(nickname) ? "-" : nickname;
 }
 
 static DropResponseDto ToDropResponse(Drop drop, HttpRequest request)
@@ -1533,6 +1778,9 @@ internal sealed record ArtPieceResponseDto(
     string Description,
     ArtPieceAssetKind AssetKind,
     bool IsPublished,
+    bool IsReported,
+    string? ReportReason,
+    DateTimeOffset? ReportedAtUtc,
     IReadOnlyCollection<PhotoReferenceDto> Photos,
     BinaryAssetReferenceDto? AssetFile);
 

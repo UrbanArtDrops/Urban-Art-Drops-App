@@ -29,6 +29,8 @@
 - Persisted draft drops can be paused after QR generation and resumed later from the My Drops list by reopening the wizard with the stored drop identifier
 - Re-entering the quantity step of the drop-maker wizard preserves existing claimed and reusable QR items instead of recreating the entire item set on every update
 - The drop-maker wizard finishes the flow by updating location coordinates, uploading local location photos as data URLs and optionally publishing the completed drop
+- Drop detail now loads persisted comments from the API, allows eligible signed-in roles to post comments, and exposes report actions for comments and linked art pieces
+- Reported comments and art pieces are persisted with reason and timestamp metadata so the moderation queue can be resolved without losing audit context
 
 ## Discovery and Map Rendering
 - Fully claimed drops are rendered as exact-position pins
@@ -39,5 +41,6 @@
 
 ## Operations
 - Alerts via SMTP mail for reported content and account approval requests
+- Moderator and admin users resolve reports in a dedicated moderation queue with comment hide, report dismissal, and art-piece depublish actions
 - Backup target: daily with 14-day retention
 - Log retention target: 30 days

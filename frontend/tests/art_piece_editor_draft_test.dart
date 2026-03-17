@@ -28,6 +28,9 @@ void main() {
       description: "This description is definitely long enough.",
       assetKind: 1,
       isPublished: true,
+      isReported: false,
+      reportReason: null,
+      reportedAtUtc: null,
       photoUrls: ["http://localhost:5143/api/media/art-piece-photos/1"],
       assetFile: BinaryAssetModel(
         id: "asset-1",

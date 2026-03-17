@@ -19,3 +19,5 @@ public sealed record UpdateArtPieceRequest(
     IReadOnlyCollection<string> PhotoUrls,
     string? AssetSource,
     string? AssetFileName);
+
+public sealed record ReportArtPieceRequest(string? Reason);

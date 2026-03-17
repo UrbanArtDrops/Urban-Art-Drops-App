@@ -208,6 +208,15 @@ class AppApiClient {
     _ensureSuccess(response, "Failed to change art piece publish state.");
   }
 
+  Future<void> reportArtPiece(String id, {String? reason}) async {
+    final response = await _httpClient.post(
+      _uri("/api/art-pieces/$id/report"),
+      headers: _jsonHeaders,
+      body: jsonEncode({"reason": reason}),
+    );
+    _ensureSuccess(response, "Failed to report art piece.");
+  }
+
   Future<List<DropModel>> getDrops() async {
     final data = await _getList("/api/drops");
     return data.map(DropModel.fromJson).toList(growable: false);
@@ -272,6 +281,85 @@ class AppApiClient {
   Future<List<LeaderboardEntry>> getLeaderboard() async {
     final data = await _getList("/api/discovery/leaderboard");
     return data.map(LeaderboardEntry.fromJson).toList(growable: false);
+  }
+
+  Future<List<DropCommentModel>> getDropComments(String dropId) async {
+    final data = await _getList("/api/comments/drop/$dropId");
+    return data.map(DropCommentModel.fromJson).toList(growable: false);
+  }
+
+  Future<DropCommentModel> createComment({
+    required String dropId,
+    String? authorUserId,
+    String? anonymousNickname,
+    required String content,
+  }) async {
+    final response = await _httpClient.post(
+      _uri("/api/comments"),
+      headers: _jsonHeaders,
+      body: jsonEncode({
+        "dropId": dropId,
+        "authorUserId": authorUserId,
+        "anonymousNickname": anonymousNickname,
+        "content": content,
+      }),
+    );
+    _ensureSuccess(response, "Failed to create comment.");
+    return DropCommentModel.fromJson(_decodeObjectResponse(response));
+  }
+
+  Future<void> reportComment(String id, {String? reason}) async {
+    final response = await _httpClient.post(
+      _uri("/api/comments/$id/report"),
+      headers: _jsonHeaders,
+      body: jsonEncode({"reason": reason}),
+    );
+    _ensureSuccess(response, "Failed to report comment.");
+  }
+
+  Future<void> hideComment(String id) async {
+    final response = await _httpClient.post(_uri("/api/comments/$id/hide"));
+    _ensureSuccess(response, "Failed to hide comment.");
+  }
+
+  Future<void> dismissCommentReport(String id) async {
+    final response = await _httpClient.post(
+      _uri("/api/comments/$id/dismiss-report"),
+    );
+    _ensureSuccess(response, "Failed to dismiss comment report.");
+  }
+
+  Future<ModerationQueueModel> getModerationQueue() async {
+    final data = await _getObject("/api/moderation/reports");
+    return ModerationQueueModel.fromJson(data);
+  }
+
+  Future<void> hideReportedComment(String id) async {
+    final response = await _httpClient.post(
+      _uri("/api/moderation/comments/$id/hide"),
+    );
+    _ensureSuccess(response, "Failed to hide reported comment.");
+  }
+
+  Future<void> dismissReportedComment(String id) async {
+    final response = await _httpClient.post(
+      _uri("/api/moderation/comments/$id/dismiss-report"),
+    );
+    _ensureSuccess(response, "Failed to dismiss reported comment.");
+  }
+
+  Future<void> depublishReportedArtPiece(String id) async {
+    final response = await _httpClient.post(
+      _uri("/api/moderation/art-pieces/$id/depublish"),
+    );
+    _ensureSuccess(response, "Failed to depublish reported art piece.");
+  }
+
+  Future<void> dismissReportedArtPiece(String id) async {
+    final response = await _httpClient.post(
+      _uri("/api/moderation/art-pieces/$id/dismiss-report"),
+    );
+    _ensureSuccess(response, "Failed to dismiss art piece report.");
   }
 
   Future<AppConfigurationModel> getAppConfiguration() async {

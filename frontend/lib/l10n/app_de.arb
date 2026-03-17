@@ -357,10 +357,74 @@
   "makeDropBackAction": "Zurück",
   "makeDropFinishAction": "Abschließen",
   "moderationTitle": "Moderations-Queue",
+  "moderationLoadFailed": "Moderationsmeldungen konnten nicht geladen werden.",
+  "moderationActionFailed": "Die Moderationsaktion konnte nicht ausgeführt werden.",
+  "moderationRestricted": "Diese Ansicht ist nur für Moderatoren und Admins verfügbar.",
+  "moderationEmpty": "Es liegen derzeit keine gemeldeten Inhalte vor.",
+  "moderationCommentSectionTitle": "Gemeldete Kommentare",
+  "moderationArtPieceSectionTitle": "Gemeldete Kunstwerke",
+  "moderationOpenDropAction": "Drop öffnen",
+  "moderationHideCommentAction": "Kommentar ausblenden",
+  "moderationDismissReportAction": "Meldung verwerfen",
+  "moderationDepublishArtPieceAction": "Kunstwerk depublizieren",
+  "moderationNoReasonProvided": "Kein Meldungsgrund angegeben.",
+  "moderationReportedBy": "Gemeldet für: {value}",
+  "@moderationReportedBy": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "moderationArtistLabel": "Artist: {value}",
+  "@moderationArtistLabel": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "moderationReportReason": "Meldungsgrund: {value}",
+  "@moderationReportReason": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "moderationReportedAt": "Gemeldet am: {value}",
+  "@moderationReportedAt": {
+    "placeholders": {
+      "value": {}
+    }
+  },
   "reportedCommentTitle": "Gemeldeter Kommentar",
   "reportedCommentSubtitle": "Bis zur Entscheidung sichtbar",
   "reportedArtPieceTitle": "Gemeldetes Art Piece",
   "reportedArtPieceSubtitle": "Mail-Alert wird erzeugt",
+  "dropDetailCommentsSection": "Kommentare",
+  "dropDetailCommentsEmpty": "Für diesen Drop gibt es noch keine Kommentare.",
+  "dropDetailCommentComposerTitle": "Kommentar verfassen",
+  "dropDetailCommentPlaceholder": "Schreibe deinen Kommentar zu diesem Drop.",
+  "dropDetailCommentSubmit": "Kommentar senden",
+  "dropDetailCommentCreated": "Kommentar gespeichert.",
+  "dropDetailCommentCreateFailed": "Kommentar konnte nicht gespeichert werden.",
+  "dropDetailCommentLoginHint": "Nur angemeldete Hunter, Artists, Drop-Maker und Moderatoren können Kommentare verfassen.",
+  "dropDetailReportCommentAction": "Kommentar melden",
+  "dropDetailReportArtPieceAction": "Kunstwerk melden",
+  "dropDetailAlreadyReported": "Bereits gemeldet",
+  "dropDetailReportDialogDescription": "Optionalen Grund für die Moderationsmeldung eingeben.",
+  "dropDetailReportReasonLabel": "Meldungsgrund",
+  "dropDetailReportReasonHint": "Warum soll dieser Inhalt geprüft werden?",
+  "dropDetailSubmitReportAction": "Melden",
+  "dropDetailReportSubmitted": "Meldung wurde gespeichert.",
+  "dropDetailReportFailed": "Meldung konnte nicht gespeichert werden.",
+  "dropDetailReportReason": "Meldungsgrund: {value}",
+  "@dropDetailReportReason": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "dropDetailReportedAt": "Gemeldet am: {value}",
+  "@dropDetailReportedAt": {
+    "placeholders": {
+      "value": {}
+    }
+  },
   "smtpLabel": "SMTP-Host",
   "mainMapRadiusSetting": "Hauptkartenausschnitt (km)",
   "miniMapRadiusSetting": "Mini-Kartenausschnitt (km)",

@@ -49,12 +49,44 @@ void main() {
     final drawer = scaffold.drawer as Drawer;
     expect(drawer.width, 304);
   });
+
+  testWidgets("shows moderation navigation only for moderator or admin", (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _TestHarness(
+        key: const ValueKey("artist"),
+        role: AppUserRole.artist,
+        child: const PageShell(title: "Test", body: SizedBox.shrink()),
+      ),
+    );
+    expect(_drawerTitles(tester), isNot(contains("Moderation")));
+
+    await tester.pumpWidget(
+      _TestHarness(
+        key: const ValueKey("moderator"),
+        role: AppUserRole.moderator,
+        child: const PageShell(title: "Test", body: SizedBox.shrink()),
+      ),
+    );
+    expect(_drawerTitles(tester), contains("Moderation"));
+
+    await tester.pumpWidget(
+      _TestHarness(
+        key: const ValueKey("admin"),
+        role: AppUserRole.admin,
+        child: const PageShell(title: "Test", body: SizedBox.shrink()),
+      ),
+    );
+    expect(_drawerTitles(tester), contains("Moderation"));
+  });
 }
 
 class _TestHarness extends StatelessWidget {
-  const _TestHarness({required this.child});
+  const _TestHarness({required this.child, this.role, super.key});
 
   final Widget child;
+  final AppUserRole? role;
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +95,18 @@ class _TestHarness extends StatelessWidget {
     );
 
     return BlocProvider(
-      create: (_) => AuthSessionCubit(),
+      create: (_) {
+        final cubit = AuthSessionCubit();
+        if (role != null) {
+          cubit.signIn(
+            userId: "user-1",
+            email: "user@example.com",
+            userName: "Test User",
+            role: role!,
+          );
+        }
+        return cubit;
+      },
       child: MaterialApp.router(
         routerConfig: router,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -71,4 +114,18 @@ class _TestHarness extends StatelessWidget {
       ),
     );
   }
+}
+
+List<String> _drawerTitles(WidgetTester tester) {
+  final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
+  final drawer = scaffold.drawer as Drawer;
+  final safeArea = drawer.child as SafeArea;
+  final listView = safeArea.child as ListView;
+  final delegate = listView.childrenDelegate as SliverChildListDelegate;
+
+  return delegate.children
+      .whereType<ListTile>()
+      .map((tile) => ((tile.title as Text).data ?? "").trim())
+      .where((title) => title.isNotEmpty)
+      .toList(growable: false);
 }

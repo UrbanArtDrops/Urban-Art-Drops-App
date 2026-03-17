@@ -38,6 +38,12 @@
 - reported comments
 - reported art pieces
 
+## Moderation
+- Public users can report drop comments and linked art pieces from the drop detail page
+- Moderators and admins process reports through `GET /api/moderation/reports`
+- Comment moderation supports hide and dismiss flows through the moderation endpoints
+- Art-piece moderation supports depublish and dismiss flows through the moderation endpoints
+
 ## Artist Workspace
 - Artists manage artworks end-to-end in the web client: create, inspect, edit, publish, depublish and delete
 - Artwork photos are selected locally in the client and stored as binary media in the backend database

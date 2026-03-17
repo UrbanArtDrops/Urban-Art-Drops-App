@@ -115,6 +115,7 @@ List<_NavigationEntry> _buildNavigationEntries(
   final isArtist = role == AppUserRole.artist;
   final isDropMakerOrArtist =
       role == AppUserRole.dropMaker || role == AppUserRole.artist;
+  final isModerator = role == AppUserRole.moderator;
   final isAdmin = role == AppUserRole.admin;
 
   final entries = <_NavigationEntry>[
@@ -145,7 +146,7 @@ List<_NavigationEntry> _buildNavigationEntries(
         l10n.menuMyDrops,
         Icons.inventory_2_outlined,
       ),
-    if (isDropMakerOrArtist)
+    if (isModerator || isAdmin)
       _NavigationEntry(
         "/moderation/reports",
         l10n.navModeration,

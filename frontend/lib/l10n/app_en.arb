@@ -357,10 +357,74 @@
   "makeDropBackAction": "Back",
   "makeDropFinishAction": "Finish",
   "moderationTitle": "Moderation queue",
+  "moderationLoadFailed": "Moderation reports could not be loaded.",
+  "moderationActionFailed": "The moderation action could not be completed.",
+  "moderationRestricted": "This view is only available to moderators and admins.",
+  "moderationEmpty": "There are no reported items right now.",
+  "moderationCommentSectionTitle": "Reported comments",
+  "moderationArtPieceSectionTitle": "Reported art pieces",
+  "moderationOpenDropAction": "Open drop",
+  "moderationHideCommentAction": "Hide comment",
+  "moderationDismissReportAction": "Dismiss report",
+  "moderationDepublishArtPieceAction": "Depublish art piece",
+  "moderationNoReasonProvided": "No report reason provided.",
+  "moderationReportedBy": "Reported for: {value}",
+  "@moderationReportedBy": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "moderationArtistLabel": "Artist: {value}",
+  "@moderationArtistLabel": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "moderationReportReason": "Report reason: {value}",
+  "@moderationReportReason": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "moderationReportedAt": "Reported at: {value}",
+  "@moderationReportedAt": {
+    "placeholders": {
+      "value": {}
+    }
+  },
   "reportedCommentTitle": "Reported comment",
   "reportedCommentSubtitle": "Visible until moderation decision",
   "reportedArtPieceTitle": "Reported art piece",
   "reportedArtPieceSubtitle": "Mail alert is generated",
+  "dropDetailCommentsSection": "Comments",
+  "dropDetailCommentsEmpty": "There are no comments for this drop yet.",
+  "dropDetailCommentComposerTitle": "Write a comment",
+  "dropDetailCommentPlaceholder": "Write your comment about this drop.",
+  "dropDetailCommentSubmit": "Send comment",
+  "dropDetailCommentCreated": "Comment saved.",
+  "dropDetailCommentCreateFailed": "Comment could not be saved.",
+  "dropDetailCommentLoginHint": "Only signed-in hunters, artists, drop-makers, and moderators can post comments.",
+  "dropDetailReportCommentAction": "Report comment",
+  "dropDetailReportArtPieceAction": "Report art piece",
+  "dropDetailAlreadyReported": "Already reported",
+  "dropDetailReportDialogDescription": "Enter an optional reason for the moderation report.",
+  "dropDetailReportReasonLabel": "Report reason",
+  "dropDetailReportReasonHint": "Why should this content be reviewed?",
+  "dropDetailSubmitReportAction": "Report",
+  "dropDetailReportSubmitted": "Report saved.",
+  "dropDetailReportFailed": "Report could not be saved.",
+  "dropDetailReportReason": "Report reason: {value}",
+  "@dropDetailReportReason": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "dropDetailReportedAt": "Reported at: {value}",
+  "@dropDetailReportedAt": {
+    "placeholders": {
+      "value": {}
+    }
+  },
   "smtpLabel": "SMTP host",
   "mainMapRadiusSetting": "Main map radius (km)",
   "miniMapRadiusSetting": "Mini-map radius (km)",
