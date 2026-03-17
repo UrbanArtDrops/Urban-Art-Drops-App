@@ -96,11 +96,14 @@ public sealed class AuthApplicationServiceTests
         Assert.Equal("maker", result.UserName);
         Assert.Equal("maker@example.com", result.Email);
         Assert.Null(result.RetryAfterUtc);
+        Assert.Equal("test-access-token", result.AccessToken);
+        Assert.Equal(DateTimeOffset.Parse("2026-03-09T18:00:00+00:00"), result.AccessTokenExpiresAtUtc);
+        Assert.Equal("Bearer", result.TokenType);
     }
 
     private static AuthApplicationService CreateService(IUserAccountStore store, IPasswordHasher hasher, IClock clock)
     {
-        return new AuthApplicationService(store, hasher, clock);
+        return new AuthApplicationService(store, hasher, new FakeAccessTokenIssuer(), clock);
     }
 
     private sealed class InMemoryUserAccountStore : IUserAccountStore
@@ -153,5 +156,11 @@ public sealed class AuthApplicationServiceTests
     private sealed class FixedClock : IClock
     {
         public DateTimeOffset UtcNow => DateTimeOffset.Parse("2026-03-09T10:00:00+00:00");
+    }
+
+    private sealed class FakeAccessTokenIssuer : IAccessTokenIssuer
+    {
+        public AccessTokenEnvelope IssueToken(UserAccount user)
+            => new("test-access-token", DateTimeOffset.Parse("2026-03-09T18:00:00+00:00"));
     }
 }

@@ -1,13 +1,11 @@
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
 using UrbanArtDropFinder.Contracts.Art;
 using UrbanArtDropFinder.Contracts.Comments;
 using UrbanArtDropFinder.Contracts.Moderation;
 using UrbanArtDropFinder.Domain.Art;
 using UrbanArtDropFinder.Domain.Users;
-using UrbanArtDropFinder.Persistence.Db;
 
 namespace UrbanArtDropFinder.IntegrationTests;
 
@@ -30,70 +28,76 @@ public sealed class ModerationEndpointsTests : IClassFixture<TestWebApplicationF
     {
         var uniqueId = Guid.NewGuid().ToString("N");
         var moderator = await CreateUserAsync(UserRole.Moderator, $"moderator.{uniqueId}");
-        var artistId = Guid.NewGuid();
-        var createArtResponse = await _client.PostAsJsonAsync(
+        var artist = await CreateUserAsync(UserRole.Artist, $"artist.flow.{uniqueId}");
+        var reporter = await CreateUserAsync(UserRole.Hunter, $"reporter.flow.{uniqueId}");
+        var createArtResponse = await _client.PostAuthorizedAsJsonAsync(
             "/api/art-pieces/",
             new
             {
-                artistId,
+                artistId = artist.Id,
                 title = $"Reported Piece {uniqueId}",
                 description = "This artwork description is intentionally long enough for moderation testing.",
                 assetKind = ArtPieceAssetKind.Image,
                 photoUrls = new[] { SamplePngDataUrl },
                 assetSource = (string?)null,
                 assetFileName = (string?)null
-            });
+            },
+            artist.AccessToken);
 
         await EnsureSuccessWithBodyAsync(createArtResponse);
         var artPiece = await createArtResponse.Content.ReadFromJsonAsync<ArtPieceResponseDto>();
         Assert.NotNull(artPiece);
 
-        var publishArtResponse = await _client.PostAsync($"/api/art-pieces/{artPiece!.Id}/publish", null);
+        var publishArtResponse = await _client.PostAuthorizedAsync($"/api/art-pieces/{artPiece!.Id}/publish", artist.AccessToken);
         await EnsureSuccessWithBodyAsync(publishArtResponse);
 
-        var createDropResponse = await _client.PostAsJsonAsync(
+        var createDropResponse = await _client.PostAuthorizedAsJsonAsync(
             "/api/drops/",
             new
             {
                 artPieceId = artPiece.Id,
-                dropMakerId = Guid.NewGuid(),
+                dropMakerId = artist.Id,
                 isStationary = true,
                 portableItemCount = (int?)null,
                 latitude = 52.52,
                 longitude = 13.405,
                 locationPhotoUrls = new[] { SamplePngDataUrl },
                 itemCount = 1
-            });
+            },
+            artist.AccessToken);
 
         await EnsureSuccessWithBodyAsync(createDropResponse);
         var drop = await createDropResponse.Content.ReadFromJsonAsync<DropResponseDto>();
         Assert.NotNull(drop);
 
-        var createCommentResponse = await _client.PostAsJsonAsync(
+        var createCommentResponse = await _client.PostAuthorizedAsJsonAsync(
             "/api/comments/",
-            new CreateCommentRequest(drop!.Id, null, "queue.user", "This comment should appear in the moderation queue."));
+            new CreateCommentRequest(drop!.Id, null, "queue.user", "This comment should appear in the moderation queue."),
+            reporter.AccessToken);
         await EnsureSuccessWithBodyAsync(createCommentResponse);
         var comment = await createCommentResponse.Content.ReadFromJsonAsync<CommentResponse>();
         Assert.NotNull(comment);
 
-        var reportCommentResponse = await _client.PostAsJsonAsync(
+        var reportCommentResponse = await _client.PostAuthorizedAsJsonAsync(
             $"/api/comments/{comment!.Id}/report",
-            new ReportCommentRequest("Comment contains abuse"));
+            new ReportCommentRequest("Comment contains abuse"),
+            reporter.AccessToken);
         await EnsureSuccessWithBodyAsync(reportCommentResponse);
 
-        var reportArtResponse = await _client.PostAsJsonAsync(
+        var reportArtResponse = await _client.PostAuthorizedAsJsonAsync(
             $"/api/art-pieces/{artPiece.Id}/report",
-            new ReportArtPieceRequest("Artwork needs content review"));
+            new ReportArtPieceRequest("Artwork needs content review"),
+            reporter.AccessToken);
         await EnsureSuccessWithBodyAsync(reportArtResponse);
 
-        var queueResponse = await GetModerationQueueAsync(moderator.Id);
+        var queueResponse = await GetModerationQueueAsync(moderator.AccessToken);
         Assert.NotNull(queueResponse);
         Assert.Contains(queueResponse!.Comments, entry => entry.Id == comment.Id && entry.DropId == drop.Id);
         Assert.Contains(queueResponse.ArtPieces, entry => entry.Id == artPiece.Id && entry.IsPublished);
 
         var hideCommentResponse = await PostModerationAsync(
             $"/api/moderation/comments/{comment.Id}/hide",
-            moderator.Id);
+            moderator.AccessToken);
         await EnsureSuccessWithBodyAsync(hideCommentResponse);
 
         var publicComments = await _client.GetFromJsonAsync<List<CommentResponse>>($"/api/comments/drop/{drop.Id}");
@@ -102,14 +106,14 @@ public sealed class ModerationEndpointsTests : IClassFixture<TestWebApplicationF
 
         var depublishArtResponse = await PostModerationAsync(
             $"/api/moderation/art-pieces/{artPiece.Id}/depublish",
-            moderator.Id);
+            moderator.AccessToken);
         await EnsureSuccessWithBodyAsync(depublishArtResponse);
 
         var reloadedArt = await _client.GetFromJsonAsync<ArtPieceResponseDto>($"/api/art-pieces/{artPiece.Id}");
         Assert.NotNull(reloadedArt);
         Assert.False(reloadedArt!.IsPublished);
 
-        var clearedQueue = await GetModerationQueueAsync(moderator.Id);
+        var clearedQueue = await GetModerationQueueAsync(moderator.AccessToken);
         Assert.NotNull(clearedQueue);
         Assert.DoesNotContain(clearedQueue!.Comments, entry => entry.Id == comment.Id);
         Assert.DoesNotContain(clearedQueue.ArtPieces, entry => entry.Id == artPiece.Id);
@@ -123,17 +127,17 @@ public sealed class ModerationEndpointsTests : IClassFixture<TestWebApplicationF
         var otherArtist = await CreateUserAsync(UserRole.Artist, $"artist.other.{uniqueId}");
 
         var ownDrop = await CreateReportedCommentAsync(
-            artist.Id,
+            artist,
             $"Own Queue Piece {uniqueId}",
             $"own-{uniqueId}",
             "This reported comment belongs to the actor.");
         var foreignDrop = await CreateReportedCommentAsync(
-            otherArtist.Id,
+            otherArtist,
             $"Foreign Queue Piece {uniqueId}",
             $"foreign-{uniqueId}",
             "This reported comment belongs to another artist.");
 
-        var queueResponse = await GetModerationQueueAsync(artist.Id);
+        var queueResponse = await GetModerationQueueAsync(artist.AccessToken);
 
         Assert.NotNull(queueResponse);
         Assert.Contains(queueResponse!.Comments, entry => entry.DropId == ownDrop.DropId);
@@ -149,19 +153,19 @@ public sealed class ModerationEndpointsTests : IClassFixture<TestWebApplicationF
         var otherArtist = await CreateUserAsync(UserRole.Artist, $"artist.other.{uniqueId}");
 
         var ownDrop = await CreateReportedCommentAsync(
-            artist.Id,
+            artist,
             $"Own Action Piece {uniqueId}",
             $"own-action-{uniqueId}",
             "Own reported comment.");
         var foreignDrop = await CreateReportedCommentAsync(
-            otherArtist.Id,
+            otherArtist,
             $"Foreign Action Piece {uniqueId}",
             $"foreign-action-{uniqueId}",
             "Foreign reported comment.");
 
         var hideOwnResponse = await PostModerationAsync(
             $"/api/moderation/comments/{ownDrop.CommentId}/hide",
-            artist.Id);
+            artist.AccessToken);
         await EnsureSuccessWithBodyAsync(hideOwnResponse);
 
         var ownPublicComments = await _client.GetFromJsonAsync<List<CommentResponse>>(
@@ -171,12 +175,12 @@ public sealed class ModerationEndpointsTests : IClassFixture<TestWebApplicationF
 
         var hideForeignResponse = await PostModerationAsync(
             $"/api/moderation/comments/{foreignDrop.CommentId}/hide",
-            artist.Id);
+            artist.AccessToken);
         Assert.Equal(HttpStatusCode.Forbidden, hideForeignResponse.StatusCode);
 
         var depublishForeignArtResponse = await PostModerationAsync(
             $"/api/moderation/art-pieces/{foreignDrop.ArtPieceId}/depublish",
-            artist.Id);
+            artist.AccessToken);
         Assert.Equal(HttpStatusCode.Forbidden, depublishForeignArtResponse.StatusCode);
     }
 
@@ -189,19 +193,19 @@ public sealed class ModerationEndpointsTests : IClassFixture<TestWebApplicationF
         var otherDropMaker = await CreateUserAsync(UserRole.DropMaker, $"dropmaker.other.{uniqueId}");
 
         var ownDrop = await CreateReportedCommentAsync(
-            artist.Id,
+            artist,
             $"Drop-Maker Queue Piece {uniqueId}",
             $"own-dropmaker-{uniqueId}",
             "This reported comment belongs to the drop-maker.",
-            dropMaker.Id);
+            dropMaker);
         var foreignDrop = await CreateReportedCommentAsync(
-            artist.Id,
+            artist,
             $"Drop-Maker Foreign Piece {uniqueId}",
             $"foreign-dropmaker-{uniqueId}",
             "This reported comment belongs to another drop-maker.",
-            otherDropMaker.Id);
+            otherDropMaker);
 
-        var queueResponse = await GetModerationQueueAsync(dropMaker.Id);
+        var queueResponse = await GetModerationQueueAsync(dropMaker.AccessToken);
 
         Assert.NotNull(queueResponse);
         Assert.Contains(queueResponse!.Comments, entry => entry.DropId == ownDrop.DropId);
@@ -218,21 +222,21 @@ public sealed class ModerationEndpointsTests : IClassFixture<TestWebApplicationF
         var otherDropMaker = await CreateUserAsync(UserRole.DropMaker, $"dropmaker.other.{uniqueId}");
 
         var ownDrop = await CreateReportedCommentAsync(
-            artist.Id,
+            artist,
             $"Own Drop-Maker Piece {uniqueId}",
             $"own-dropmaker-action-{uniqueId}",
             "Own reported comment for drop-maker.",
-            dropMaker.Id);
+            dropMaker);
         var foreignDrop = await CreateReportedCommentAsync(
-            artist.Id,
+            artist,
             $"Foreign Drop-Maker Piece {uniqueId}",
             $"foreign-dropmaker-action-{uniqueId}",
             "Foreign reported comment for drop-maker.",
-            otherDropMaker.Id);
+            otherDropMaker);
 
         var hideOwnResponse = await PostModerationAsync(
             $"/api/moderation/comments/{ownDrop.CommentId}/hide",
-            dropMaker.Id);
+            dropMaker.AccessToken);
         await EnsureSuccessWithBodyAsync(hideOwnResponse);
 
         var ownPublicComments = await _client.GetFromJsonAsync<List<CommentResponse>>(
@@ -242,13 +246,24 @@ public sealed class ModerationEndpointsTests : IClassFixture<TestWebApplicationF
 
         var hideForeignResponse = await PostModerationAsync(
             $"/api/moderation/comments/{foreignDrop.CommentId}/hide",
-            dropMaker.Id);
+            dropMaker.AccessToken);
         Assert.Equal(HttpStatusCode.Forbidden, hideForeignResponse.StatusCode);
 
         var depublishForeignArtResponse = await PostModerationAsync(
             $"/api/moderation/art-pieces/{foreignDrop.ArtPieceId}/depublish",
-            dropMaker.Id);
+            dropMaker.AccessToken);
         Assert.Equal(HttpStatusCode.Forbidden, depublishForeignArtResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task ModerationQueue_RejectsAnonymousAndUnprivilegedUsers()
+    {
+        var anonymousResponse = await _client.GetAsync("/api/moderation/reports");
+        Assert.Equal(HttpStatusCode.Unauthorized, anonymousResponse.StatusCode);
+
+        var hunter = await CreateUserAsync(UserRole.Hunter, $"hunter.moderation.{Guid.NewGuid():N}");
+        var hunterResponse = await _client.GetAuthorizedAsync("/api/moderation/reports", hunter.AccessToken);
+        Assert.Equal(HttpStatusCode.Forbidden, hunterResponse.StatusCode);
     }
 
     private sealed record ArtPieceResponseDto(Guid Id, bool IsPublished);
@@ -257,97 +272,82 @@ public sealed class ModerationEndpointsTests : IClassFixture<TestWebApplicationF
 
     private sealed record ReportedDropContext(Guid ArtPieceId, Guid DropId, Guid CommentId);
 
-    private async Task<UserAccount> CreateUserAsync(UserRole role, string userName)
-    {
-        using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<UrbanArtDbContext>();
-        var email = $"{userName}@example.com";
-        var user = UserAccount.CreateLocal(
-            email,
-            userName,
-            role,
-            "hashed-password",
-            approved: true);
-        user.MarkEmailVerified();
-        await dbContext.UserAccounts.AddAsync(user);
-        await dbContext.SaveChangesAsync();
-        return user;
-    }
+    private Task<TestAuthUtilities.AuthenticatedTestUser> CreateUserAsync(UserRole role, string userName)
+        => _factory.CreateAuthenticatedUserAsync(role, userName);
 
     private async Task<ReportedDropContext> CreateReportedCommentAsync(
-        Guid artistId,
+        TestAuthUtilities.AuthenticatedTestUser artist,
         string artTitle,
         string nickname,
         string commentText,
-        Guid? dropMakerId = null)
+        TestAuthUtilities.AuthenticatedTestUser? dropMaker = null)
     {
-        var createArtResponse = await _client.PostAsJsonAsync(
+        var reporter = await CreateUserAsync(UserRole.Hunter, $"reporter.{Guid.NewGuid():N}");
+        var dropActor = dropMaker ?? artist;
+        var createArtResponse = await _client.PostAuthorizedAsJsonAsync(
             "/api/art-pieces/",
             new
             {
-                artistId,
+                artistId = artist.Id,
                 title = artTitle,
                 description = "This artwork description is intentionally long enough for artist moderation testing.",
                 assetKind = ArtPieceAssetKind.Image,
                 photoUrls = new[] { SamplePngDataUrl },
                 assetSource = (string?)null,
                 assetFileName = (string?)null
-            });
+            },
+            artist.AccessToken);
         await EnsureSuccessWithBodyAsync(createArtResponse);
         var artPiece = await createArtResponse.Content.ReadFromJsonAsync<ArtPieceResponseDto>();
         Assert.NotNull(artPiece);
 
-        var publishArtResponse = await _client.PostAsync($"/api/art-pieces/{artPiece!.Id}/publish", null);
+        var publishArtResponse = await _client.PostAuthorizedAsync($"/api/art-pieces/{artPiece!.Id}/publish", artist.AccessToken);
         await EnsureSuccessWithBodyAsync(publishArtResponse);
 
-        var createDropResponse = await _client.PostAsJsonAsync(
+        var createDropResponse = await _client.PostAuthorizedAsJsonAsync(
             "/api/drops/",
             new
             {
                 artPieceId = artPiece.Id,
-                dropMakerId = dropMakerId ?? Guid.NewGuid(),
+                dropMakerId = dropActor.Id,
                 isStationary = true,
                 portableItemCount = (int?)null,
                 latitude = 52.52,
                 longitude = 13.405,
                 locationPhotoUrls = new[] { SamplePngDataUrl },
                 itemCount = 1
-            });
+            },
+            dropActor.AccessToken);
         await EnsureSuccessWithBodyAsync(createDropResponse);
         var drop = await createDropResponse.Content.ReadFromJsonAsync<DropResponseDto>();
         Assert.NotNull(drop);
 
-        var createCommentResponse = await _client.PostAsJsonAsync(
+        var createCommentResponse = await _client.PostAuthorizedAsJsonAsync(
             "/api/comments/",
-            new CreateCommentRequest(drop!.Id, null, nickname, commentText));
+            new CreateCommentRequest(drop!.Id, null, nickname, commentText),
+            reporter.AccessToken);
         await EnsureSuccessWithBodyAsync(createCommentResponse);
         var comment = await createCommentResponse.Content.ReadFromJsonAsync<CommentResponse>();
         Assert.NotNull(comment);
 
-        var reportCommentResponse = await _client.PostAsJsonAsync(
+        var reportCommentResponse = await _client.PostAuthorizedAsJsonAsync(
             $"/api/comments/{comment!.Id}/report",
-            new ReportCommentRequest("Comment contains abuse"));
+            new ReportCommentRequest("Comment contains abuse"),
+            reporter.AccessToken);
         await EnsureSuccessWithBodyAsync(reportCommentResponse);
 
         return new ReportedDropContext(artPiece.Id, drop.Id, comment.Id);
     }
 
-    private async Task<ModerationQueueResponse?> GetModerationQueueAsync(Guid actorUserId)
+    private async Task<ModerationQueueResponse?> GetModerationQueueAsync(string accessToken)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, "/api/moderation/reports");
-        request.Headers.Add("X-Actor-User-Id", actorUserId.ToString());
-
-        using var response = await _client.SendAsync(request);
+        using var response = await _client.GetAuthorizedAsync("/api/moderation/reports", accessToken);
         await EnsureSuccessWithBodyAsync(response);
         return await response.Content.ReadFromJsonAsync<ModerationQueueResponse>();
     }
 
-    private Task<HttpResponseMessage> PostModerationAsync(string path, Guid actorUserId)
-    {
-        var request = new HttpRequestMessage(HttpMethod.Post, path);
-        request.Headers.Add("X-Actor-User-Id", actorUserId.ToString());
-        return _client.SendAsync(request);
-    }
+    private Task<HttpResponseMessage> PostModerationAsync(string path, string accessToken)
+        => _client.PostAuthorizedAsync(path, accessToken);
 
     private static async Task EnsureSuccessWithBodyAsync(HttpResponseMessage response)
     {

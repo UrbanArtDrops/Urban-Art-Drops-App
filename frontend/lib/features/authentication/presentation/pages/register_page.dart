@@ -49,12 +49,12 @@ class _RegisterPageState extends State<RegisterPage> {
         role: _selectedRole,
       );
 
-      if (result.userId != null && result.userId!.trim().isNotEmpty) {
-        await _apiClient.verifyEmail(result.userId!);
-      }
-
       if (!mounted) {
         return;
+      }
+
+      if (!result.success) {
+        throw ApiException(result.message);
       }
 
       final successMessage = _selectedRole == 0

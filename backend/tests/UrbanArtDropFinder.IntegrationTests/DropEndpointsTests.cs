@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
+using UrbanArtDropFinder.Domain.Users;
 
 namespace UrbanArtDropFinder.IntegrationTests;
 
@@ -10,15 +11,19 @@ public sealed class DropEndpointsTests : IClassFixture<TestWebApplicationFactory
         "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/w8AAgMBgJ/gG1cAAAAASUVORK5CYII=";
 
     private readonly HttpClient _client;
+    private readonly TestWebApplicationFactory _factory;
 
     public DropEndpointsTests(TestWebApplicationFactory factory)
     {
+        _factory = factory;
         _client = factory.CreateClient();
     }
 
     [Fact]
     public async Task UpdateDrop_WhenItemCountChangesMultipleTimes_KeepsEndpointStableAndPreservesExistingTokens()
     {
+        var uniqueId = Guid.NewGuid().ToString("N");
+        var admin = await _factory.CreateAuthenticatedUserAsync(UserRole.Admin, $"admin.drop.{uniqueId}");
         var createRequest = new
         {
             artPieceId = Guid.NewGuid(),
@@ -31,14 +36,14 @@ public sealed class DropEndpointsTests : IClassFixture<TestWebApplicationFactory
             itemCount = 2
         };
 
-        var createResponse = await _client.PostAsJsonAsync("/api/drops/", createRequest);
+        var createResponse = await _client.PostAuthorizedAsJsonAsync("/api/drops/", createRequest, admin.AccessToken);
         await EnsureSuccessWithBodyAsync(createResponse);
         var createdDrop = await createResponse.Content.ReadFromJsonAsync<DropResponseDto>();
         Assert.NotNull(createdDrop);
         Assert.Equal(2, createdDrop!.Items.Count);
         var originalTokens = createdDrop.Items.Select(item => item.QrToken).ToHashSet(StringComparer.Ordinal);
 
-        var expandedResponse = await _client.PutAsJsonAsync(
+        var expandedResponse = await _client.PutAuthorizedAsJsonAsync(
             $"/api/drops/{createdDrop.Id}",
             new
             {
@@ -50,14 +55,15 @@ public sealed class DropEndpointsTests : IClassFixture<TestWebApplicationFactory
                 createRequest.longitude,
                 createRequest.locationPhotoUrls,
                 itemCount = 4
-            });
+            },
+            admin.AccessToken);
         await EnsureSuccessWithBodyAsync(expandedResponse);
         var expandedDrop = await expandedResponse.Content.ReadFromJsonAsync<DropResponseDto>();
         Assert.NotNull(expandedDrop);
         Assert.Equal(4, expandedDrop!.Items.Count);
         Assert.True(originalTokens.IsSubsetOf(expandedDrop.Items.Select(item => item.QrToken).ToHashSet(StringComparer.Ordinal)));
 
-        var reducedResponse = await _client.PutAsJsonAsync(
+        var reducedResponse = await _client.PutAuthorizedAsJsonAsync(
             $"/api/drops/{createdDrop.Id}",
             new
             {
@@ -69,7 +75,8 @@ public sealed class DropEndpointsTests : IClassFixture<TestWebApplicationFactory
                 createRequest.longitude,
                 createRequest.locationPhotoUrls,
                 itemCount = 3
-            });
+            },
+            admin.AccessToken);
         await EnsureSuccessWithBodyAsync(reducedResponse);
         var reducedDrop = await reducedResponse.Content.ReadFromJsonAsync<DropResponseDto>();
         Assert.NotNull(reducedDrop);
@@ -80,7 +87,9 @@ public sealed class DropEndpointsTests : IClassFixture<TestWebApplicationFactory
     [Fact]
     public async Task UpdateDrop_WhenRequestedItemCountDropsBelowClaimedItems_ReturnsBadRequest()
     {
-        var createResponse = await _client.PostAsJsonAsync(
+        var uniqueId = Guid.NewGuid().ToString("N");
+        var admin = await _factory.CreateAuthenticatedUserAsync(UserRole.Admin, $"admin.drop.invalid.{uniqueId}");
+        var createResponse = await _client.PostAuthorizedAsJsonAsync(
             "/api/drops/",
             new
             {
@@ -92,7 +101,8 @@ public sealed class DropEndpointsTests : IClassFixture<TestWebApplicationFactory
                 longitude = 8.6821,
                 locationPhotoUrls = new[] { SamplePngDataUrl },
                 itemCount = 2
-            });
+            },
+            admin.AccessToken);
         await EnsureSuccessWithBodyAsync(createResponse);
         var createdDrop = await createResponse.Content.ReadFromJsonAsync<DropResponseDto>();
         Assert.NotNull(createdDrop);
@@ -103,7 +113,7 @@ public sealed class DropEndpointsTests : IClassFixture<TestWebApplicationFactory
             new { hunterUserId = (Guid?)null, anonymousNickname = "visitor-alpha" });
         await EnsureSuccessWithBodyAsync(claimResponse);
 
-        var invalidUpdateResponse = await _client.PutAsJsonAsync(
+        var invalidUpdateResponse = await _client.PutAuthorizedAsJsonAsync(
             $"/api/drops/{createdDrop.Id}",
             new
             {
@@ -115,7 +125,8 @@ public sealed class DropEndpointsTests : IClassFixture<TestWebApplicationFactory
                 createdDrop.Longitude,
                 locationPhotoUrls = new[] { SamplePngDataUrl },
                 itemCount = 0
-            });
+            },
+            admin.AccessToken);
 
         Assert.Equal(HttpStatusCode.BadRequest, invalidUpdateResponse.StatusCode);
     }

@@ -46,6 +46,9 @@ class AuthResultModel {
     required this.userName,
     required this.email,
     required this.retryAfterUtc,
+    required this.accessToken,
+    required this.accessTokenExpiresAtUtc,
+    required this.tokenType,
   });
 
   factory AuthResultModel.fromJson(Map<String, dynamic> json) {
@@ -53,6 +56,11 @@ class AuthResultModel {
       json,
       "retryAfterUtc",
       "RetryAfterUtc",
+    );
+    final accessTokenExpiresAtRaw = _readNullableString(
+      json,
+      "accessTokenExpiresAtUtc",
+      "AccessTokenExpiresAtUtc",
     );
 
     return AuthResultModel(
@@ -65,6 +73,11 @@ class AuthResultModel {
       retryAfterUtc: retryAfterRaw == null
           ? null
           : DateTime.tryParse(retryAfterRaw),
+      accessToken: _readNullableString(json, "accessToken", "AccessToken"),
+      accessTokenExpiresAtUtc: accessTokenExpiresAtRaw == null
+          ? null
+          : DateTime.tryParse(accessTokenExpiresAtRaw),
+      tokenType: _readNullableString(json, "tokenType", "TokenType"),
     );
   }
 
@@ -75,6 +88,9 @@ class AuthResultModel {
   final String? userName;
   final String? email;
   final DateTime? retryAfterUtc;
+  final String? accessToken;
+  final DateTime? accessTokenExpiresAtUtc;
+  final String? tokenType;
 }
 
 class ArtPieceModel {

@@ -8,15 +8,18 @@ public sealed class AuthApplicationService
 {
     private readonly IUserAccountStore _userAccountStore;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly IAccessTokenIssuer _accessTokenIssuer;
     private readonly IClock _clock;
 
     public AuthApplicationService(
         IUserAccountStore userAccountStore,
         IPasswordHasher passwordHasher,
+        IAccessTokenIssuer accessTokenIssuer,
         IClock clock)
     {
         _userAccountStore = userAccountStore;
         _passwordHasher = passwordHasher;
+        _accessTokenIssuer = accessTokenIssuer;
         _clock = clock;
     }
 
@@ -128,17 +131,35 @@ public sealed class AuthApplicationService
         user.RegisterSuccessfulLogin();
         await _userAccountStore.SaveChangesAsync(cancellationToken);
 
-        return CreateSuccessResult("Login successful.", user);
+        return CreateSuccessResult(
+            "Login successful.",
+            user,
+            includeAccessToken: true,
+            accessTokenIssuer: _accessTokenIssuer);
     }
 
-    private static AuthResult CreateSuccessResult(string message, UserAccount user)
+    private static AuthResult CreateSuccessResult(
+        string message,
+        UserAccount user,
+        bool includeAccessToken = false,
+        IAccessTokenIssuer? accessTokenIssuer = null)
     {
+        AccessTokenEnvelope? accessToken = null;
+        if (includeAccessToken)
+        {
+            accessToken = accessTokenIssuer?.IssueToken(user)
+                ?? throw new InvalidOperationException("Access token issuer is required.");
+        }
+
         return new AuthResult(
             true,
             message,
             user.Id,
             user.Role,
             user.UserName,
-            user.Email);
+            user.Email,
+            AccessToken: accessToken?.AccessToken,
+            AccessTokenExpiresAtUtc: accessToken?.ExpiresAtUtc,
+            TokenType: accessToken?.TokenType);
     }
 }

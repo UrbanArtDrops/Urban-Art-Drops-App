@@ -1,16 +1,20 @@
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
 using UrbanArtDropFinder.Domain.Users;
+using UrbanArtDropFinder.Persistence.Db;
 
 namespace UrbanArtDropFinder.IntegrationTests;
 
 public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly HttpClient _client;
+    private readonly TestWebApplicationFactory _factory;
 
     public AuthEndpointsTests(TestWebApplicationFactory factory)
     {
+        _factory = factory;
         _client = factory.CreateClient();
     }
 
@@ -54,6 +58,9 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
         Assert.NotNull(loginResult);
         Assert.Equal(registerResult.UserId, loginResult!.UserId);
         Assert.Equal(UserRole.Hunter, loginResult.Role);
+        Assert.False(string.IsNullOrWhiteSpace(loginResult.AccessToken));
+        Assert.NotNull(loginResult.AccessTokenExpiresAtUtc);
+        Assert.Equal("Bearer", loginResult.TokenType);
     }
 
     [Fact]
@@ -74,12 +81,9 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
             });
         await EnsureSuccessWithBodyAsync(registerResponse);
 
-        var usersResponse = await _client.GetAsync("/api/admin/users");
-        await EnsureSuccessWithBodyAsync(usersResponse);
-        var users = await usersResponse.Content.ReadFromJsonAsync<List<ManagedUserDto>>();
-        Assert.NotNull(users);
-
-        var createdUser = users!.Single(user => string.Equals(user.Email, email, StringComparison.OrdinalIgnoreCase));
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<UrbanArtDbContext>();
+        var createdUser = dbContext.UserAccounts.Single(user => string.Equals(user.Email, email, StringComparison.OrdinalIgnoreCase));
         Assert.Equal(UserRole.Artist, createdUser.Role);
         Assert.False(createdUser.IsApproved);
 
@@ -99,6 +103,25 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
         Assert.Contains("pending", loginBody, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public async Task AdminEndpoints_RequireAuthenticatedAdminToken()
+    {
+        var anonymousResponse = await _client.GetAsync("/api/admin/users");
+        Assert.Equal(HttpStatusCode.Unauthorized, anonymousResponse.StatusCode);
+
+        var hunter = await _factory.CreateAuthenticatedUserAsync(
+            UserRole.Hunter,
+            $"hunter.authz.{Guid.NewGuid():N}");
+        var hunterResponse = await _client.GetAuthorizedAsync("/api/admin/users", hunter.AccessToken);
+        Assert.Equal(HttpStatusCode.Forbidden, hunterResponse.StatusCode);
+
+        var admin = await _factory.CreateAuthenticatedUserAsync(
+            UserRole.Admin,
+            $"admin.authz.{Guid.NewGuid():N}");
+        var adminResponse = await _client.GetAuthorizedAsync("/api/admin/users", admin.AccessToken);
+        await EnsureSuccessWithBodyAsync(adminResponse);
+    }
+
     private sealed record AuthResultDto(
         bool Success,
         string Message,
@@ -106,17 +129,10 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
         UserRole? Role,
         string? UserName,
         string? Email,
-        DateTimeOffset? RetryAfterUtc);
-
-    private sealed record ManagedUserDto(
-        Guid Id,
-        string Email,
-        string UserName,
-        UserRole Role,
-        bool IsApproved,
-        bool IsSuspended,
-        bool IsEmailVerified,
-        bool IsProviderAccount);
+        DateTimeOffset? RetryAfterUtc,
+        string? AccessToken,
+        DateTimeOffset? AccessTokenExpiresAtUtc,
+        string? TokenType);
 
     private static async Task EnsureSuccessWithBodyAsync(HttpResponseMessage response)
     {

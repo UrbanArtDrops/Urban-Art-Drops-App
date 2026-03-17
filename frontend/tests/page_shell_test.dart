@@ -113,6 +113,8 @@ class _TestHarness extends StatelessWidget {
             email: "user@example.com",
             userName: "Test User",
             role: role!,
+            accessToken: "token",
+            accessTokenExpiresAtUtc: DateTime.utc(2026, 3, 17, 18),
           );
         }
         return cubit;

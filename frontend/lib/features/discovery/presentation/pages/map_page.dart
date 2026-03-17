@@ -81,7 +81,7 @@ class _MapPageState extends State<MapPage> {
       final results = await Future.wait([
         _apiClient.getDrops(),
         _apiClient.getArtPieces(),
-        _apiClient.getUsers(),
+        _apiClient.getUserDirectory(),
       ]);
 
       final drops = (results[0] as List<DropModel>)

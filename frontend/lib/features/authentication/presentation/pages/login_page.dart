@@ -50,9 +50,15 @@ class _LoginPageState extends State<LoginPage> {
 
       final role = appUserRoleFromApiValue(result.role);
       final userId = result.userId?.trim();
+      final accessToken = result.accessToken?.trim();
       final resolvedEmail = result.email?.trim() ?? email;
       final userName = result.userName?.trim() ?? resolvedEmail;
-      if (!result.success || role == null || userId == null || userId.isEmpty) {
+      if (!result.success ||
+          role == null ||
+          userId == null ||
+          userId.isEmpty ||
+          accessToken == null ||
+          accessToken.isEmpty) {
         throw const ApiException("The login response is incomplete.");
       }
 
@@ -61,8 +67,18 @@ class _LoginPageState extends State<LoginPage> {
         email: resolvedEmail,
         userName: userName,
         role: role,
+        accessToken: accessToken,
+        accessTokenExpiresAtUtc: result.accessTokenExpiresAtUtc,
+        tokenType: result.tokenType ?? "Bearer",
       );
-      context.go("/");
+      final redirectTarget = GoRouterState.of(
+        context,
+      ).uri.queryParameters["from"];
+      context.go(
+        redirectTarget == null || redirectTarget.trim().isEmpty
+            ? "/"
+            : redirectTarget,
+      );
     } on ApiException catch (error) {
       if (!mounted) {
         return;

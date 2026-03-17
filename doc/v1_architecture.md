@@ -13,6 +13,9 @@
 - Exponential login backoff: 15s, 30s, 60s, 120s
 - Local self-registration stores the requested account role in the database at creation time; Hunters are auto-approved while Artist and Drop-Maker accounts remain pending until an admin approves them
 - Local login no longer asks the client to pick a role; the API returns the stored role and identity payload for the session
+- The API now issues bearer access tokens for local login and enforces authorization policies at the endpoint boundary for admin, moderation, artist and drop-creator workflows
+- Moderation and admin actions no longer trust caller-supplied user headers; the backend resolves the acting user from validated JWT claims
+- The Flutter client persists the authenticated session locally and restores it on startup so route guards and API calls continue to use the server-issued access token across app reloads
 
 ## Core Domain Rules
 - Art piece requires title, description and at least one photo before publish
@@ -45,5 +48,6 @@
 - Moderator and admin users resolve reports in a dedicated moderation queue with comment hide, report dismissal, and art-piece depublish actions
 - Runtime startup applies EF Core migrations against the configured SQL database and only bootstraps application configuration defaults
 - Debug and sample content seeding is disabled; a fresh database starts without demo users, art pieces, drops, comments, or reports
+- JWT signing keys must be supplied outside source control for stable environments; local development can fall back to an ephemeral in-memory signing key for the running process
 - Backup target: daily with 14-day retention
 - Log retention target: 30 days

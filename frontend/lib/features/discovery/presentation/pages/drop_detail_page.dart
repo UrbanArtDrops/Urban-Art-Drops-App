@@ -52,7 +52,7 @@ class _DropDetailPageState extends State<DropDetailPage> {
       final results = await Future.wait([
         _apiClient.getDropById(widget.dropId),
         _apiClient.getArtPieces(),
-        _apiClient.getUsers(),
+        _apiClient.getUserDirectory(),
         _apiClient.getDropComments(widget.dropId),
       ]);
 
@@ -107,7 +107,6 @@ class _DropDetailPageState extends State<DropDetailPage> {
     try {
       final created = await _apiClient.createComment(
         dropId: drop.id,
-        authorUserId: authState.userId,
         content: content,
       );
 
@@ -1005,9 +1004,8 @@ bool _canCreateComments(AuthSessionState authState) {
     case AppUserRole.artist:
     case AppUserRole.dropMaker:
     case AppUserRole.moderator:
-      return true;
     case AppUserRole.admin:
-      return false;
+      return true;
   }
 }
 

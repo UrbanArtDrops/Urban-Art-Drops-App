@@ -35,7 +35,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
       final results = await Future.wait([
         _apiClient.getDrops(),
         _apiClient.getArtPieces(),
-        _apiClient.getUsers(),
+        _apiClient.getUserDirectory(),
       ]);
       if (!mounted) {
         return;

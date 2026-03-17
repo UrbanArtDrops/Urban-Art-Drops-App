@@ -3,8 +3,12 @@ import "package:flutter_test/flutter_test.dart";
 import "package:flutter_bloc/flutter_bloc.dart";
 
 import "package:urban_art_drops_app/app/app.dart";
+import "package:urban_art_drops_app/app/router/app_router.dart";
+import "package:urban_art_drops_app/features/admin/presentation/pages/admin_configuration_page.dart";
 import "package:urban_art_drops_app/features/authentication/presentation/bloc/auth_session_cubit.dart";
+import "package:urban_art_drops_app/features/authentication/presentation/pages/login_page.dart";
 import "package:urban_art_drops_app/features/navigation/presentation/bloc/navigation_cubit.dart";
+import "package:urban_art_drops_app/l10n/app_localizations.dart";
 
 void main() {
   testWidgets("renders app shell", (tester) async {
@@ -22,5 +26,57 @@ void main() {
 
     expect(find.byType(MaterialApp), findsOneWidget);
     expect(find.byType(Scaffold), findsAtLeastNWidgets(1));
+  });
+
+  testWidgets("redirects unauthenticated admin routes to login", (
+    tester,
+  ) async {
+    final authSessionCubit = AuthSessionCubit();
+    final router = createAppRouter(authSessionCubit);
+
+    await tester.pumpWidget(
+      BlocProvider.value(
+        value: authSessionCubit,
+        child: MaterialApp.router(
+          routerConfig: router,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+        ),
+      ),
+    );
+    router.go("/admin/configuration");
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LoginPage), findsOneWidget);
+  });
+
+  testWidgets("allows authenticated admins to open admin routes", (
+    tester,
+  ) async {
+    final authSessionCubit = AuthSessionCubit();
+    authSessionCubit.signIn(
+      userId: "admin-1",
+      email: "admin@example.com",
+      userName: "admin",
+      role: AppUserRole.admin,
+      accessToken: "admin-token",
+      accessTokenExpiresAtUtc: DateTime.utc(2026, 3, 17, 18),
+    );
+    final router = createAppRouter(authSessionCubit);
+
+    await tester.pumpWidget(
+      BlocProvider.value(
+        value: authSessionCubit,
+        child: MaterialApp.router(
+          routerConfig: router,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+        ),
+      ),
+    );
+    router.go("/admin/configuration");
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AdminConfigurationPage), findsOneWidget);
   });
 }

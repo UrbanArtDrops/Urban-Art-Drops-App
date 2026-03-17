@@ -81,7 +81,7 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
     try {
       final results = await Future.wait<Object>([
         _apiClient.getArtPieces(),
-        _apiClient.getUsers(),
+        _apiClient.getUserDirectory(),
       ]);
       if (!mounted) {
         return;

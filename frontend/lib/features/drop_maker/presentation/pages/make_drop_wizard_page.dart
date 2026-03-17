@@ -121,7 +121,7 @@ class _MakeDropWizardPageState extends State<MakeDropWizardPage> {
     try {
       final requests = <Future<Object>>[
         _apiClient.getArtPieces(),
-        _apiClient.getUsers(),
+        _apiClient.getUserDirectory(),
       ];
       final resumeDropId = widget.resumeDropId?.trim();
       if (resumeDropId != null && resumeDropId.isNotEmpty) {

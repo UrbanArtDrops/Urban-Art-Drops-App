@@ -1,8 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using UrbanArtDropFinder.Application.Abstractions;
 using UrbanArtDropFinder.Application.Auth;
+using UrbanArtDropFinder.Infrastructure.Authentication;
 using UrbanArtDropFinder.Application.Drops;
 using UrbanArtDropFinder.Infrastructure.Services;
 using UrbanArtDropFinder.Infrastructure.Stores;
@@ -12,8 +14,14 @@ namespace UrbanArtDropFinder.Infrastructure.DependencyInjection;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddUrbanArtInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddUrbanArtInfrastructure(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        JwtAuthenticationOptions jwtOptions)
     {
+        services
+            .AddSingleton<IOptions<JwtAuthenticationOptions>>(_ => Options.Create(jwtOptions));
+
         var persistenceProvider = configuration["Persistence:Provider"];
         if (string.Equals(persistenceProvider, "InMemory", StringComparison.OrdinalIgnoreCase))
         {
@@ -57,6 +65,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUserAccountStore, UserAccountStore>();
         services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
         services.AddSingleton<ITokenGenerator, SecureTokenGenerator>();
+        services.AddSingleton<IAccessTokenIssuer, JwtAccessTokenIssuer>();
         services.AddSingleton<IClock, SystemClock>();
         services.AddScoped<AuthApplicationService>();
         services.AddScoped<DropClaimApplicationService>();

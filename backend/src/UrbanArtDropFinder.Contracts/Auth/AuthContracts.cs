@@ -17,4 +17,7 @@ public sealed record AuthResult(
     UserRole? Role = null,
     string? UserName = null,
     string? Email = null,
-    DateTimeOffset? RetryAfterUtc = null);
+    DateTimeOffset? RetryAfterUtc = null,
+    string? AccessToken = null,
+    DateTimeOffset? AccessTokenExpiresAtUtc = null,
+    string? TokenType = null);

@@ -15,6 +15,12 @@ class ApiException implements Exception {
 }
 
 class AppApiClient {
+  static String? Function()? _accessTokenProvider;
+
+  static void configureAccessTokenProvider(String? Function() provider) {
+    _accessTokenProvider = provider;
+  }
+
   AppApiClient({http.Client? httpClient, String? baseUrl})
     : _httpClient = httpClient ?? http.Client(),
       _baseUrl =
@@ -36,7 +42,7 @@ class AppApiClient {
   }) async {
     final response = await _httpClient.post(
       _uri("/api/auth/register-local"),
-      headers: _jsonHeaders,
+      headers: _jsonHeaders(includeAuthorization: false),
       body: jsonEncode({
         "email": email,
         "userName": userName,
@@ -54,7 +60,7 @@ class AppApiClient {
   }) async {
     final response = await _httpClient.post(
       _uri("/api/auth/login-local"),
-      headers: _jsonHeaders,
+      headers: _jsonHeaders(includeAuthorization: false),
       body: jsonEncode({"email": email, "password": password}),
     );
     _ensureSuccess(response, "Failed to login.");
@@ -64,12 +70,18 @@ class AppApiClient {
   Future<void> verifyEmail(String userId) async {
     final response = await _httpClient.post(
       _uri("/api/auth/verify-email/$userId"),
+      headers: _headers(includeAuthorization: false),
     );
     _ensureSuccess(response, "Failed to verify email.");
   }
 
   Future<List<ManagedUser>> getUsers() async {
     final data = await _getList("/api/admin/users");
+    return data.map(ManagedUser.fromJson).toList(growable: false);
+  }
+
+  Future<List<ManagedUser>> getUserDirectory() async {
+    final data = await _getList("/api/users/directory");
     return data.map(ManagedUser.fromJson).toList(growable: false);
   }
 
@@ -86,7 +98,7 @@ class AppApiClient {
   }) async {
     final response = await _httpClient.post(
       _uri("/api/admin/users"),
-      headers: _jsonHeaders,
+      headers: _jsonHeaders(),
       body: jsonEncode({
         "email": email,
         "userName": userName,
@@ -131,7 +143,7 @@ class AppApiClient {
   Future<void> updateUserName(String userId, String userName) async {
     final response = await _httpClient.patch(
       _uri("/api/admin/users/$userId/profile"),
-      headers: _jsonHeaders,
+      headers: _jsonHeaders(),
       body: jsonEncode({"userName": userName}),
     );
     _ensureSuccess(response, "Failed to update user profile.");
@@ -153,7 +165,7 @@ class AppApiClient {
   }) async {
     final response = await _httpClient.post(
       _uri("/api/art-pieces"),
-      headers: _jsonHeaders,
+      headers: _jsonHeaders(),
       body: jsonEncode({
         "artistId": artistId,
         "title": title,
@@ -180,7 +192,7 @@ class AppApiClient {
   }) async {
     final response = await _httpClient.put(
       _uri("/api/art-pieces/$id"),
-      headers: _jsonHeaders,
+      headers: _jsonHeaders(),
       body: jsonEncode({
         "artistId": artistId,
         "title": title,
@@ -211,7 +223,7 @@ class AppApiClient {
   Future<void> reportArtPiece(String id, {String? reason}) async {
     final response = await _httpClient.post(
       _uri("/api/art-pieces/$id/report"),
-      headers: _jsonHeaders,
+      headers: _jsonHeaders(),
       body: jsonEncode({"reason": reason}),
     );
     _ensureSuccess(response, "Failed to report art piece.");
@@ -232,7 +244,7 @@ class AppApiClient {
   Future<DropModel> createDrop(CreateDropInput input) async {
     final response = await _httpClient.post(
       _uri("/api/drops"),
-      headers: _jsonHeaders,
+      headers: _jsonHeaders(),
       body: jsonEncode({
         "artPieceId": input.artPieceId,
         "dropMakerId": input.dropMakerId,
@@ -251,7 +263,7 @@ class AppApiClient {
   Future<DropModel> updateDrop(String id, CreateDropInput input) async {
     final response = await _httpClient.put(
       _uri("/api/drops/$id"),
-      headers: _jsonHeaders,
+      headers: _jsonHeaders(),
       body: jsonEncode({
         "artPieceId": input.artPieceId,
         "dropMakerId": input.dropMakerId,
@@ -290,19 +302,12 @@ class AppApiClient {
 
   Future<DropCommentModel> createComment({
     required String dropId,
-    String? authorUserId,
-    String? anonymousNickname,
     required String content,
   }) async {
     final response = await _httpClient.post(
       _uri("/api/comments"),
-      headers: _jsonHeaders,
-      body: jsonEncode({
-        "dropId": dropId,
-        "authorUserId": authorUserId,
-        "anonymousNickname": anonymousNickname,
-        "content": content,
-      }),
+      headers: _jsonHeaders(),
+      body: jsonEncode({"dropId": dropId, "content": content}),
     );
     _ensureSuccess(response, "Failed to create comment.");
     return DropCommentModel.fromJson(_decodeObjectResponse(response));
@@ -311,7 +316,7 @@ class AppApiClient {
   Future<void> reportComment(String id, {String? reason}) async {
     final response = await _httpClient.post(
       _uri("/api/comments/$id/report"),
-      headers: _jsonHeaders,
+      headers: _jsonHeaders(),
       body: jsonEncode({"reason": reason}),
     );
     _ensureSuccess(response, "Failed to report comment.");
@@ -320,7 +325,7 @@ class AppApiClient {
   Future<void> hideComment(String id, {required String actingUserId}) async {
     final response = await _httpClient.post(
       _uri("/api/comments/$id/hide"),
-      headers: _moderationHeaders(actingUserId),
+      headers: _headers(),
     );
     _ensureSuccess(response, "Failed to hide comment.");
   }
@@ -331,7 +336,7 @@ class AppApiClient {
   }) async {
     final response = await _httpClient.post(
       _uri("/api/comments/$id/dismiss-report"),
-      headers: _moderationHeaders(actingUserId),
+      headers: _headers(),
     );
     _ensureSuccess(response, "Failed to dismiss comment report.");
   }
@@ -341,7 +346,7 @@ class AppApiClient {
   }) async {
     final response = await _httpClient.get(
       _uri("/api/moderation/reports"),
-      headers: _moderationHeaders(actingUserId),
+      headers: _headers(),
     );
     _ensureSuccess(response, "Failed to load moderation queue.");
     final data = _decodeObjectResponse(response);
@@ -354,7 +359,7 @@ class AppApiClient {
   }) async {
     final response = await _httpClient.post(
       _uri("/api/moderation/comments/$id/hide"),
-      headers: _moderationHeaders(actingUserId),
+      headers: _headers(),
     );
     _ensureSuccess(response, "Failed to hide reported comment.");
   }
@@ -365,7 +370,7 @@ class AppApiClient {
   }) async {
     final response = await _httpClient.post(
       _uri("/api/moderation/comments/$id/dismiss-report"),
-      headers: _moderationHeaders(actingUserId),
+      headers: _headers(),
     );
     _ensureSuccess(response, "Failed to dismiss reported comment.");
   }
@@ -376,7 +381,7 @@ class AppApiClient {
   }) async {
     final response = await _httpClient.post(
       _uri("/api/moderation/art-pieces/$id/depublish"),
-      headers: _moderationHeaders(actingUserId),
+      headers: _headers(),
     );
     _ensureSuccess(response, "Failed to depublish reported art piece.");
   }
@@ -387,7 +392,7 @@ class AppApiClient {
   }) async {
     final response = await _httpClient.post(
       _uri("/api/moderation/art-pieces/$id/dismiss-report"),
-      headers: _moderationHeaders(actingUserId),
+      headers: _headers(),
     );
     _ensureSuccess(response, "Failed to dismiss art piece report.");
   }
@@ -398,7 +403,7 @@ class AppApiClient {
   }
 
   Future<List<Map<String, dynamic>>> _getList(String path) async {
-    final response = await _httpClient.get(_uri(path));
+    final response = await _httpClient.get(_uri(path), headers: _headers());
     _ensureSuccess(response, "Failed to load data.");
     final payload = jsonDecode(response.body);
     if (payload is! List<dynamic>) {
@@ -409,7 +414,7 @@ class AppApiClient {
   }
 
   Future<Map<String, dynamic>> _getObject(String path) async {
-    final response = await _httpClient.get(_uri(path));
+    final response = await _httpClient.get(_uri(path), headers: _headers());
     _ensureSuccess(response, "Failed to load data.");
     return _decodeObjectResponse(response);
   }
@@ -423,10 +428,24 @@ class AppApiClient {
     return uri.replace(queryParameters: query);
   }
 
-  Map<String, String> _moderationHeaders(String actingUserId) => {
-    "Accept": "application/json",
-    "X-Actor-User-Id": actingUserId,
-  };
+  Map<String, String> _headers({bool includeAuthorization = true}) {
+    final headers = <String, String>{"Accept": "application/json"};
+    final accessToken = includeAuthorization
+        ? _accessTokenProvider?.call()
+        : null;
+    if (accessToken != null && accessToken.trim().isNotEmpty) {
+      headers["Authorization"] = "Bearer ${accessToken.trim()}";
+    }
+
+    return headers;
+  }
+
+  Map<String, String> _jsonHeaders({bool includeAuthorization = true}) {
+    return {
+      ..._headers(includeAuthorization: includeAuthorization),
+      "Content-Type": "application/json",
+    };
+  }
 
   void _ensureSuccess(http.Response response, String fallbackMessage) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -466,8 +485,3 @@ class AppApiClient {
     return payload;
   }
 }
-
-const Map<String, String> _jsonHeaders = {
-  "Content-Type": "application/json",
-  "Accept": "application/json",
-};

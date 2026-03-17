@@ -1,6 +1,12 @@
+using System.Security.Claims;
+using System.Text;
 using System.Net.Http.Headers;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.IdentityModel.Tokens;
+using UrbanArtDropFinder.Application.Abstractions;
 using UrbanArtDropFinder.Application.Auth;
 using UrbanArtDropFinder.Application.Drops;
 using UrbanArtDropFinder.Contracts.Admin;
@@ -17,9 +23,12 @@ using UrbanArtDropFinder.Domain.Shared;
 using UrbanArtDropFinder.Domain.Users;
 using UrbanArtDropFinder.Api.Services;
 using UrbanArtDropFinder.Infrastructure.DependencyInjection;
+using UrbanArtDropFinder.Infrastructure.Authentication;
 using UrbanArtDropFinder.Persistence.Db;
 
 var builder = WebApplication.CreateBuilder(args);
+var jwtOptions = JwtAuthenticationOptionsResolver.Resolve(builder.Configuration, builder.Environment.EnvironmentName);
+
 builder.WebHost.ConfigureKestrel(options =>
 {
     options.ConfigureEndpointDefaults(endpointOptions =>
@@ -32,6 +41,36 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddGrpc();
 builder.Services.AddHttpClient("photo-fetcher");
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateIssuerSigningKey = true,
+            ValidateLifetime = true,
+            ValidIssuer = jwtOptions.Issuer,
+            ValidAudience = jwtOptions.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey!)),
+            ClockSkew = TimeSpan.FromMinutes(1)
+        };
+    });
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(AuthPolicies.ApprovedAccount, policy => policy.RequireAuthenticatedUser());
+    options.AddPolicy(AuthPolicies.ArtistOrAdmin, policy =>
+        policy.RequireRole(UserRole.Artist.ToString(), UserRole.Admin.ToString()));
+    options.AddPolicy(AuthPolicies.DropCreator, policy =>
+        policy.RequireRole(UserRole.Artist.ToString(), UserRole.DropMaker.ToString(), UserRole.Admin.ToString()));
+    options.AddPolicy(AuthPolicies.ModerationAccess, policy =>
+        policy.RequireRole(
+            UserRole.Artist.ToString(),
+            UserRole.DropMaker.ToString(),
+            UserRole.Moderator.ToString(),
+            UserRole.Admin.ToString()));
+    options.AddPolicy(AuthPolicies.AdminOnly, policy => policy.RequireRole(UserRole.Admin.ToString()));
+});
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendDev", policy =>
@@ -39,7 +78,7 @@ builder.Services.AddCors(options =>
         policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
     });
 });
-builder.Services.AddUrbanArtInfrastructure(builder.Configuration);
+builder.Services.AddUrbanArtInfrastructure(builder.Configuration, jwtOptions);
 
 var app = builder.Build();
 
@@ -50,6 +89,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("FrontendDev");
+app.UseAuthentication();
+app.UseAuthorization();
 
 await SeedConfigurationAsync(app.Services);
 
@@ -152,6 +193,18 @@ authGroup.MapPost("/verify-email/{userId:guid}", async (
     return Results.Ok();
 });
 
+var usersGroup = app.MapGroup("/api/users");
+usersGroup.MapGet("/directory", async (UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+{
+    var users = await dbContext.UserAccounts
+        .AsNoTracking()
+        .Where(user => user.IsApproved && !user.IsSuspended)
+        .OrderBy(user => user.UserName)
+        .ToListAsync(cancellationToken);
+
+    return Results.Ok(users.Select(user => ToManagedUserResponse(user, includeEmail: false)).ToList());
+});
+
 var artGroup = app.MapGroup("/api/art-pieces");
 artGroup.MapGet("/", async (HttpContext httpContext, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
 {
@@ -185,6 +238,17 @@ artGroup.MapPost("/", async (
     IHttpClientFactory httpClientFactory,
     CancellationToken cancellationToken) =>
 {
+    var actorResolution = await ResolveAuthenticatedActorAsync(httpContext, dbContext, cancellationToken);
+    if (actorResolution.Failure is not null)
+    {
+        return actorResolution.Failure;
+    }
+
+    if (!CanCreateArtPiece(actorResolution.Actor!, request.ArtistId))
+    {
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
+    }
+
     try
     {
         var artPiece = ArtPiece.Create(request.ArtistId, request.Title, request.Description, request.AssetKind);
@@ -213,7 +277,7 @@ artGroup.MapPost("/", async (
     {
         return Results.BadRequest(new { error = ex.Message });
     }
-});
+}).RequireAuthorization(AuthPolicies.ArtistOrAdmin);
 
 artGroup.MapPut("/{id:guid}", async (
     Guid id,
@@ -223,10 +287,21 @@ artGroup.MapPut("/{id:guid}", async (
     IHttpClientFactory httpClientFactory,
     CancellationToken cancellationToken) =>
 {
+    var actorResolution = await ResolveAuthenticatedActorAsync(httpContext, dbContext, cancellationToken);
+    if (actorResolution.Failure is not null)
+    {
+        return actorResolution.Failure;
+    }
+
     var artPiece = await dbContext.ArtPieces.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     if (artPiece is null)
     {
         return Results.NotFound();
+    }
+
+    if (!CanManageArtPiece(actorResolution.Actor!, artPiece, request.ArtistId))
+    {
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
     }
 
     try
@@ -308,10 +383,16 @@ artGroup.MapPut("/{id:guid}", async (
     {
         return Results.BadRequest(new { error = ex.Message });
     }
-});
+}).RequireAuthorization(AuthPolicies.ArtistOrAdmin);
 
-artGroup.MapPost("/{id:guid}/publish", async (Guid id, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+artGroup.MapPost("/{id:guid}/publish", async (Guid id, HttpContext httpContext, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
 {
+    var actorResolution = await ResolveAuthenticatedActorAsync(httpContext, dbContext, cancellationToken);
+    if (actorResolution.Failure is not null)
+    {
+        return actorResolution.Failure;
+    }
+
     var artPiece = await dbContext.ArtPieces
         .Include(x => x.Photos)
         .Include(x => x.AssetFile)
@@ -319,6 +400,11 @@ artGroup.MapPost("/{id:guid}/publish", async (Guid id, UrbanArtDbContext dbConte
     if (artPiece is null)
     {
         return Results.NotFound();
+    }
+
+    if (!CanManageArtPiece(actorResolution.Actor!, artPiece))
+    {
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
     }
 
     try
@@ -331,20 +417,31 @@ artGroup.MapPost("/{id:guid}/publish", async (Guid id, UrbanArtDbContext dbConte
     {
         return Results.BadRequest(new { error = ex.Message });
     }
-});
+}).RequireAuthorization(AuthPolicies.ApprovedAccount);
 
-artGroup.MapPost("/{id:guid}/depublish", async (Guid id, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+artGroup.MapPost("/{id:guid}/depublish", async (Guid id, HttpContext httpContext, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
 {
+    var actorResolution = await ResolveAuthenticatedActorAsync(httpContext, dbContext, cancellationToken);
+    if (actorResolution.Failure is not null)
+    {
+        return actorResolution.Failure;
+    }
+
     var artPiece = await dbContext.ArtPieces.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     if (artPiece is null)
     {
         return Results.NotFound();
     }
 
+    if (!CanManageArtPiece(actorResolution.Actor!, artPiece))
+    {
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
+    }
+
     artPiece.Depublish();
     await dbContext.SaveChangesAsync(cancellationToken);
     return Results.Ok();
-});
+}).RequireAuthorization(AuthPolicies.ArtistOrAdmin);
 
 artGroup.MapPost("/{id:guid}/report", async (
     Guid id,
@@ -363,12 +460,23 @@ artGroup.MapPost("/{id:guid}/report", async (
     return Results.Ok(new { mailAlertTriggered = true });
 });
 
-artGroup.MapDelete("/{id:guid}", async (Guid id, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+artGroup.MapDelete("/{id:guid}", async (Guid id, HttpContext httpContext, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
 {
+    var actorResolution = await ResolveAuthenticatedActorAsync(httpContext, dbContext, cancellationToken);
+    if (actorResolution.Failure is not null)
+    {
+        return actorResolution.Failure;
+    }
+
     var artPiece = await dbContext.ArtPieces.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     if (artPiece is null)
     {
         return Results.NotFound();
+    }
+
+    if (!CanManageArtPiece(actorResolution.Actor!, artPiece))
+    {
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
     }
 
     dbContext.ArtPieces.Remove(artPiece);
@@ -409,6 +517,17 @@ dropsGroup.MapPost("/", async (
     IHttpClientFactory httpClientFactory,
     CancellationToken cancellationToken) =>
 {
+    var actorResolution = await ResolveAuthenticatedActorAsync(httpContext, dbContext, cancellationToken);
+    if (actorResolution.Failure is not null)
+    {
+        return actorResolution.Failure;
+    }
+
+    if (!await CanCreateDropAsync(actorResolution.Actor!, request, dbContext, cancellationToken))
+    {
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
+    }
+
     try
     {
         var drop = Drop.Create(request.ArtPieceId, request.DropMakerId, request.IsStationary, request.PortableItemCount);
@@ -443,7 +562,7 @@ dropsGroup.MapPost("/", async (
     {
         return Results.BadRequest(new { error = ex.Message });
     }
-});
+}).RequireAuthorization(AuthPolicies.DropCreator);
 
 dropsGroup.MapPut("/{id:guid}", async (
     Guid id,
@@ -453,11 +572,22 @@ dropsGroup.MapPut("/{id:guid}", async (
     IHttpClientFactory httpClientFactory,
     CancellationToken cancellationToken) =>
 {
+    var actorResolution = await ResolveAuthenticatedActorAsync(httpContext, dbContext, cancellationToken);
+    if (actorResolution.Failure is not null)
+    {
+        return actorResolution.Failure;
+    }
+
     var drop = await dbContext.Drops.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
     if (drop is null)
     {
         return Results.NotFound();
+    }
+
+    if (!await CanManageDropAsync(actorResolution.Actor!, drop, request.DropMakerId, dbContext, cancellationToken))
+    {
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
     }
 
     try
@@ -548,10 +678,16 @@ dropsGroup.MapPut("/{id:guid}", async (
     {
         return Results.BadRequest(new { error = ex.Message });
     }
-});
+}).RequireAuthorization(AuthPolicies.DropCreator);
 
-dropsGroup.MapPost("/{id:guid}/publish", async (Guid id, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+dropsGroup.MapPost("/{id:guid}/publish", async (Guid id, HttpContext httpContext, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
 {
+    var actorResolution = await ResolveAuthenticatedActorAsync(httpContext, dbContext, cancellationToken);
+    if (actorResolution.Failure is not null)
+    {
+        return actorResolution.Failure;
+    }
+
     var drop = await dbContext.Drops
         .Include(x => x.Items)
         .Include(x => x.LocationPhotos)
@@ -560,6 +696,11 @@ dropsGroup.MapPost("/{id:guid}/publish", async (Guid id, UrbanArtDbContext dbCon
     if (drop is null)
     {
         return Results.NotFound();
+    }
+
+    if (!await CanManageDropAsync(actorResolution.Actor!, drop, drop.DropMakerId, dbContext, cancellationToken))
+    {
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
     }
 
     try
@@ -572,23 +713,40 @@ dropsGroup.MapPost("/{id:guid}/publish", async (Guid id, UrbanArtDbContext dbCon
     {
         return Results.BadRequest(new { error = ex.Message });
     }
-});
+}).RequireAuthorization(AuthPolicies.DropCreator);
 
-dropsGroup.MapPost("/{id:guid}/depublish", async (Guid id, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+dropsGroup.MapPost("/{id:guid}/depublish", async (Guid id, HttpContext httpContext, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
 {
+    var actorResolution = await ResolveAuthenticatedActorAsync(httpContext, dbContext, cancellationToken);
+    if (actorResolution.Failure is not null)
+    {
+        return actorResolution.Failure;
+    }
+
     var drop = await dbContext.Drops.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     if (drop is null)
     {
         return Results.NotFound();
     }
 
+    if (!await CanManageDropAsync(actorResolution.Actor!, drop, drop.DropMakerId, dbContext, cancellationToken))
+    {
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
+    }
+
     drop.Depublish();
     await dbContext.SaveChangesAsync(cancellationToken);
     return Results.Ok();
-});
+}).RequireAuthorization(AuthPolicies.DropCreator);
 
-dropsGroup.MapDelete("/{id:guid}", async (Guid id, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+dropsGroup.MapDelete("/{id:guid}", async (Guid id, HttpContext httpContext, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
 {
+    var actorResolution = await ResolveAuthenticatedActorAsync(httpContext, dbContext, cancellationToken);
+    if (actorResolution.Failure is not null)
+    {
+        return actorResolution.Failure;
+    }
+
     var drop = await dbContext.Drops
         .Include(x => x.Items)
         .Include(x => x.LocationPhotos)
@@ -599,6 +757,11 @@ dropsGroup.MapDelete("/{id:guid}", async (Guid id, UrbanArtDbContext dbContext, 
         return Results.NotFound();
     }
 
+    if (!await CanManageDropAsync(actorResolution.Actor!, drop, drop.DropMakerId, dbContext, cancellationToken))
+    {
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
+    }
+
     dbContext.Drops.Remove(drop);
     await dbContext.SaveChangesAsync(cancellationToken);
     return Results.NoContent();
@@ -607,13 +770,25 @@ dropsGroup.MapDelete("/{id:guid}", async (Guid id, UrbanArtDbContext dbContext, 
 dropsGroup.MapPost("/{id:guid}/mark-all-claimed", async (
     Guid id,
     ClaimDropItemRequest request,
+    HttpContext httpContext,
     UrbanArtDbContext dbContext,
     CancellationToken cancellationToken) =>
 {
+    var actorResolution = await ResolveAuthenticatedActorAsync(httpContext, dbContext, cancellationToken);
+    if (actorResolution.Failure is not null)
+    {
+        return actorResolution.Failure;
+    }
+
     var drop = await dbContext.Drops.Include(x => x.Items).FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     if (drop is null)
     {
         return Results.NotFound();
+    }
+
+    if (!await CanManageDropAsync(actorResolution.Actor!, drop, drop.DropMakerId, dbContext, cancellationToken))
+    {
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
     }
 
     try
@@ -684,38 +859,44 @@ commentsGroup.MapGet("/drop/{dropId:guid}", async (Guid dropId, UrbanArtDbContex
     return Results.Ok(comments.Select(comment => ToCommentResponse(comment, usersById)).ToList());
 });
 
-commentsGroup.MapPost("/", async (CreateCommentRequest request, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+commentsGroup.MapPost("/", async (CreateCommentRequest request, HttpContext httpContext, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
 {
+    var actorResolution = await ResolveAuthenticatedActorAsync(httpContext, dbContext, cancellationToken);
+    if (actorResolution.Failure is not null)
+    {
+        return actorResolution.Failure;
+    }
+
     if (string.IsNullOrWhiteSpace(request.Content))
     {
         return Results.BadRequest(new { error = "Comment content is required." });
     }
 
-    if (!request.AuthorUserId.HasValue && string.IsNullOrWhiteSpace(request.AnonymousNickname))
+    if (!CanCreateComment(actorResolution.Actor!))
     {
-        return Results.BadRequest(new { error = "Anonymous comments require nickname." });
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
     }
 
     var comment = new DropComment
     {
         DropId = request.DropId,
-        AuthorUserId = request.AuthorUserId,
-        AnonymousNickname = request.AnonymousNickname?.Trim(),
+        AuthorUserId = actorResolution.Actor!.Id,
+        AnonymousNickname = null,
         Content = request.Content.Trim(),
         CreatedAtUtc = DateTimeOffset.UtcNow
     };
 
     await dbContext.DropComments.AddAsync(comment, cancellationToken);
     await dbContext.SaveChangesAsync(cancellationToken);
-    var usersById = request.AuthorUserId.HasValue
+    var usersById = comment.AuthorUserId.HasValue
         ? await dbContext.UserAccounts
             .AsNoTracking()
-            .Where(user => user.Id == request.AuthorUserId.Value)
+            .Where(user => user.Id == comment.AuthorUserId.Value)
             .ToDictionaryAsync(user => user.Id, cancellationToken)
         : new Dictionary<Guid, UserAccount>();
 
     return Results.Created($"/api/comments/{comment.Id}", ToCommentResponse(comment, usersById));
-});
+}).RequireAuthorization(AuthPolicies.ApprovedAccount);
 
 commentsGroup.MapPost("/{id:guid}/report", async (
     Guid id,
@@ -732,7 +913,7 @@ commentsGroup.MapPost("/{id:guid}/report", async (
     comment.Report(request.Reason, DateTimeOffset.UtcNow);
     await dbContext.SaveChangesAsync(cancellationToken);
     return Results.Ok(new { mailAlertTriggered = true });
-});
+}).RequireAuthorization(AuthPolicies.ApprovedAccount);
 
 commentsGroup.MapPost("/{id:guid}/hide", async (
     Guid id,
@@ -760,7 +941,7 @@ commentsGroup.MapPost("/{id:guid}/hide", async (
     comment.Hide(DateTimeOffset.UtcNow);
     await dbContext.SaveChangesAsync(cancellationToken);
     return Results.Ok();
-});
+}).RequireAuthorization(AuthPolicies.ModerationAccess);
 
 commentsGroup.MapPost("/{id:guid}/dismiss-report", async (
     Guid id,
@@ -788,7 +969,7 @@ commentsGroup.MapPost("/{id:guid}/dismiss-report", async (
     comment.DismissReport();
     await dbContext.SaveChangesAsync(cancellationToken);
     return Results.Ok();
-});
+}).RequireAuthorization(AuthPolicies.ModerationAccess);
 
 var moderationGroup = app.MapGroup("/api/moderation");
 moderationGroup.MapGet("/reports", async (
@@ -924,7 +1105,7 @@ moderationGroup.MapGet("/reports", async (
         .ToList();
 
     return Results.Ok(new ModerationQueueResponse(commentResponses, artPieceResponses));
-});
+}).RequireAuthorization(AuthPolicies.ModerationAccess);
 
 moderationGroup.MapPost("/comments/{id:guid}/hide", async (
     Guid id,
@@ -952,7 +1133,7 @@ moderationGroup.MapPost("/comments/{id:guid}/hide", async (
     comment.Hide(DateTimeOffset.UtcNow);
     await dbContext.SaveChangesAsync(cancellationToken);
     return Results.Ok();
-});
+}).RequireAuthorization(AuthPolicies.ModerationAccess);
 
 moderationGroup.MapPost("/comments/{id:guid}/dismiss-report", async (
     Guid id,
@@ -980,7 +1161,7 @@ moderationGroup.MapPost("/comments/{id:guid}/dismiss-report", async (
     comment.DismissReport();
     await dbContext.SaveChangesAsync(cancellationToken);
     return Results.Ok();
-});
+}).RequireAuthorization(AuthPolicies.ModerationAccess);
 
 moderationGroup.MapPost("/art-pieces/{id:guid}/depublish", async (
     Guid id,
@@ -1009,7 +1190,7 @@ moderationGroup.MapPost("/art-pieces/{id:guid}/depublish", async (
     artPiece.DismissReport();
     await dbContext.SaveChangesAsync(cancellationToken);
     return Results.Ok();
-});
+}).RequireAuthorization(AuthPolicies.ModerationAccess);
 
 moderationGroup.MapPost("/art-pieces/{id:guid}/dismiss-report", async (
     Guid id,
@@ -1037,7 +1218,7 @@ moderationGroup.MapPost("/art-pieces/{id:guid}/dismiss-report", async (
     artPiece.DismissReport();
     await dbContext.SaveChangesAsync(cancellationToken);
     return Results.Ok();
-});
+}).RequireAuthorization(AuthPolicies.ModerationAccess);
 
 var discoveryGroup = app.MapGroup("/api/discovery");
 discoveryGroup.MapGet("/drops", async (
@@ -1130,7 +1311,8 @@ discoveryGroup.MapGet("/leaderboard", async (UrbanArtDbContext dbContext, Cancel
 
 var adminGroup = app.MapGroup("/api/admin");
 adminGroup.MapGet("/configuration", async (UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
-    Results.Ok(await GetConfigurationAsync(dbContext, cancellationToken)));
+    Results.Ok(await GetConfigurationAsync(dbContext, cancellationToken)))
+    .RequireAuthorization(AuthPolicies.AdminOnly);
 
 adminGroup.MapPut("/configuration", async (
     UpdateAppConfigurationRequest request,
@@ -1146,61 +1328,97 @@ adminGroup.MapPut("/configuration", async (
 
     await dbContext.SaveChangesAsync(cancellationToken);
     return Results.Ok(config);
-});
+}).RequireAuthorization(AuthPolicies.AdminOnly);
 
 adminGroup.MapGet("/users", async (UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
-    Results.Ok(await dbContext.UserAccounts.AsNoTracking().OrderBy(x => x.UserName).ToListAsync(cancellationToken)));
+{
+    var users = await dbContext.UserAccounts
+        .AsNoTracking()
+        .OrderBy(user => user.UserName)
+        .ToListAsync(cancellationToken);
+    return Results.Ok(users.Select(user => ToManagedUserResponse(user, includeEmail: true)).ToList());
+})
+    .RequireAuthorization(AuthPolicies.AdminOnly);
 
 adminGroup.MapPost("/users", async (
     CreateManagedUserRequest request,
-    AuthApplicationService authService,
+    IPasswordHasher passwordHasher,
     UrbanArtDbContext dbContext,
     CancellationToken cancellationToken) =>
 {
+    if (await dbContext.UserAccounts.AnyAsync(user => user.Email == request.Email.Trim().ToLowerInvariant(), cancellationToken))
+    {
+        return Results.BadRequest(new { error = "Email already exists." });
+    }
+
+    if (await dbContext.UserAccounts.AnyAsync(user => user.UserName == request.UserName.Trim(), cancellationToken))
+    {
+        return Results.BadRequest(new { error = "User name already exists." });
+    }
+
     if (request.IsProviderAccount)
     {
-        var providerResult = await authService.RegisterProviderAsync(
-            new RegisterProviderRequest(request.Provider ?? string.Empty, request.ProviderSubject ?? string.Empty, request.Email, request.UserName, request.Role),
+        if (string.IsNullOrWhiteSpace(request.Provider) || string.IsNullOrWhiteSpace(request.ProviderSubject))
+        {
+            return Results.BadRequest(new { error = "Provider and provider subject are required for provider accounts." });
+        }
+
+        var provider = request.Provider.Trim();
+        var providerSubject = request.ProviderSubject.Trim();
+        var providerExists = await dbContext.UserProviderLinks.AnyAsync(
+            link => link.Provider == provider && link.ProviderSubject == providerSubject,
             cancellationToken);
-
-        if (!providerResult.Success)
+        if (providerExists)
         {
-            return Results.BadRequest(providerResult);
+            return Results.BadRequest(new { error = "Provider subject is already linked." });
         }
 
-        var providerUser = await dbContext.UserAccounts.FirstOrDefaultAsync(x => x.Id == providerResult.UserId, cancellationToken);
-        if (providerUser is not null)
-        {
-            providerUser.SetApproval(request.IsApproved);
-            await dbContext.SaveChangesAsync(cancellationToken);
-        }
-
-        return Results.Ok(providerResult);
-    }
-
-    var localResult = await authService.RegisterLocalAsync(
-        new RegisterLocalRequest(request.Email, request.UserName, request.Password ?? string.Empty, request.Role),
-        cancellationToken);
-
-    if (!localResult.Success)
-    {
-        return Results.BadRequest(localResult);
-    }
-
-    var user = await dbContext.UserAccounts.FirstOrDefaultAsync(x => x.Id == localResult.UserId, cancellationToken);
-    if (user is not null)
-    {
-        user.SetApproval(request.IsApproved);
+        var providerUser = UserAccount.CreateProvider(request.Email, request.UserName, request.Role, provider, request.IsApproved);
         if (request.IsEmailVerified)
         {
-            user.MarkEmailVerified();
+            providerUser.MarkEmailVerified();
         }
 
+        providerUser.SetApproval(request.IsApproved);
+        providerUser.SetSuspended(false);
+        await dbContext.UserAccounts.AddAsync(providerUser, cancellationToken);
+        await dbContext.UserProviderLinks.AddAsync(
+            new UserProviderLink
+            {
+                UserAccountId = providerUser.Id,
+                Provider = provider,
+                ProviderSubject = providerSubject
+            },
+            cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        return Results.Ok(new AuthResult(true, "Managed user created.", providerUser.Id, providerUser.Role, providerUser.UserName, providerUser.Email));
     }
 
-    return Results.Ok(localResult);
-});
+    if (string.IsNullOrWhiteSpace(request.Password))
+    {
+        return Results.BadRequest(new { error = "Password is required for local accounts." });
+    }
+
+    var passwordValidation = PasswordPolicy.Validate(request.Password);
+    if (!passwordValidation.IsValid)
+    {
+        return Results.BadRequest(new { error = passwordValidation.Error ?? "Invalid password." });
+    }
+
+    var passwordHash = passwordHasher.Hash(request.Password);
+    var user = UserAccount.CreateLocal(request.Email, request.UserName, request.Role, passwordHash, request.IsApproved);
+    if (request.IsEmailVerified)
+    {
+        user.MarkEmailVerified();
+    }
+
+    user.SetApproval(request.IsApproved);
+    user.SetSuspended(false);
+    await dbContext.UserAccounts.AddAsync(user, cancellationToken);
+    await dbContext.SaveChangesAsync(cancellationToken);
+    return Results.Ok(new AuthResult(true, "Managed user created.", user.Id, user.Role, user.UserName, user.Email));
+}).RequireAuthorization(AuthPolicies.AdminOnly);
 
 adminGroup.MapPatch("/users/{userId:guid}/approval", async (Guid userId, bool approved, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
 {
@@ -1213,7 +1431,7 @@ adminGroup.MapPatch("/users/{userId:guid}/approval", async (Guid userId, bool ap
     user.SetApproval(approved);
     await dbContext.SaveChangesAsync(cancellationToken);
     return Results.Ok();
-});
+}).RequireAuthorization(AuthPolicies.AdminOnly);
 
 adminGroup.MapPatch("/users/{userId:guid}/suspension", async (Guid userId, bool suspended, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
 {
@@ -1226,7 +1444,7 @@ adminGroup.MapPatch("/users/{userId:guid}/suspension", async (Guid userId, bool 
     user.SetSuspended(suspended);
     await dbContext.SaveChangesAsync(cancellationToken);
     return Results.Ok();
-});
+}).RequireAuthorization(AuthPolicies.AdminOnly);
 
 adminGroup.MapPatch("/users/{userId:guid}/role", async (Guid userId, UserRole role, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
 {
@@ -1239,7 +1457,7 @@ adminGroup.MapPatch("/users/{userId:guid}/role", async (Guid userId, UserRole ro
     user.ChangeRole(role);
     await dbContext.SaveChangesAsync(cancellationToken);
     return Results.Ok();
-});
+}).RequireAuthorization(AuthPolicies.AdminOnly);
 
 adminGroup.MapPatch("/users/{userId:guid}/profile", async (
     Guid userId,
@@ -1256,7 +1474,7 @@ adminGroup.MapPatch("/users/{userId:guid}/profile", async (
     user.ChangeUserName(request.UserName);
     await dbContext.SaveChangesAsync(cancellationToken);
     return Results.Ok();
-});
+}).RequireAuthorization(AuthPolicies.AdminOnly);
 
 app.Run();
 
@@ -1295,13 +1513,12 @@ static async Task<AppConfiguration> GetConfigurationAsync(UrbanArtDbContext dbCo
     return config;
 }
 
-static async Task<(UserAccount? Actor, IResult? Failure)> ResolveModerationActorAsync(
+static async Task<(UserAccount? Actor, IResult? Failure)> ResolveAuthenticatedActorAsync(
     HttpContext httpContext,
     UrbanArtDbContext dbContext,
     CancellationToken cancellationToken)
 {
-    if (!httpContext.Request.Headers.TryGetValue("X-Actor-User-Id", out var actorHeader)
-        || !Guid.TryParse(actorHeader.ToString(), out var actorUserId))
+    if (!TryGetAuthenticatedUserId(httpContext.User, out var actorUserId))
     {
         return (null, Results.Unauthorized());
     }
@@ -1322,11 +1539,132 @@ static async Task<(UserAccount? Actor, IResult? Failure)> ResolveModerationActor
     return (actor, null);
 }
 
+static async Task<(UserAccount? Actor, IResult? Failure)> ResolveModerationActorAsync(
+    HttpContext httpContext,
+    UrbanArtDbContext dbContext,
+    CancellationToken cancellationToken)
+{
+    var actorResolution = await ResolveAuthenticatedActorAsync(httpContext, dbContext, cancellationToken);
+    if (actorResolution.Failure is not null)
+    {
+        return actorResolution;
+    }
+
+    var actor = actorResolution.Actor!;
+    if (!CanAccessModerationQueue(actor))
+    {
+        return (null, Results.StatusCode(StatusCodes.Status403Forbidden));
+    }
+
+    return (actor, null);
+}
+
+static bool TryGetAuthenticatedUserId(ClaimsPrincipal principal, out Guid userId)
+{
+    userId = Guid.Empty;
+    var rawUserId = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+    return !string.IsNullOrWhiteSpace(rawUserId) && Guid.TryParse(rawUserId, out userId);
+}
+
+static bool CanCreateArtPiece(UserAccount actor, Guid artistId)
+    => actor.Role == UserRole.Admin || (actor.Role == UserRole.Artist && actor.Id == artistId);
+
+static bool CanManageArtPiece(UserAccount actor, ArtPiece artPiece, Guid? requestedArtistId = null)
+{
+    if (actor.Role == UserRole.Admin)
+    {
+        return true;
+    }
+
+    if (actor.Role != UserRole.Artist)
+    {
+        return false;
+    }
+
+    if (artPiece.ArtistId != actor.Id)
+    {
+        return false;
+    }
+
+    return !requestedArtistId.HasValue || requestedArtistId.Value == actor.Id;
+}
+
+static async Task<bool> CanCreateDropAsync(
+    UserAccount actor,
+    CreateDropRequest request,
+    UrbanArtDbContext dbContext,
+    CancellationToken cancellationToken)
+{
+    if (actor.Role == UserRole.Admin)
+    {
+        return true;
+    }
+
+    if (actor.Role == UserRole.DropMaker)
+    {
+        return actor.Id == request.DropMakerId;
+    }
+
+    if (actor.Role != UserRole.Artist)
+    {
+        return false;
+    }
+
+    if (request.DropMakerId != actor.Id)
+    {
+        return false;
+    }
+
+    return await dbContext.ArtPieces
+        .AsNoTracking()
+        .AnyAsync(artPiece => artPiece.Id == request.ArtPieceId && artPiece.ArtistId == actor.Id, cancellationToken);
+}
+
+static async Task<bool> CanManageDropAsync(
+    UserAccount actor,
+    Drop drop,
+    Guid requestedDropMakerId,
+    UrbanArtDbContext dbContext,
+    CancellationToken cancellationToken)
+{
+    if (actor.Role == UserRole.Admin)
+    {
+        return true;
+    }
+
+    if (requestedDropMakerId != drop.DropMakerId)
+    {
+        return false;
+    }
+
+    if (actor.Role == UserRole.DropMaker)
+    {
+        return drop.DropMakerId == actor.Id;
+    }
+
+    if (actor.Role == UserRole.Artist)
+    {
+        if (drop.DropMakerId == actor.Id)
+        {
+            return true;
+        }
+
+        return await dbContext.ArtPieces
+            .AsNoTracking()
+            .AnyAsync(artPiece => artPiece.Id == drop.ArtPieceId && artPiece.ArtistId == actor.Id, cancellationToken);
+    }
+
+    return false;
+}
+
 static bool CanAccessModerationQueue(UserAccount actor)
     => actor.Role is UserRole.Artist or UserRole.DropMaker or UserRole.Moderator or UserRole.Admin;
 
 static bool CanModerateArtPieceReports(UserAccount actor)
     => actor.Role is UserRole.Moderator or UserRole.Admin;
+
+static bool CanCreateComment(UserAccount actor)
+    => actor.Role is UserRole.Hunter or UserRole.Artist or UserRole.DropMaker or UserRole.Moderator or UserRole.Admin;
 
 static async Task<bool> CanModerateCommentAsync(
     UserAccount actor,
@@ -1447,6 +1785,17 @@ static DropResponseDto ToDropResponse(Drop drop, HttpRequest request)
         locationPhotos,
         items);
 }
+
+static ManagedUserResponseDto ToManagedUserResponse(UserAccount user, bool includeEmail)
+    => new(
+        user.Id,
+        includeEmail ? user.Email : string.Empty,
+        user.UserName,
+        user.Role,
+        user.IsApproved,
+        user.IsSuspended,
+        user.IsEmailVerified,
+        user.IsProviderAccount);
 
 static async Task<IReadOnlyList<ResolvedPhotoPayload>> ResolvePhotoSourcesAsync(
     IEnumerable<string>? photoSources,
@@ -1842,6 +2191,16 @@ internal sealed record DropResponseDto(
     IReadOnlyCollection<PhotoReferenceDto> LocationPhotos,
     IReadOnlyCollection<DropItemResponseDto> Items);
 
+internal sealed record ManagedUserResponseDto(
+    Guid Id,
+    string Email,
+    string UserName,
+    UserRole Role,
+    bool IsApproved,
+    bool IsSuspended,
+    bool IsEmailVerified,
+    bool IsProviderAccount);
+
 internal readonly record struct ResolvedPhotoPayload(byte[] BinaryData, string ContentType);
 internal readonly record struct ResolvedAssetPayload(byte[] BinaryData, string ContentType, string FileName);
 
@@ -1863,6 +2222,15 @@ internal sealed record CreateManagedUserRequest(
     string? ProviderSubject);
 
 internal sealed record UpdateManagedUserProfileRequest(string UserName);
+
+internal static class AuthPolicies
+{
+    public const string ApprovedAccount = "ApprovedAccount";
+    public const string ArtistOrAdmin = "ArtistOrAdmin";
+    public const string DropCreator = "DropCreator";
+    public const string ModerationAccess = "ModerationAccess";
+    public const string AdminOnly = "AdminOnly";
+}
 
 public partial class Program
 {

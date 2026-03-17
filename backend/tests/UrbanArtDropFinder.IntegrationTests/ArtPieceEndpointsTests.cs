@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using UrbanArtDropFinder.Contracts.Art;
 using UrbanArtDropFinder.Domain.Art;
+using UrbanArtDropFinder.Domain.Users;
 
 namespace UrbanArtDropFinder.IntegrationTests;
 
@@ -13,9 +14,11 @@ public sealed class ArtPieceEndpointsTests : IClassFixture<TestWebApplicationFac
         "data:model/gltf-binary;base64,Z2xURg==";
 
     private readonly HttpClient _client;
+    private readonly TestWebApplicationFactory _factory;
 
     public ArtPieceEndpointsTests(TestWebApplicationFactory factory)
     {
+        _factory = factory;
         _client = factory.CreateClient();
     }
 
@@ -23,6 +26,7 @@ public sealed class ArtPieceEndpointsTests : IClassFixture<TestWebApplicationFac
     public async Task ArtPieceCrudFlow_CreatesUpdatesPublishesAndDeletesResource()
     {
         var uniqueId = Guid.NewGuid().ToString("N");
+        var admin = await _factory.CreateAuthenticatedUserAsync(UserRole.Admin, $"admin.art.{uniqueId}");
         var createRequest = new
         {
             artistId = Guid.NewGuid(),
@@ -34,7 +38,7 @@ public sealed class ArtPieceEndpointsTests : IClassFixture<TestWebApplicationFac
             assetFileName = "crystal-owl.glb"
         };
 
-        var createResponse = await _client.PostAsJsonAsync("/api/art-pieces/", createRequest);
+        var createResponse = await _client.PostAuthorizedAsJsonAsync("/api/art-pieces/", createRequest, admin.AccessToken);
 
         await EnsureSuccessWithBodyAsync(createResponse);
         var createdArtPiece = await createResponse.Content.ReadFromJsonAsync<ArtPieceResponseDto>();
@@ -74,9 +78,10 @@ public sealed class ArtPieceEndpointsTests : IClassFixture<TestWebApplicationFac
             assetFileName = "steel-fox.glb"
         };
 
-        var updateResponse = await _client.PutAsJsonAsync(
+        var updateResponse = await _client.PutAuthorizedAsJsonAsync(
             $"/api/art-pieces/{createdArtPiece.Id}",
-            updateRequest);
+            updateRequest,
+            admin.AccessToken);
 
         await EnsureSuccessWithBodyAsync(updateResponse);
         var updatedArtPiece = await updateResponse.Content.ReadFromJsonAsync<ArtPieceResponseDto>();
@@ -88,9 +93,9 @@ public sealed class ArtPieceEndpointsTests : IClassFixture<TestWebApplicationFac
         Assert.NotNull(updatedArtPiece.AssetFile);
         Assert.Equal("steel-fox.glb", updatedArtPiece.AssetFile!.FileName);
 
-        var publishResponse = await _client.PostAsync(
+        var publishResponse = await _client.PostAuthorizedAsync(
             $"/api/art-pieces/{createdArtPiece.Id}/publish",
-            content: null);
+            admin.AccessToken);
 
         await EnsureSuccessWithBodyAsync(publishResponse);
         var publishedArtPiece = await _client.GetFromJsonAsync<ArtPieceResponseDto>(
@@ -98,7 +103,7 @@ public sealed class ArtPieceEndpointsTests : IClassFixture<TestWebApplicationFac
         Assert.NotNull(publishedArtPiece);
         Assert.True(publishedArtPiece!.IsPublished);
 
-        var deleteResponse = await _client.DeleteAsync($"/api/art-pieces/{createdArtPiece.Id}");
+        var deleteResponse = await _client.DeleteAuthorizedAsync($"/api/art-pieces/{createdArtPiece.Id}", admin.AccessToken);
         deleteResponse.EnsureSuccessStatusCode();
 
         var deletedGetResponse = await _client.GetAsync($"/api/art-pieces/{createdArtPiece.Id}");

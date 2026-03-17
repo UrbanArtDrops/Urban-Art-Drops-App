@@ -6,6 +6,9 @@
 
 ## Required configuration
 - ConnectionStrings__SqlServer
+- Authentication__Jwt__Issuer
+- Authentication__Jwt__Audience
+- Authentication__Jwt__SigningKey
 - SMTP host settings
 - Map radius configuration
   - `MainMapRadiusKm` (default 30)
@@ -30,6 +33,10 @@
 - Hunters are approved immediately after registration, while Artist and Drop-Maker accounts remain pending until admin approval
 - Local login consumes the stored backend role and identity payload instead of accepting a client-side role selection
 - Admin accounts are only created or assigned through the user-management flow
+- Local login returns a JWT bearer token with expiry metadata and the Flutter client attaches that token automatically to protected API calls
+- Startup route guards redirect unauthenticated users away from protected artist, drop-maker, moderation and admin screens to `/auth/login`
+- Admin endpoints require an authenticated admin token; moderation endpoints require a moderator/admin token or the scoped artist/drop-maker ownership rules enforced by the API
+- For local development without an explicit signing key, the API can run with an ephemeral process-local JWT key; use user-secrets or environment variables when sessions must survive API restarts
 
 ## Backup
 - Daily backup job

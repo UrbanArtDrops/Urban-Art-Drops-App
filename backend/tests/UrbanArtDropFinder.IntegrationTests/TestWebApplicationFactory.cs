@@ -20,6 +20,9 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
                 {
                     ["Persistence:Provider"] = "InMemory",
                     ["Persistence:InMemoryDatabaseName"] = databaseName,
+                    ["Authentication:Jwt:Issuer"] = "UrbanArtDrops.Tests",
+                    ["Authentication:Jwt:Audience"] = "UrbanArtDrops.Tests.Client",
+                    ["Authentication:Jwt:SigningKey"] = "UrbanArtDrops_IntegrationTests_Only_Signing_Key_1234567890",
                     ["ConnectionStrings:SqlServer"] =
                         "Server=(localdb)\\MSSQLLocalDB;Database=UrbanArtDropFinder.Tests.Placeholder;Trusted_Connection=True;TrustServerCertificate=True"
                 });
