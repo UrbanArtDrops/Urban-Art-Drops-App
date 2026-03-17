@@ -22,18 +22,63 @@ class _ModerationPageState extends State<ModerationPage> {
   late final AppApiClient _apiClient;
 
   ModerationQueueModel? _queue;
-  bool _isLoading = true;
+  bool _isLoading = false;
   String? _error;
   String? _pendingActionKey;
+  String? _loadedModerationActorId;
 
   @override
   void initState() {
     super.initState();
     _apiClient = widget.apiClient ?? AppApiClient();
-    _loadQueue();
   }
 
-  Future<void> _loadQueue() async {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _ensureModerationQueueLoaded();
+  }
+
+  bool _canModerate(AuthSessionState authState) =>
+      authState.isAuthenticated &&
+      authState.userId != null &&
+      (authState.role == AppUserRole.artist ||
+          authState.role == AppUserRole.moderator ||
+          authState.role == AppUserRole.admin);
+
+  String? _moderationActorId(AuthSessionState authState) =>
+      _canModerate(authState) ? authState.userId : null;
+
+  void _ensureModerationQueueLoaded() {
+    final authState = context.read<AuthSessionCubit>().state;
+    final actorId = _moderationActorId(authState);
+
+    if (actorId == null) {
+      if (_loadedModerationActorId != null ||
+          _queue != null ||
+          _error != null ||
+          _isLoading ||
+          _pendingActionKey != null) {
+        setState(() {
+          _loadedModerationActorId = null;
+          _queue = null;
+          _error = null;
+          _isLoading = false;
+          _pendingActionKey = null;
+        });
+      }
+      return;
+    }
+
+    if (_loadedModerationActorId == actorId) {
+      return;
+    }
+
+    _loadedModerationActorId = actorId;
+    _loadQueue(actorId);
+  }
+
+  Future<void> _loadQueue(String actingUserId) async {
     setState(() {
       _isLoading = true;
       _error = null;
@@ -41,8 +86,10 @@ class _ModerationPageState extends State<ModerationPage> {
     });
 
     try {
-      final queue = await _apiClient.getModerationQueue();
-      if (!mounted) {
+      final queue = await _apiClient.getModerationQueue(
+        actingUserId: actingUserId,
+      );
+      if (!mounted || _loadedModerationActorId != actingUserId) {
         return;
       }
 
@@ -51,7 +98,7 @@ class _ModerationPageState extends State<ModerationPage> {
         _isLoading = false;
       });
     } catch (_) {
-      if (!mounted) {
+      if (!mounted || _loadedModerationActorId != actingUserId) {
         return;
       }
 
@@ -64,21 +111,26 @@ class _ModerationPageState extends State<ModerationPage> {
 
   Future<void> _runAction(
     String actionKey,
-    Future<void> Function() action,
+    Future<void> Function(String actingUserId) action,
   ) async {
     if (_pendingActionKey != null) {
+      return;
+    }
+
+    final actorId = _moderationActorId(context.read<AuthSessionCubit>().state);
+    if (actorId == null) {
       return;
     }
 
     setState(() => _pendingActionKey = actionKey);
 
     try {
-      await action();
+      await action(actorId);
       if (!mounted) {
         return;
       }
 
-      await _loadQueue();
+      await _loadQueue(actorId);
     } catch (_) {
       if (!mounted) {
         return;
@@ -97,7 +149,8 @@ class _ModerationPageState extends State<ModerationPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final authState = context.watch<AuthSessionCubit>().state;
-    final canModerate =
+    final canModerate = _canModerate(authState);
+    final canModerateArtPieces =
         authState.role == AppUserRole.moderator ||
         authState.role == AppUserRole.admin;
 
@@ -106,7 +159,14 @@ class _ModerationPageState extends State<ModerationPage> {
       actions: [
         IconButton(
           tooltip: l10n.refreshAction,
-          onPressed: _isLoading ? null : _loadQueue,
+          onPressed: _isLoading
+              ? null
+              : () {
+                  final actorId = _moderationActorId(authState);
+                  if (actorId != null) {
+                    _loadQueue(actorId);
+                  }
+                },
           icon: const Icon(Icons.refresh),
         ),
       ],
@@ -122,7 +182,12 @@ class _ModerationPageState extends State<ModerationPage> {
                   Text(_error!),
                   const SizedBox(height: 12),
                   FilledButton(
-                    onPressed: _loadQueue,
+                    onPressed: () {
+                      final actorId = _moderationActorId(authState);
+                      if (actorId != null) {
+                        _loadQueue(actorId);
+                      }
+                    },
                     child: Text(l10n.retryButton),
                   ),
                 ],
@@ -133,22 +198,35 @@ class _ModerationPageState extends State<ModerationPage> {
           : _ModerationContent(
               l10n: l10n,
               queue: _queue!,
+              showArtPieceReports: canModerateArtPieces,
               pendingActionKey: _pendingActionKey,
               onHideComment: (comment) => _runAction(
                 "comment-hide-${comment.id}",
-                () => _apiClient.hideReportedComment(comment.id),
+                (actorId) => _apiClient.hideReportedComment(
+                  comment.id,
+                  actingUserId: actorId,
+                ),
               ),
               onDismissComment: (comment) => _runAction(
                 "comment-dismiss-${comment.id}",
-                () => _apiClient.dismissReportedComment(comment.id),
+                (actorId) => _apiClient.dismissReportedComment(
+                  comment.id,
+                  actingUserId: actorId,
+                ),
               ),
               onDepublishArtPiece: (artPiece) => _runAction(
                 "artpiece-depublish-${artPiece.id}",
-                () => _apiClient.depublishReportedArtPiece(artPiece.id),
+                (actorId) => _apiClient.depublishReportedArtPiece(
+                  artPiece.id,
+                  actingUserId: actorId,
+                ),
               ),
               onDismissArtPiece: (artPiece) => _runAction(
                 "artpiece-dismiss-${artPiece.id}",
-                () => _apiClient.dismissReportedArtPiece(artPiece.id),
+                (actorId) => _apiClient.dismissReportedArtPiece(
+                  artPiece.id,
+                  actingUserId: actorId,
+                ),
               ),
             ),
     );
@@ -159,6 +237,7 @@ class _ModerationContent extends StatelessWidget {
   const _ModerationContent({
     required this.l10n,
     required this.queue,
+    required this.showArtPieceReports,
     required this.pendingActionKey,
     required this.onHideComment,
     required this.onDismissComment,
@@ -168,6 +247,7 @@ class _ModerationContent extends StatelessWidget {
 
   final AppLocalizations l10n;
   final ModerationQueueModel queue;
+  final bool showArtPieceReports;
   final String? pendingActionKey;
   final Future<void> Function(ReportedCommentModel comment) onHideComment;
   final Future<void> Function(ReportedCommentModel comment) onDismissComment;
@@ -210,7 +290,7 @@ class _ModerationContent extends StatelessWidget {
             ),
           ),
         ],
-        if (queue.artPieces.isNotEmpty) ...[
+        if (showArtPieceReports && queue.artPieces.isNotEmpty) ...[
           if (queue.comments.isNotEmpty) const SizedBox(height: 12),
           Text(
             l10n.moderationArtPieceSectionTitle,

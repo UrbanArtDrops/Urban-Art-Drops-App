@@ -317,47 +317,77 @@ class AppApiClient {
     _ensureSuccess(response, "Failed to report comment.");
   }
 
-  Future<void> hideComment(String id) async {
-    final response = await _httpClient.post(_uri("/api/comments/$id/hide"));
+  Future<void> hideComment(String id, {required String actingUserId}) async {
+    final response = await _httpClient.post(
+      _uri("/api/comments/$id/hide"),
+      headers: _moderationHeaders(actingUserId),
+    );
     _ensureSuccess(response, "Failed to hide comment.");
   }
 
-  Future<void> dismissCommentReport(String id) async {
+  Future<void> dismissCommentReport(
+    String id, {
+    required String actingUserId,
+  }) async {
     final response = await _httpClient.post(
       _uri("/api/comments/$id/dismiss-report"),
+      headers: _moderationHeaders(actingUserId),
     );
     _ensureSuccess(response, "Failed to dismiss comment report.");
   }
 
-  Future<ModerationQueueModel> getModerationQueue() async {
-    final data = await _getObject("/api/moderation/reports");
+  Future<ModerationQueueModel> getModerationQueue({
+    required String actingUserId,
+  }) async {
+    final response = await _httpClient.get(
+      _uri("/api/moderation/reports"),
+      headers: _moderationHeaders(actingUserId),
+    );
+    _ensureSuccess(response, "Failed to load moderation queue.");
+    final data = _decodeObjectResponse(response);
     return ModerationQueueModel.fromJson(data);
   }
 
-  Future<void> hideReportedComment(String id) async {
+  Future<void> hideReportedComment(
+    String id, {
+    required String actingUserId,
+  }) async {
     final response = await _httpClient.post(
       _uri("/api/moderation/comments/$id/hide"),
+      headers: _moderationHeaders(actingUserId),
     );
     _ensureSuccess(response, "Failed to hide reported comment.");
   }
 
-  Future<void> dismissReportedComment(String id) async {
+  Future<void> dismissReportedComment(
+    String id, {
+    required String actingUserId,
+  }) async {
     final response = await _httpClient.post(
       _uri("/api/moderation/comments/$id/dismiss-report"),
+      headers: _moderationHeaders(actingUserId),
     );
     _ensureSuccess(response, "Failed to dismiss reported comment.");
   }
 
-  Future<void> depublishReportedArtPiece(String id) async {
+  Future<void> depublishReportedArtPiece(
+    String id, {
+    required String actingUserId,
+  }) async {
     final response = await _httpClient.post(
       _uri("/api/moderation/art-pieces/$id/depublish"),
+      headers: _moderationHeaders(actingUserId),
     );
     _ensureSuccess(response, "Failed to depublish reported art piece.");
   }
 
-  Future<void> dismissReportedArtPiece(String id) async {
+  Future<void> dismissReportedArtPiece(
+    String id, {
+    required String actingUserId,
+  }) async {
     final response = await _httpClient.post(
       _uri("/api/moderation/art-pieces/$id/dismiss-report"),
+      headers: _moderationHeaders(actingUserId),
     );
     _ensureSuccess(response, "Failed to dismiss art piece report.");
   }
@@ -392,6 +422,11 @@ class AppApiClient {
 
     return uri.replace(queryParameters: query);
   }
+
+  Map<String, String> _moderationHeaders(String actingUserId) => {
+    "Accept": "application/json",
+    "X-Actor-User-Id": actingUserId,
+  };
 
   void _ensureSuccess(http.Response response, String fallbackMessage) {
     if (response.statusCode >= 200 && response.statusCode < 300) {

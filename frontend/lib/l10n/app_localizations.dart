@@ -1547,7 +1547,7 @@ abstract class AppLocalizations {
   /// No description provided for @moderationRestricted.
   ///
   /// In en, this message translates to:
-  /// **'This view is only available to moderators and admins.'**
+  /// **'This view is only available to artists, moderators, and admins.'**
   String get moderationRestricted;
 
   /// No description provided for @moderationEmpty.

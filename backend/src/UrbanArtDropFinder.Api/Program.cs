@@ -734,12 +734,27 @@ commentsGroup.MapPost("/{id:guid}/report", async (
     return Results.Ok(new { mailAlertTriggered = true });
 });
 
-commentsGroup.MapPost("/{id:guid}/hide", async (Guid id, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+commentsGroup.MapPost("/{id:guid}/hide", async (
+    Guid id,
+    HttpContext httpContext,
+    UrbanArtDbContext dbContext,
+    CancellationToken cancellationToken) =>
 {
+    var actorResolution = await ResolveModerationActorAsync(httpContext, dbContext, cancellationToken);
+    if (actorResolution.Failure is not null)
+    {
+        return actorResolution.Failure;
+    }
+
     var comment = await dbContext.DropComments.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     if (comment is null)
     {
         return Results.NotFound();
+    }
+
+    if (!await CanModerateCommentAsync(actorResolution.Actor!, comment.DropId, dbContext, cancellationToken))
+    {
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
     }
 
     comment.Hide(DateTimeOffset.UtcNow);
@@ -747,12 +762,27 @@ commentsGroup.MapPost("/{id:guid}/hide", async (Guid id, UrbanArtDbContext dbCon
     return Results.Ok();
 });
 
-commentsGroup.MapPost("/{id:guid}/dismiss-report", async (Guid id, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+commentsGroup.MapPost("/{id:guid}/dismiss-report", async (
+    Guid id,
+    HttpContext httpContext,
+    UrbanArtDbContext dbContext,
+    CancellationToken cancellationToken) =>
 {
+    var actorResolution = await ResolveModerationActorAsync(httpContext, dbContext, cancellationToken);
+    if (actorResolution.Failure is not null)
+    {
+        return actorResolution.Failure;
+    }
+
     var comment = await dbContext.DropComments.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     if (comment is null)
     {
         return Results.NotFound();
+    }
+
+    if (!await CanModerateCommentAsync(actorResolution.Actor!, comment.DropId, dbContext, cancellationToken))
+    {
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
     }
 
     comment.DismissReport();
@@ -766,17 +796,42 @@ moderationGroup.MapGet("/reports", async (
     UrbanArtDbContext dbContext,
     CancellationToken cancellationToken) =>
 {
-    var reportedComments = await dbContext.DropComments
+    var actorResolution = await ResolveModerationActorAsync(httpContext, dbContext, cancellationToken);
+    if (actorResolution.Failure is not null)
+    {
+        return actorResolution.Failure;
+    }
+
+    var actor = actorResolution.Actor!;
+    if (!CanAccessModerationQueue(actor))
+    {
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
+    }
+
+    IQueryable<DropComment> reportedCommentsQuery = dbContext.DropComments
         .AsNoTracking()
-        .Where(comment => comment.IsReported)
+        .Where(comment => comment.IsReported);
+    if (actor.Role == UserRole.Artist)
+    {
+        reportedCommentsQuery =
+            from comment in dbContext.DropComments.AsNoTracking()
+            join drop in dbContext.Drops.AsNoTracking() on comment.DropId equals drop.Id
+            join artPiece in dbContext.ArtPieces.AsNoTracking() on drop.ArtPieceId equals artPiece.Id
+            where comment.IsReported && artPiece.ArtistId == actor.Id
+            select comment;
+    }
+
+    var reportedComments = await reportedCommentsQuery
         .OrderByDescending(comment => comment.ReportedAtUtc ?? comment.CreatedAtUtc)
         .ToListAsync(cancellationToken);
-    var reportedArtPieces = await dbContext.ArtPieces
-        .Include(artPiece => artPiece.Photos)
-        .AsNoTracking()
-        .Where(artPiece => artPiece.IsReported)
-        .OrderByDescending(artPiece => artPiece.ReportedAtUtc)
-        .ToListAsync(cancellationToken);
+    var reportedArtPieces = CanModerateArtPieceReports(actor)
+        ? await dbContext.ArtPieces
+            .Include(artPiece => artPiece.Photos)
+            .AsNoTracking()
+            .Where(artPiece => artPiece.IsReported)
+            .OrderByDescending(artPiece => artPiece.ReportedAtUtc)
+            .ToListAsync(cancellationToken)
+        : [];
 
     var commentAuthorIds = reportedComments
         .Where(comment => comment.AuthorUserId.HasValue)
@@ -863,12 +918,27 @@ moderationGroup.MapGet("/reports", async (
     return Results.Ok(new ModerationQueueResponse(commentResponses, artPieceResponses));
 });
 
-moderationGroup.MapPost("/comments/{id:guid}/hide", async (Guid id, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+moderationGroup.MapPost("/comments/{id:guid}/hide", async (
+    Guid id,
+    HttpContext httpContext,
+    UrbanArtDbContext dbContext,
+    CancellationToken cancellationToken) =>
 {
+    var actorResolution = await ResolveModerationActorAsync(httpContext, dbContext, cancellationToken);
+    if (actorResolution.Failure is not null)
+    {
+        return actorResolution.Failure;
+    }
+
     var comment = await dbContext.DropComments.FirstOrDefaultAsync(entry => entry.Id == id, cancellationToken);
     if (comment is null)
     {
         return Results.NotFound();
+    }
+
+    if (!await CanModerateCommentAsync(actorResolution.Actor!, comment.DropId, dbContext, cancellationToken))
+    {
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
     }
 
     comment.Hide(DateTimeOffset.UtcNow);
@@ -876,12 +946,27 @@ moderationGroup.MapPost("/comments/{id:guid}/hide", async (Guid id, UrbanArtDbCo
     return Results.Ok();
 });
 
-moderationGroup.MapPost("/comments/{id:guid}/dismiss-report", async (Guid id, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+moderationGroup.MapPost("/comments/{id:guid}/dismiss-report", async (
+    Guid id,
+    HttpContext httpContext,
+    UrbanArtDbContext dbContext,
+    CancellationToken cancellationToken) =>
 {
+    var actorResolution = await ResolveModerationActorAsync(httpContext, dbContext, cancellationToken);
+    if (actorResolution.Failure is not null)
+    {
+        return actorResolution.Failure;
+    }
+
     var comment = await dbContext.DropComments.FirstOrDefaultAsync(entry => entry.Id == id, cancellationToken);
     if (comment is null)
     {
         return Results.NotFound();
+    }
+
+    if (!await CanModerateCommentAsync(actorResolution.Actor!, comment.DropId, dbContext, cancellationToken))
+    {
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
     }
 
     comment.DismissReport();
@@ -889,8 +974,23 @@ moderationGroup.MapPost("/comments/{id:guid}/dismiss-report", async (Guid id, Ur
     return Results.Ok();
 });
 
-moderationGroup.MapPost("/art-pieces/{id:guid}/depublish", async (Guid id, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+moderationGroup.MapPost("/art-pieces/{id:guid}/depublish", async (
+    Guid id,
+    HttpContext httpContext,
+    UrbanArtDbContext dbContext,
+    CancellationToken cancellationToken) =>
 {
+    var actorResolution = await ResolveModerationActorAsync(httpContext, dbContext, cancellationToken);
+    if (actorResolution.Failure is not null)
+    {
+        return actorResolution.Failure;
+    }
+
+    if (!CanModerateArtPieceReports(actorResolution.Actor!))
+    {
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
+    }
+
     var artPiece = await dbContext.ArtPieces.FirstOrDefaultAsync(entry => entry.Id == id, cancellationToken);
     if (artPiece is null)
     {
@@ -903,8 +1003,23 @@ moderationGroup.MapPost("/art-pieces/{id:guid}/depublish", async (Guid id, Urban
     return Results.Ok();
 });
 
-moderationGroup.MapPost("/art-pieces/{id:guid}/dismiss-report", async (Guid id, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+moderationGroup.MapPost("/art-pieces/{id:guid}/dismiss-report", async (
+    Guid id,
+    HttpContext httpContext,
+    UrbanArtDbContext dbContext,
+    CancellationToken cancellationToken) =>
 {
+    var actorResolution = await ResolveModerationActorAsync(httpContext, dbContext, cancellationToken);
+    if (actorResolution.Failure is not null)
+    {
+        return actorResolution.Failure;
+    }
+
+    if (!CanModerateArtPieceReports(actorResolution.Actor!))
+    {
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
+    }
+
     var artPiece = await dbContext.ArtPieces.FirstOrDefaultAsync(entry => entry.Id == id, cancellationToken);
     if (artPiece is null)
     {
@@ -1170,6 +1285,66 @@ static async Task<AppConfiguration> GetConfigurationAsync(UrbanArtDbContext dbCo
     await dbContext.AppConfigurations.AddAsync(config, cancellationToken);
     await dbContext.SaveChangesAsync(cancellationToken);
     return config;
+}
+
+static async Task<(UserAccount? Actor, IResult? Failure)> ResolveModerationActorAsync(
+    HttpContext httpContext,
+    UrbanArtDbContext dbContext,
+    CancellationToken cancellationToken)
+{
+    if (!httpContext.Request.Headers.TryGetValue("X-Actor-User-Id", out var actorHeader)
+        || !Guid.TryParse(actorHeader.ToString(), out var actorUserId))
+    {
+        return (null, Results.Unauthorized());
+    }
+
+    var actor = await dbContext.UserAccounts
+        .AsNoTracking()
+        .FirstOrDefaultAsync(user => user.Id == actorUserId, cancellationToken);
+    if (actor is null)
+    {
+        return (null, Results.Unauthorized());
+    }
+
+    if (!actor.IsApproved || actor.IsSuspended)
+    {
+        return (null, Results.StatusCode(StatusCodes.Status403Forbidden));
+    }
+
+    return (actor, null);
+}
+
+static bool CanAccessModerationQueue(UserAccount actor)
+    => actor.Role is UserRole.Artist or UserRole.Moderator or UserRole.Admin;
+
+static bool CanModerateArtPieceReports(UserAccount actor)
+    => actor.Role is UserRole.Moderator or UserRole.Admin;
+
+static async Task<bool> CanModerateCommentAsync(
+    UserAccount actor,
+    Guid dropId,
+    UrbanArtDbContext dbContext,
+    CancellationToken cancellationToken)
+{
+    if (actor.Role is UserRole.Moderator or UserRole.Admin)
+    {
+        return true;
+    }
+
+    if (actor.Role != UserRole.Artist)
+    {
+        return false;
+    }
+
+    return await dbContext.Drops
+        .AsNoTracking()
+        .Where(drop => drop.Id == dropId)
+        .Join(
+            dbContext.ArtPieces.AsNoTracking(),
+            drop => drop.ArtPieceId,
+            artPiece => artPiece.Id,
+            (_, artPiece) => artPiece.ArtistId)
+        .AnyAsync(artistId => artistId == actor.Id, cancellationToken);
 }
 
 static ArtPieceResponseDto ToArtPieceResponse(ArtPiece artPiece, HttpRequest request)

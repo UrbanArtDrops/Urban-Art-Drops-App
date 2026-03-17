@@ -830,7 +830,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get moderationRestricted =>
-      'Diese Ansicht ist nur für Moderatoren und Admins verfügbar.';
+      'Diese Ansicht ist nur für Artists, Moderatoren und Admins verfügbar.';
 
   @override
   String get moderationEmpty =>

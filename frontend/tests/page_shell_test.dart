@@ -50,7 +50,7 @@ void main() {
     expect(drawer.width, 304);
   });
 
-  testWidgets("shows moderation navigation only for moderator or admin", (
+  testWidgets("shows moderation navigation for artist, moderator and admin", (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -60,7 +60,7 @@ void main() {
         child: const PageShell(title: "Test", body: SizedBox.shrink()),
       ),
     );
-    expect(_drawerTitles(tester), isNot(contains("Moderation")));
+    expect(_drawerTitles(tester), contains("Moderation"));
 
     await tester.pumpWidget(
       _TestHarness(
