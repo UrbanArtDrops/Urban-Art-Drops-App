@@ -31,7 +31,7 @@
 - The drop-maker wizard finishes the flow by updating location coordinates, uploading local location photos as data URLs and optionally publishing the completed drop
 - Drop detail now loads persisted comments from the API, allows eligible signed-in roles to post comments, and exposes report actions for comments and linked art pieces
 - Reported comments and art pieces are persisted with reason and timestamp metadata so the moderation queue can be resolved without losing audit context
-- Artists can access reported drop comments that belong to drops created from their own art pieces, while moderator and admin users continue to manage the global queue and art-piece moderation actions
+- Artists can access reported drop comments that belong to drops created from their own art pieces, drop-makers can access reported drop comments for their own drops, and moderator/admin users continue to manage the global queue and art-piece moderation actions
 
 ## Discovery and Map Rendering
 - Fully claimed drops are rendered as exact-position pins

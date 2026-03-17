@@ -50,36 +50,46 @@ void main() {
     expect(drawer.width, 304);
   });
 
-  testWidgets("shows moderation navigation for artist, moderator and admin", (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      _TestHarness(
-        key: const ValueKey("artist"),
-        role: AppUserRole.artist,
-        child: const PageShell(title: "Test", body: SizedBox.shrink()),
-      ),
-    );
-    expect(_drawerTitles(tester), contains("Moderation"));
+  testWidgets(
+    "shows moderation navigation for artist, drop-maker, moderator and admin",
+    (tester) async {
+      await tester.pumpWidget(
+        _TestHarness(
+          key: const ValueKey("artist"),
+          role: AppUserRole.artist,
+          child: const PageShell(title: "Test", body: SizedBox.shrink()),
+        ),
+      );
+      expect(_drawerTitles(tester), contains("Moderation"));
 
-    await tester.pumpWidget(
-      _TestHarness(
-        key: const ValueKey("moderator"),
-        role: AppUserRole.moderator,
-        child: const PageShell(title: "Test", body: SizedBox.shrink()),
-      ),
-    );
-    expect(_drawerTitles(tester), contains("Moderation"));
+      await tester.pumpWidget(
+        _TestHarness(
+          key: const ValueKey("dropmaker"),
+          role: AppUserRole.dropMaker,
+          child: const PageShell(title: "Test", body: SizedBox.shrink()),
+        ),
+      );
+      expect(_drawerTitles(tester), contains("Moderation"));
 
-    await tester.pumpWidget(
-      _TestHarness(
-        key: const ValueKey("admin"),
-        role: AppUserRole.admin,
-        child: const PageShell(title: "Test", body: SizedBox.shrink()),
-      ),
-    );
-    expect(_drawerTitles(tester), contains("Moderation"));
-  });
+      await tester.pumpWidget(
+        _TestHarness(
+          key: const ValueKey("moderator"),
+          role: AppUserRole.moderator,
+          child: const PageShell(title: "Test", body: SizedBox.shrink()),
+        ),
+      );
+      expect(_drawerTitles(tester), contains("Moderation"));
+
+      await tester.pumpWidget(
+        _TestHarness(
+          key: const ValueKey("admin"),
+          role: AppUserRole.admin,
+          child: const PageShell(title: "Test", body: SizedBox.shrink()),
+        ),
+      );
+      expect(_drawerTitles(tester), contains("Moderation"));
+    },
+  );
 }
 
 class _TestHarness extends StatelessWidget {

@@ -146,7 +146,7 @@ List<_NavigationEntry> _buildNavigationEntries(
         l10n.menuMyDrops,
         Icons.inventory_2_outlined,
       ),
-    if (isArtist || isModerator || isAdmin)
+    if (isDropMakerOrArtist || isModerator || isAdmin)
       _NavigationEntry(
         "/moderation/reports",
         l10n.navModeration,

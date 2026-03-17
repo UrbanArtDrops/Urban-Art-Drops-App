@@ -180,6 +180,77 @@ public sealed class ModerationEndpointsTests : IClassFixture<TestWebApplicationF
         Assert.Equal(HttpStatusCode.Forbidden, depublishForeignArtResponse.StatusCode);
     }
 
+    [Fact]
+    public async Task DropMakerModerationQueue_ContainsOnlyReportedCommentsForOwnDrops()
+    {
+        var uniqueId = Guid.NewGuid().ToString("N");
+        var artist = await CreateUserAsync(UserRole.Artist, $"artist.queue.{uniqueId}");
+        var dropMaker = await CreateUserAsync(UserRole.DropMaker, $"dropmaker.owner.{uniqueId}");
+        var otherDropMaker = await CreateUserAsync(UserRole.DropMaker, $"dropmaker.other.{uniqueId}");
+
+        var ownDrop = await CreateReportedCommentAsync(
+            artist.Id,
+            $"Drop-Maker Queue Piece {uniqueId}",
+            $"own-dropmaker-{uniqueId}",
+            "This reported comment belongs to the drop-maker.",
+            dropMaker.Id);
+        var foreignDrop = await CreateReportedCommentAsync(
+            artist.Id,
+            $"Drop-Maker Foreign Piece {uniqueId}",
+            $"foreign-dropmaker-{uniqueId}",
+            "This reported comment belongs to another drop-maker.",
+            otherDropMaker.Id);
+
+        var queueResponse = await GetModerationQueueAsync(dropMaker.Id);
+
+        Assert.NotNull(queueResponse);
+        Assert.Contains(queueResponse!.Comments, entry => entry.DropId == ownDrop.DropId);
+        Assert.DoesNotContain(queueResponse.Comments, entry => entry.DropId == foreignDrop.DropId);
+        Assert.Empty(queueResponse.ArtPieces);
+    }
+
+    [Fact]
+    public async Task DropMakerModerationActions_CanHideOwnCommentButCannotModerateForeignCommentOrArtPiece()
+    {
+        var uniqueId = Guid.NewGuid().ToString("N");
+        var artist = await CreateUserAsync(UserRole.Artist, $"artist.dropmaker.{uniqueId}");
+        var dropMaker = await CreateUserAsync(UserRole.DropMaker, $"dropmaker.owner.{uniqueId}");
+        var otherDropMaker = await CreateUserAsync(UserRole.DropMaker, $"dropmaker.other.{uniqueId}");
+
+        var ownDrop = await CreateReportedCommentAsync(
+            artist.Id,
+            $"Own Drop-Maker Piece {uniqueId}",
+            $"own-dropmaker-action-{uniqueId}",
+            "Own reported comment for drop-maker.",
+            dropMaker.Id);
+        var foreignDrop = await CreateReportedCommentAsync(
+            artist.Id,
+            $"Foreign Drop-Maker Piece {uniqueId}",
+            $"foreign-dropmaker-action-{uniqueId}",
+            "Foreign reported comment for drop-maker.",
+            otherDropMaker.Id);
+
+        var hideOwnResponse = await PostModerationAsync(
+            $"/api/moderation/comments/{ownDrop.CommentId}/hide",
+            dropMaker.Id);
+        await EnsureSuccessWithBodyAsync(hideOwnResponse);
+
+        var ownPublicComments = await _client.GetFromJsonAsync<List<CommentResponse>>(
+            $"/api/comments/drop/{ownDrop.DropId}");
+        Assert.NotNull(ownPublicComments);
+        Assert.DoesNotContain(ownPublicComments!, entry => entry.Id == ownDrop.CommentId);
+
+        var hideForeignResponse = await PostModerationAsync(
+            $"/api/moderation/comments/{foreignDrop.CommentId}/hide",
+            dropMaker.Id);
+        Assert.Equal(HttpStatusCode.Forbidden, hideForeignResponse.StatusCode);
+
+        var depublishForeignArtResponse = await PostModerationAsync(
+            $"/api/moderation/art-pieces/{foreignDrop.ArtPieceId}/depublish",
+            dropMaker.Id);
+        Assert.Equal(HttpStatusCode.Forbidden, depublishForeignArtResponse.StatusCode);
+    }
+
     private sealed record ArtPieceResponseDto(Guid Id, bool IsPublished);
 
     private sealed record DropResponseDto(Guid Id);
@@ -207,7 +278,8 @@ public sealed class ModerationEndpointsTests : IClassFixture<TestWebApplicationF
         Guid artistId,
         string artTitle,
         string nickname,
-        string commentText)
+        string commentText,
+        Guid? dropMakerId = null)
     {
         var createArtResponse = await _client.PostAsJsonAsync(
             "/api/art-pieces/",
@@ -233,7 +305,7 @@ public sealed class ModerationEndpointsTests : IClassFixture<TestWebApplicationF
             new
             {
                 artPieceId = artPiece.Id,
-                dropMakerId = Guid.NewGuid(),
+                dropMakerId = dropMakerId ?? Guid.NewGuid(),
                 isStationary = true,
                 portableItemCount = (int?)null,
                 latitude = 52.52,

@@ -820,6 +820,14 @@ moderationGroup.MapGet("/reports", async (
             where comment.IsReported && artPiece.ArtistId == actor.Id
             select comment;
     }
+    else if (actor.Role == UserRole.DropMaker)
+    {
+        reportedCommentsQuery =
+            from comment in dbContext.DropComments.AsNoTracking()
+            join drop in dbContext.Drops.AsNoTracking() on comment.DropId equals drop.Id
+            where comment.IsReported && drop.DropMakerId == actor.Id
+            select comment;
+    }
 
     var reportedComments = await reportedCommentsQuery
         .OrderByDescending(comment => comment.ReportedAtUtc ?? comment.CreatedAtUtc)
@@ -1315,7 +1323,7 @@ static async Task<(UserAccount? Actor, IResult? Failure)> ResolveModerationActor
 }
 
 static bool CanAccessModerationQueue(UserAccount actor)
-    => actor.Role is UserRole.Artist or UserRole.Moderator or UserRole.Admin;
+    => actor.Role is UserRole.Artist or UserRole.DropMaker or UserRole.Moderator or UserRole.Admin;
 
 static bool CanModerateArtPieceReports(UserAccount actor)
     => actor.Role is UserRole.Moderator or UserRole.Admin;
@@ -1329,6 +1337,13 @@ static async Task<bool> CanModerateCommentAsync(
     if (actor.Role is UserRole.Moderator or UserRole.Admin)
     {
         return true;
+    }
+
+    if (actor.Role == UserRole.DropMaker)
+    {
+        return await dbContext.Drops
+            .AsNoTracking()
+            .AnyAsync(drop => drop.Id == dropId && drop.DropMakerId == actor.Id, cancellationToken);
     }
 
     if (actor.Role != UserRole.Artist)

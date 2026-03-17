@@ -820,7 +820,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get moderationRestricted =>
-      'This view is only available to artists, moderators, and admins.';
+      'This view is only available to artists, drop-makers, moderators, and admins.';
 
   @override
   String get moderationEmpty => 'There are no reported items right now.';

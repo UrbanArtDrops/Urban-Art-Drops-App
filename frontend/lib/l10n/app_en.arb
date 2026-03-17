@@ -359,7 +359,7 @@
   "moderationTitle": "Moderation queue",
   "moderationLoadFailed": "Moderation reports could not be loaded.",
   "moderationActionFailed": "The moderation action could not be completed.",
-  "moderationRestricted": "This view is only available to artists, moderators, and admins.",
+  "moderationRestricted": "This view is only available to artists, drop-makers, moderators, and admins.",
   "moderationEmpty": "There are no reported items right now.",
   "moderationCommentSectionTitle": "Reported comments",
   "moderationArtPieceSectionTitle": "Reported art pieces",

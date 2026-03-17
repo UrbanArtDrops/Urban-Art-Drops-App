@@ -359,7 +359,7 @@
   "moderationTitle": "Moderations-Queue",
   "moderationLoadFailed": "Moderationsmeldungen konnten nicht geladen werden.",
   "moderationActionFailed": "Die Moderationsaktion konnte nicht ausgeführt werden.",
-  "moderationRestricted": "Diese Ansicht ist nur für Artists, Moderatoren und Admins verfügbar.",
+  "moderationRestricted": "Diese Ansicht ist nur für Artists, Drop-Maker, Moderatoren und Admins verfügbar.",
   "moderationEmpty": "Es liegen derzeit keine gemeldeten Inhalte vor.",
   "moderationCommentSectionTitle": "Gemeldete Kommentare",
   "moderationArtPieceSectionTitle": "Gemeldete Kunstwerke",

@@ -43,6 +43,7 @@ class _ModerationPageState extends State<ModerationPage> {
       authState.isAuthenticated &&
       authState.userId != null &&
       (authState.role == AppUserRole.artist ||
+          authState.role == AppUserRole.dropMaker ||
           authState.role == AppUserRole.moderator ||
           authState.role == AppUserRole.admin);
 
