@@ -1,4 +1,5 @@
 import "dart:async";
+import "dart:math" as math;
 
 import "package:flutter/material.dart";
 import "package:flutter_map/flutter_map.dart";
@@ -15,6 +16,8 @@ class DropOverviewCard extends StatelessWidget {
     required this.claimedHunterNames,
     required this.claimedItemCount,
     required this.itemCount,
+    required this.isFullyClaimed,
+    required this.unclaimedDropRadiusKm,
     required this.latitude,
     required this.longitude,
     this.distanceKm,
@@ -32,6 +35,8 @@ class DropOverviewCard extends StatelessWidget {
   final List<String> claimedHunterNames;
   final int claimedItemCount;
   final int itemCount;
+  final bool isFullyClaimed;
+  final int unclaimedDropRadiusKm;
   final double? latitude;
   final double? longitude;
   final double? distanceKm;
@@ -59,6 +64,8 @@ class DropOverviewCard extends StatelessWidget {
           );
           final miniMap = _DropMiniMap(
             l10n: l10n,
+            isFullyClaimed: isFullyClaimed,
+            unclaimedDropRadiusKm: unclaimedDropRadiusKm,
             latitude: latitude,
             longitude: longitude,
             onTap: onMiniMapTap,
@@ -392,15 +399,25 @@ class _CarouselButton extends StatelessWidget {
 class _DropMiniMap extends StatelessWidget {
   const _DropMiniMap({
     required this.l10n,
+    required this.isFullyClaimed,
+    required this.unclaimedDropRadiusKm,
     required this.latitude,
     required this.longitude,
     required this.onTap,
   });
 
   final AppLocalizations l10n;
+  final bool isFullyClaimed;
+  final int unclaimedDropRadiusKm;
   final double? latitude;
   final double? longitude;
   final VoidCallback? onTap;
+
+  double _zoomForRadiusKm(int radiusKm) {
+    final safeRadiusKm = math.max(1, radiusKm);
+    final zoom = 14.0 - math.log(safeRadiusKm) / math.ln2;
+    return (zoom.clamp(10.5, 14.5) as num).toDouble();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -415,12 +432,20 @@ class _DropMiniMap extends StatelessWidget {
     }
 
     final point = LatLng(latitude!, longitude!);
+    final unclaimedFillColor = Theme.of(
+      context,
+    ).colorScheme.primary.withValues(alpha: 0.14);
+    final unclaimedBorderColor = Theme.of(
+      context,
+    ).colorScheme.primary.withValues(alpha: 0.72);
     final map = ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: FlutterMap(
         options: MapOptions(
           initialCenter: point,
-          initialZoom: 14.5,
+          initialZoom: isFullyClaimed
+              ? 14.5
+              : _zoomForRadiusKm(unclaimedDropRadiusKm),
           interactionOptions: const InteractionOptions(
             flags: InteractiveFlag.none,
           ),
@@ -430,20 +455,34 @@ class _DropMiniMap extends StatelessWidget {
             urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
             userAgentPackageName: "urban.art.drops.app",
           ),
-          MarkerLayer(
-            markers: [
-              Marker(
-                point: point,
-                width: 44,
-                height: 44,
-                child: const Icon(
-                  Icons.location_on,
-                  color: Colors.redAccent,
-                  size: 34,
+          if (!isFullyClaimed)
+            CircleLayer(
+              circles: [
+                CircleMarker(
+                  point: point,
+                  radius: unclaimedDropRadiusKm * 1000,
+                  useRadiusInMeter: true,
+                  color: unclaimedFillColor,
+                  borderColor: unclaimedBorderColor,
+                  borderStrokeWidth: 2,
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
+          if (isFullyClaimed)
+            MarkerLayer(
+              markers: [
+                Marker(
+                  point: point,
+                  width: 44,
+                  height: 44,
+                  child: const Icon(
+                    Icons.location_on,
+                    color: Colors.redAccent,
+                    size: 34,
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );

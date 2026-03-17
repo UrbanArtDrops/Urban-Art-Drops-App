@@ -12,6 +12,7 @@
   - `MiniMapRadiusKm` (default 5)
   - `UnclaimedDropRadiusKm` (default 3)
   - `ShowExactPositionWhenFullyClaimed`
+- Drop-list and My Drops mini-maps read `UnclaimedDropRadiusKm` to render not fully claimed drops as a radius instead of a pin
 
 ## Media storage
 - Drop and art photos are persisted as binary data in SQL tables

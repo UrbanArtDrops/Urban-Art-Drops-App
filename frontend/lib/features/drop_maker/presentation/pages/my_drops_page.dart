@@ -22,6 +22,7 @@ class _MyDropsPageState extends State<MyDropsPage> {
   List<ArtPieceModel> _artPieces = const [];
   List<ManagedUser> _dropMakers = const [];
   Map<String, ManagedUser> _usersById = const {};
+  AppConfigurationModel _appConfiguration = AppConfigurationModel.defaults;
   bool _isLoading = true;
   bool _isSaving = false;
   String? _error;
@@ -39,6 +40,13 @@ class _MyDropsPageState extends State<MyDropsPage> {
     });
 
     try {
+      var appConfiguration = AppConfigurationModel.defaults;
+      try {
+        appConfiguration = await _apiClient.getAppConfiguration();
+      } catch (_) {
+        appConfiguration = AppConfigurationModel.defaults;
+      }
+
       final results = await Future.wait([
         _apiClient.getDrops(),
         _apiClient.getArtPieces(),
@@ -68,6 +76,7 @@ class _MyDropsPageState extends State<MyDropsPage> {
         _artPieces = (results[1] as List<ArtPieceModel>);
         _dropMakers = users;
         _usersById = {for (final user in allUsers) user.id: user};
+        _appConfiguration = appConfiguration;
         _isLoading = false;
       });
     } catch (_) {
@@ -383,6 +392,8 @@ class _MyDropsPageState extends State<MyDropsPage> {
             longitude: drop.longitude,
             claimedItemCount: drop.claimedItemCount,
             itemCount: drop.itemCount,
+            isFullyClaimed: drop.isFullyClaimed,
+            unclaimedDropRadiusKm: _appConfiguration.unclaimedDropRadiusKm,
             isPublished: drop.isPublished,
             canResumeWizard: drop.canResumeWizard,
           );
@@ -457,6 +468,9 @@ class _MyDropsPageState extends State<MyDropsPage> {
                                       viewModel.claimedHunterNames,
                                   claimedItemCount: viewModel.claimedItemCount,
                                   itemCount: viewModel.itemCount,
+                                  isFullyClaimed: viewModel.isFullyClaimed,
+                                  unclaimedDropRadiusKm:
+                                      viewModel.unclaimedDropRadiusKm,
                                   latitude: viewModel.latitude,
                                   longitude: viewModel.longitude,
                                   onTap: () => context.go(
@@ -530,6 +544,8 @@ class _MyDropViewModel {
     required this.longitude,
     required this.claimedItemCount,
     required this.itemCount,
+    required this.isFullyClaimed,
+    required this.unclaimedDropRadiusKm,
     required this.isPublished,
     required this.canResumeWizard,
   });
@@ -545,6 +561,8 @@ class _MyDropViewModel {
   final double? longitude;
   final int claimedItemCount;
   final int itemCount;
+  final bool isFullyClaimed;
+  final int unclaimedDropRadiusKm;
   final bool isPublished;
   final bool canResumeWizard;
 }

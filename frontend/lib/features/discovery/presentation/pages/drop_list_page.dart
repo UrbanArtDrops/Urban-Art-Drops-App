@@ -31,6 +31,7 @@ class _DropListPageState extends State<DropListPage> {
   List<DropModel> _drops = const [];
   Map<String, ArtPieceModel> _artPiecesById = const {};
   Map<String, ManagedUser> _usersById = const {};
+  AppConfigurationModel _appConfiguration = AppConfigurationModel.defaults;
   LatLng? _referenceLocation;
   String? _referenceLocationLabel;
   List<_LocationSuggestion> _locationSuggestions = const [];
@@ -68,6 +69,13 @@ class _DropListPageState extends State<DropListPage> {
     });
 
     try {
+      var appConfiguration = AppConfigurationModel.defaults;
+      try {
+        appConfiguration = await _apiClient.getAppConfiguration();
+      } catch (_) {
+        appConfiguration = AppConfigurationModel.defaults;
+      }
+
       final results = await Future.wait([
         _apiClient.getDrops(),
         _apiClient.getArtPieces(),
@@ -92,6 +100,7 @@ class _DropListPageState extends State<DropListPage> {
         _drops = drops;
         _artPiecesById = artById;
         _usersById = usersById;
+        _appConfiguration = appConfiguration;
         _isLoading = false;
       });
     } catch (_) {
@@ -444,6 +453,8 @@ class _DropListPageState extends State<DropListPage> {
             longitude: drop.longitude,
             claimedItemCount: drop.claimedItemCount,
             itemCount: drop.itemCount,
+            isFullyClaimed: drop.isFullyClaimed,
+            unclaimedDropRadiusKm: _appConfiguration.unclaimedDropRadiusKm,
             distanceKm: distanceKm,
           );
         })
@@ -678,6 +689,9 @@ class _DropListPageState extends State<DropListPage> {
                                     viewModel.claimedHunterNames,
                                 claimedItemCount: viewModel.claimedItemCount,
                                 itemCount: viewModel.itemCount,
+                                isFullyClaimed: viewModel.isFullyClaimed,
+                                unclaimedDropRadiusKm:
+                                    viewModel.unclaimedDropRadiusKm,
                                 latitude: viewModel.latitude,
                                 longitude: viewModel.longitude,
                                 distanceKm: viewModel.distanceKm,
@@ -712,6 +726,8 @@ class _DropListViewModel {
     required this.longitude,
     required this.claimedItemCount,
     required this.itemCount,
+    required this.isFullyClaimed,
+    required this.unclaimedDropRadiusKm,
     required this.distanceKm,
   });
 
@@ -726,6 +742,8 @@ class _DropListViewModel {
   final double? longitude;
   final int claimedItemCount;
   final int itemCount;
+  final bool isFullyClaimed;
+  final int unclaimedDropRadiusKm;
   final double? distanceKm;
 
   List<String> get galleryUrls => [...artPhotoUrls, ...locationPhotoUrls];

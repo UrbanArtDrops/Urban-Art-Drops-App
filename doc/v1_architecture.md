@@ -35,6 +35,7 @@
 - Not fully claimed drops are rendered as map radius overlays (no pin)
 - The unclaimed drop radius is read from admin configuration (`UnclaimedDropRadiusKm`)
 - Clicking a drop mini-map in the drop list opens the map view and focuses that drop
+- Drop-list and My Drops mini-maps mirror the same radius-overlay rule for not fully claimed drops
 
 ## Operations
 - Alerts via SMTP mail for reported content and account approval requests
