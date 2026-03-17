@@ -4,14 +4,14 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace UrbanArtDropFinder.IntegrationTests;
 
-public sealed class DropEndpointsTests : IClassFixture<WebApplicationFactory<Program>>
+public sealed class DropEndpointsTests : IClassFixture<TestWebApplicationFactory>
 {
     private const string SamplePngDataUrl =
         "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/w8AAgMBgJ/gG1cAAAAASUVORK5CYII=";
 
     private readonly HttpClient _client;
 
-    public DropEndpointsTests(WebApplicationFactory<Program> factory)
+    public DropEndpointsTests(TestWebApplicationFactory factory)
     {
         _client = factory.CreateClient();
     }

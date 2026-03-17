@@ -2,7 +2,7 @@
 
 ## Runtime
 - Backend: ASP.NET Core HTTP API on .NET 9
-- Data: SQL Server Express (fallback InMemory for local bootstrap)
+- Data: SQL Server / LocalDB for all runtime environments
 - Frontend: Flutter Android, iOS, Web
 - Deployment: one self-hosted container host (dev/prod)
 
@@ -42,5 +42,7 @@
 ## Operations
 - Alerts via SMTP mail for reported content and account approval requests
 - Moderator and admin users resolve reports in a dedicated moderation queue with comment hide, report dismissal, and art-piece depublish actions
+- Runtime startup applies EF Core migrations against the configured SQL database and only bootstraps application configuration defaults
+- Debug and sample content seeding is disabled; a fresh database starts without demo users, art pieces, drops, comments, or reports
 - Backup target: daily with 14-day retention
 - Log retention target: 30 days

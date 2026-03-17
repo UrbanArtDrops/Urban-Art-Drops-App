@@ -8,14 +8,14 @@ using UrbanArtDropFinder.Domain.Art;
 
 namespace UrbanArtDropFinder.IntegrationTests;
 
-public sealed class ModerationEndpointsTests : IClassFixture<WebApplicationFactory<Program>>
+public sealed class ModerationEndpointsTests : IClassFixture<TestWebApplicationFactory>
 {
     private const string SamplePngDataUrl =
         "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/w8AAgMBgJ/gG1cAAAAASUVORK5CYII=";
 
     private readonly HttpClient _client;
 
-    public ModerationEndpointsTests(WebApplicationFactory<Program> factory)
+    public ModerationEndpointsTests(TestWebApplicationFactory factory)
     {
         _client = factory.CreateClient();
     }

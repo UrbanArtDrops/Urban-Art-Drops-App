@@ -5,11 +5,11 @@ using UrbanArtDropFinder.Domain.Users;
 
 namespace UrbanArtDropFinder.IntegrationTests;
 
-public sealed class AuthEndpointsTests : IClassFixture<WebApplicationFactory<Program>>
+public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly HttpClient _client;
 
-    public AuthEndpointsTests(WebApplicationFactory<Program> factory)
+    public AuthEndpointsTests(TestWebApplicationFactory factory)
     {
         _client = factory.CreateClient();
     }

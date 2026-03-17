@@ -5,7 +5,7 @@ using UrbanArtDropFinder.Domain.Art;
 
 namespace UrbanArtDropFinder.IntegrationTests;
 
-public sealed class ArtPieceEndpointsTests : IClassFixture<WebApplicationFactory<Program>>
+public sealed class ArtPieceEndpointsTests : IClassFixture<TestWebApplicationFactory>
 {
     private const string SamplePngDataUrl =
         "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/w8AAgMBgJ/gG1cAAAAASUVORK5CYII=";
@@ -14,7 +14,7 @@ public sealed class ArtPieceEndpointsTests : IClassFixture<WebApplicationFactory
 
     private readonly HttpClient _client;
 
-    public ArtPieceEndpointsTests(WebApplicationFactory<Program> factory)
+    public ArtPieceEndpointsTests(TestWebApplicationFactory factory)
     {
         _client = factory.CreateClient();
     }

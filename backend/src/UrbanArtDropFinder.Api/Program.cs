@@ -1,7 +1,6 @@
 using System.Net.Http.Headers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using UrbanArtDropFinder.Application.Abstractions;
 using UrbanArtDropFinder.Application.Auth;
 using UrbanArtDropFinder.Application.Drops;
 using UrbanArtDropFinder.Contracts.Admin;
@@ -53,9 +52,6 @@ if (app.Environment.IsDevelopment())
 app.UseCors("FrontendDev");
 
 await SeedConfigurationAsync(app.Services);
-#if DEBUG
-await SeedDebugDataAsync(app.Services);
-#endif
 
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok", utcNow = DateTimeOffset.UtcNow }))
     .WithName("Health");
@@ -1162,123 +1158,6 @@ static async Task SeedConfigurationAsync(IServiceProvider services)
     }
 }
 
-static async Task SeedDebugDataAsync(IServiceProvider services)
-{
-    using var scope = services.CreateScope();
-    var dbContext = scope.ServiceProvider.GetRequiredService<UrbanArtDbContext>();
-    var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
-
-    if (await dbContext.ArtPieces.AnyAsync() || await dbContext.Drops.AnyAsync())
-    {
-        return;
-    }
-
-    var artist = UserAccount.CreateLocal(
-        "artist.debug@example.local",
-        "debug.artist",
-        UserRole.Artist,
-        passwordHasher.Hash("Debug!ArtistPass123"),
-        approved: true);
-    artist.MarkEmailVerified();
-
-    var dropMaker = UserAccount.CreateLocal(
-        "dropmaker.debug@example.local",
-        "debug.dropmaker",
-        UserRole.DropMaker,
-        passwordHasher.Hash("Debug!DropMakerPass123"),
-        approved: true);
-    dropMaker.MarkEmailVerified();
-
-    var hunter = UserAccount.CreateLocal(
-        "hunter.debug@example.local",
-        "debug.hunter",
-        UserRole.Hunter,
-        passwordHasher.Hash("Debug!HunterPass123"),
-        approved: true);
-    hunter.MarkEmailVerified();
-
-    var moderator = UserAccount.CreateProvider(
-        "moderator.debug@example.local",
-        "debug.moderator",
-        UserRole.Moderator,
-        "google",
-        approved: true);
-
-    var admin = UserAccount.CreateProvider(
-        "admin.debug@example.local",
-        "debug.admin",
-        UserRole.Admin,
-        "google",
-        approved: true);
-
-    await dbContext.UserAccounts.AddRangeAsync(artist, dropMaker, hunter, moderator, admin);
-
-    var artPieceOne = ArtPiece.Create(
-        artist.Id,
-        "Neon Fox Totem",
-        "Leuchtendes urbanes Totem mit modularen Oberflaechen fuer den Nachtbereich.",
-        ArtPieceAssetKind.Model3d);
-    AddSeedAssetFile(artPieceOne, "neon-fox.glb", "model/gltf-binary");
-    AddSeedPhoto(artPieceOne);
-    AddSeedPhoto(artPieceOne);
-    AddSeedPhoto(artPieceOne);
-    artPieceOne.Publish();
-
-    var artPieceTwo = ArtPiece.Create(
-        artist.Id,
-        "Steel Bird Fragment",
-        "Geometrische Stahlform mit Kontrastkanten fuer experimentelle Installationen.",
-        ArtPieceAssetKind.Image);
-    AddSeedPhoto(artPieceTwo);
-    AddSeedPhoto(artPieceTwo);
-    artPieceTwo.Publish();
-    artPieceTwo.Report("Beispielmeldung fuer Moderation im Debug-Modus.", DateTimeOffset.UtcNow.AddMinutes(-30));
-
-    await dbContext.ArtPieces.AddRangeAsync(artPieceOne, artPieceTwo);
-
-    var dropOne = Drop.Create(artPieceOne.Id, dropMaker.Id, isStationary: false, portableItemCount: 3);
-    dropOne.SetLocation(52.5208, 13.4095);
-    AddSeedLocationPhoto(dropOne);
-    AddSeedLocationPhoto(dropOne);
-    dropOne.AddItem("debug-drop-neon-fox-item-01");
-    dropOne.AddItem("debug-drop-neon-fox-item-02");
-    dropOne.AddItem("debug-drop-neon-fox-item-03");
-    dropOne.Publish();
-    dropOne.Items.First().MarkClaimed(hunter.Id, null, DateTimeOffset.UtcNow.AddHours(-3));
-
-    var dropTwo = Drop.Create(artPieceTwo.Id, dropMaker.Id, isStationary: true, portableItemCount: null);
-    dropTwo.SetLocation(52.5331, 13.3889);
-    AddSeedLocationPhoto(dropTwo);
-    AddSeedLocationPhoto(dropTwo);
-    dropTwo.AddItem("debug-drop-steel-bird-item-01");
-    dropTwo.AddItem("debug-drop-steel-bird-item-02");
-    dropTwo.Publish();
-
-    await dbContext.Drops.AddRangeAsync(dropOne, dropTwo);
-
-    var debugCommentOne = new DropComment
-    {
-        DropId = dropOne.Id,
-        AuthorUserId = hunter.Id,
-        Content = "Starker Spot, QR hat direkt funktioniert.",
-        CreatedAtUtc = DateTimeOffset.UtcNow.AddHours(-2)
-    };
-    var debugCommentTwo = new DropComment
-    {
-        DropId = dropTwo.Id,
-        AuthorUserId = artist.Id,
-        Content = "Bitte respektvoll mit dem stationaeren Drop umgehen.",
-        CreatedAtUtc = DateTimeOffset.UtcNow.AddHours(-1)
-    };
-    debugCommentTwo.Report("Enthaelt eine Beispielmeldung fuer die Queue.", DateTimeOffset.UtcNow.AddMinutes(-20));
-
-    await dbContext.DropComments.AddRangeAsync(
-        debugCommentOne,
-        debugCommentTwo);
-
-    await dbContext.SaveChangesAsync();
-}
-
 static async Task<AppConfiguration> GetConfigurationAsync(UrbanArtDbContext dbContext, CancellationToken cancellationToken)
 {
     var config = await dbContext.AppConfigurations.FirstOrDefaultAsync(cancellationToken);
@@ -1702,37 +1581,6 @@ static string? GetFileNameFromUri(Uri uri)
 
     var lastSegment = uri.Segments[^1].Trim('/');
     return string.IsNullOrWhiteSpace(lastSegment) ? null : lastSegment;
-}
-
-static void AddSeedPhoto(ArtPiece artPiece)
-{
-    var payload = CreateSeedPhotoPayload();
-    artPiece.AddPhoto(payload.BinaryData, payload.ContentType);
-}
-
-static void AddSeedAssetFile(ArtPiece artPiece, string fileName, string contentType)
-{
-    var payload = CreateSeedAssetPayload();
-    artPiece.SetAssetFile(payload.BinaryData, contentType, fileName);
-}
-
-static void AddSeedLocationPhoto(Drop drop)
-{
-    var payload = CreateSeedPhotoPayload();
-    drop.AddLocationPhoto(payload.BinaryData, payload.ContentType);
-}
-
-static ResolvedPhotoPayload CreateSeedPhotoPayload()
-{
-    // 1x1 PNG pixel.
-    const string base64Png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO7ZfKkAAAAASUVORK5CYII=";
-    return new ResolvedPhotoPayload(Convert.FromBase64String(base64Png), "image/png");
-}
-
-static ResolvedAssetPayload CreateSeedAssetPayload()
-{
-    var bytes = new byte[] { 0x67, 0x6C, 0x54, 0x46 };
-    return new ResolvedAssetPayload(bytes, "model/gltf-binary", "seed.glb");
 }
 
 static double HaversineDistanceKm(double lat1, double lon1, double lat2, double lon2)

@@ -14,6 +14,11 @@
   - `ShowExactPositionWhenFullyClaimed`
 - Drop-list and My Drops mini-maps read `UnclaimedDropRadiusKm` to render not fully claimed drops as a radius instead of a pin
 
+## Database bootstrap
+- The API requires `ConnectionStrings__SqlServer` and will not start without a SQL Server or LocalDB connection string
+- On startup the API applies pending EF Core migrations to the configured relational database
+- Only the application configuration row is bootstrapped automatically; demo users, demo drops and other sample content are no longer seeded
+
 ## Media storage
 - Drop and art photos are persisted as binary data in SQL tables
 - 3D artwork assets are persisted as binary data in SQL tables with file name and content type metadata
@@ -37,6 +42,10 @@
 - account approval requests
 - reported comments
 - reported art pieces
+
+## Test isolation
+- Integration tests override the runtime SQL registration with an in-memory EF Core database inside the test host
+- Production and local runtime keep the relational SQL path enabled at all times
 
 ## Moderation
 - Public users can report drop comments and linked art pieces from the drop detail page
