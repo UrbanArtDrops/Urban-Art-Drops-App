@@ -73,7 +73,8 @@ GoRouter createAppRouter(AuthSessionCubit authSessionCubit) {
       ),
       GoRoute(
         path: "/hunter/claim",
-        builder: (context, state) => const ClaimPage(),
+        builder: (context, state) =>
+            ClaimPage(initialToken: state.uri.queryParameters["token"]),
       ),
       GoRoute(
         path: "/hunter/leaderboard",

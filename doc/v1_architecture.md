@@ -8,14 +8,15 @@
 
 ## Security
 - Local auth with min length 16 and special character
-- Provider login (Google, Facebook, Instagram, TikTok)
-- MFA for Admin and Moderator (planned app-based challenge in auth boundary)
+- Provider login and provider registration (Google, Facebook, Instagram, TikTok, Microsoft)
+- App-based MFA for Admin and Moderator is enforced by the authentication boundary before an access token is issued
 - Exponential login backoff: 15s, 30s, 60s, 120s
 - Local self-registration stores the requested account role in the database at creation time; Hunters are auto-approved while Artist and Drop-Maker accounts remain pending until an admin approves them
 - Local login no longer asks the client to pick a role; the API returns the stored role and identity payload for the session
 - The API now issues bearer access tokens for local login and enforces authorization policies at the endpoint boundary for admin, moderation, artist and drop-creator workflows
 - Moderation and admin actions no longer trust caller-supplied user headers; the backend resolves the acting user from validated JWT claims
 - The Flutter client persists the authenticated session locally and restores it on startup so route guards and API calls continue to use the server-issued access token across app reloads
+- Provider login follows the same JWT session path as local login; privileged provider accounts also pass through the same MFA challenge and completion flow
 
 ## Core Domain Rules
 - Art piece requires title, description and at least one photo before publish
@@ -35,6 +36,8 @@
 - Drop detail now loads persisted comments from the API, allows eligible signed-in roles to post comments, and exposes report actions for comments and linked art pieces
 - Reported comments and art pieces are persisted with reason and timestamp metadata so the moderation queue can be resolved without losing audit context
 - Artists can access reported drop comments that belong to drops created from their own art pieces, drop-makers can access reported drop comments for their own drops, and moderator/admin users continue to manage the global queue and art-piece moderation actions
+- Every drop item now exposes a public claim URL that points to the web claim route with the QR token as query parameter
+- Claim preview and claim completion can resolve the drop item directly from the QR token, so app-deep links and browser fallback share the same backend flow
 
 ## Discovery and Map Rendering
 - Fully claimed drops are rendered as exact-position pins
@@ -49,5 +52,6 @@
 - Runtime startup applies EF Core migrations against the configured SQL database and only bootstraps application configuration defaults
 - Debug and sample content seeding is disabled; a fresh database starts without demo users, art pieces, drops, comments, or reports
 - JWT signing keys must be supplied outside source control for stable environments; local development can fall back to an ephemeral in-memory signing key for the running process
+- Admin configuration is persisted in SQL and currently drives SMTP host, public app base URL, map radii and exact-position rendering behavior
 - Backup target: daily with 14-day retention
 - Log retention target: 30 days

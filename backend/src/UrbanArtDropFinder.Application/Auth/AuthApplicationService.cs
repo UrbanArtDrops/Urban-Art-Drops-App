@@ -9,17 +9,23 @@ public sealed class AuthApplicationService
     private readonly IUserAccountStore _userAccountStore;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IAccessTokenIssuer _accessTokenIssuer;
+    private readonly ITotpService _totpService;
+    private readonly IMfaChallengeTokenService _mfaChallengeTokenService;
     private readonly IClock _clock;
 
     public AuthApplicationService(
         IUserAccountStore userAccountStore,
         IPasswordHasher passwordHasher,
         IAccessTokenIssuer accessTokenIssuer,
+        ITotpService totpService,
+        IMfaChallengeTokenService mfaChallengeTokenService,
         IClock clock)
     {
         _userAccountStore = userAccountStore;
         _passwordHasher = passwordHasher;
         _accessTokenIssuer = accessTokenIssuer;
+        _totpService = totpService;
+        _mfaChallengeTokenService = mfaChallengeTokenService;
         _clock = clock;
     }
 
@@ -131,24 +137,132 @@ public sealed class AuthApplicationService
         user.RegisterSuccessfulLogin();
         await _userAccountStore.SaveChangesAsync(cancellationToken);
 
-        return CreateSuccessResult(
-            "Login successful.",
-            user,
-            includeAccessToken: true,
-            accessTokenIssuer: _accessTokenIssuer);
+        return CreateLoginResult("Login successful.", user);
     }
 
-    private static AuthResult CreateSuccessResult(
+    public async Task<AuthResult> LoginProviderAsync(LoginProviderRequest request, CancellationToken cancellationToken)
+    {
+        var user = await _userAccountStore.GetByProviderSubjectAsync(request.Provider, request.ProviderSubject, cancellationToken);
+        if (user is null || !user.IsProviderAccount)
+        {
+            return new AuthResult(false, "Invalid provider credentials.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Email) &&
+            !string.Equals(user.Email, request.Email.Trim(), StringComparison.OrdinalIgnoreCase))
+        {
+            return new AuthResult(false, "Invalid provider credentials.");
+        }
+
+        if (!user.IsApproved)
+        {
+            return new AuthResult(false, "Account approval is pending.");
+        }
+
+        if (user.IsSuspended)
+        {
+            return new AuthResult(false, "Account is suspended.");
+        }
+
+        user.RegisterSuccessfulLogin();
+        await _userAccountStore.SaveChangesAsync(cancellationToken);
+
+        return CreateLoginResult("Login successful.", user);
+    }
+
+    public async Task<AuthResult> CompleteMfaChallengeAsync(CompleteMfaChallengeRequest request, CancellationToken cancellationToken)
+    {
+        var challenge = _mfaChallengeTokenService.ReadChallenge(request.ChallengeToken);
+        if (challenge is null || challenge.ExpiresAtUtc <= _clock.UtcNow)
+        {
+            return new AuthResult(false, "MFA challenge is invalid or expired.");
+        }
+
+        var user = await _userAccountStore.GetByIdAsync(challenge.UserId, cancellationToken);
+        if (user is null)
+        {
+            return new AuthResult(false, "User account does not exist.");
+        }
+
+        if (!IsMfaRequired(user))
+        {
+            return CreateSuccessResult("MFA is not required for this account.", user, mfaVerified: false);
+        }
+
+        var secretKey = challenge.Mode == MfaChallengeMode.Setup
+            ? challenge.SecretKey
+            : user.MfaSecretKey;
+        if (string.IsNullOrWhiteSpace(secretKey))
+        {
+            return new AuthResult(false, "MFA secret is unavailable.");
+        }
+
+        if (!_totpService.VerifyCode(secretKey, request.Code, _clock.UtcNow))
+        {
+            return new AuthResult(false, "The MFA code is invalid.");
+        }
+
+        if (challenge.Mode == MfaChallengeMode.Setup)
+        {
+            user.EnableMfa(secretKey);
+            await _userAccountStore.SaveChangesAsync(cancellationToken);
+        }
+
+        return CreateSuccessResult("MFA verification successful.", user, includeAccessToken: true, mfaVerified: true);
+    }
+
+    private AuthResult CreateLoginResult(string message, UserAccount user)
+    {
+        if (!IsMfaRequired(user))
+        {
+            return CreateSuccessResult(message, user, includeAccessToken: true, mfaVerified: false);
+        }
+
+        if (user.IsMfaEnabled && !string.IsNullOrWhiteSpace(user.MfaSecretKey))
+        {
+            var challenge = _mfaChallengeTokenService.CreateVerificationChallenge(user);
+            return new AuthResult(
+                true,
+                "MFA verification is required.",
+                user.Id,
+                user.Role,
+                user.UserName,
+                user.Email,
+                RequiresMfa: true,
+                MfaChallengeToken: challenge.Token,
+                MfaChallengeExpiresAtUtc: challenge.ExpiresAtUtc);
+        }
+
+        var secretKey = _totpService.GenerateSecretKey();
+        var setupChallenge = _mfaChallengeTokenService.CreateSetupChallenge(user, secretKey);
+        return new AuthResult(
+            true,
+            "MFA setup is required before access is granted.",
+            user.Id,
+            user.Role,
+            user.UserName,
+            user.Email,
+            RequiresMfa: true,
+            MfaSetupRequired: true,
+            MfaChallengeToken: setupChallenge.Token,
+            MfaChallengeExpiresAtUtc: setupChallenge.ExpiresAtUtc,
+            MfaManualEntryKey: secretKey,
+            MfaProvisioningUri: _totpService.BuildProvisioningUri(user.Email, secretKey));
+    }
+
+    private static bool IsMfaRequired(UserAccount user)
+        => user.Role is UserRole.Admin or UserRole.Moderator;
+
+    private AuthResult CreateSuccessResult(
         string message,
         UserAccount user,
         bool includeAccessToken = false,
-        IAccessTokenIssuer? accessTokenIssuer = null)
+        bool mfaVerified = false)
     {
         AccessTokenEnvelope? accessToken = null;
         if (includeAccessToken)
         {
-            accessToken = accessTokenIssuer?.IssueToken(user)
-                ?? throw new InvalidOperationException("Access token issuer is required.");
+            accessToken = _accessTokenIssuer.IssueToken(user, mfaVerified);
         }
 
         return new AuthResult(

@@ -32,6 +32,7 @@ public sealed class UrbanArtDbContext : DbContext
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Email).IsRequired();
             entity.Property(x => x.UserName).IsRequired();
+            entity.Property(x => x.MfaSecretKey).HasMaxLength(128);
             entity.HasIndex(x => x.Email).IsUnique();
             entity.HasIndex(x => x.UserName).IsUnique();
         });
@@ -102,6 +103,8 @@ public sealed class UrbanArtDbContext : DbContext
         modelBuilder.Entity<AppConfiguration>(entity =>
         {
             entity.HasKey(x => x.Id);
+            entity.Property(x => x.PublicAppBaseUrl).HasMaxLength(512);
+            entity.Property(x => x.SmtpHost).HasMaxLength(512);
         });
 
         base.OnModelCreating(modelBuilder);

@@ -80,6 +80,7 @@ void main() {
         DropItemModel(
           id: "item-1",
           qrToken: "token-1",
+          claimUrl: "https://example.com/hunter/claim?token=token-1",
           isClaimed: false,
           claimedByUserId: null,
           claimedByAnonymousNickname: null,
@@ -88,6 +89,7 @@ void main() {
         DropItemModel(
           id: "item-2",
           qrToken: "token-2",
+          claimUrl: "https://example.com/hunter/claim?token=token-2",
           isClaimed: false,
           claimedByUserId: null,
           claimedByAnonymousNickname: null,
@@ -122,6 +124,7 @@ void main() {
         DropItemModel(
           id: "item-1",
           qrToken: "token-1",
+          claimUrl: "https://example.com/hunter/claim?token=token-1",
           isClaimed: false,
           claimedByUserId: null,
           claimedByAnonymousNickname: null,
@@ -159,6 +162,7 @@ void main() {
         DropItemModel(
           id: "item-1",
           qrToken: "token-1",
+          claimUrl: "https://example.com/hunter/claim?token=token-1",
           isClaimed: false,
           claimedByUserId: null,
           claimedByAnonymousNickname: null,

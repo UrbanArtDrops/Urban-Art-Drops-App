@@ -156,7 +156,8 @@ authGroup.MapPost("/register-provider", async (
         "google",
         "facebook",
         "instagram",
-        "tiktok"
+        "tiktok",
+        "microsoft"
     };
 
     if (!allowedProviders.Contains(request.Provider))
@@ -174,6 +175,38 @@ authGroup.MapPost("/login-local", async (
     CancellationToken cancellationToken) =>
 {
     var result = await authService.LoginLocalAsync(request, cancellationToken);
+    return result.Success ? Results.Ok(result) : Results.BadRequest(result);
+});
+
+authGroup.MapPost("/login-provider", async (
+    LoginProviderRequest request,
+    AuthApplicationService authService,
+    CancellationToken cancellationToken) =>
+{
+    var allowedProviders = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        "google",
+        "facebook",
+        "instagram",
+        "tiktok",
+        "microsoft"
+    };
+
+    if (!allowedProviders.Contains(request.Provider))
+    {
+        return Results.BadRequest(new AuthResult(false, "Unsupported provider for v1."));
+    }
+
+    var result = await authService.LoginProviderAsync(request, cancellationToken);
+    return result.Success ? Results.Ok(result) : Results.BadRequest(result);
+});
+
+authGroup.MapPost("/mfa/complete", async (
+    CompleteMfaChallengeRequest request,
+    AuthApplicationService authService,
+    CancellationToken cancellationToken) =>
+{
+    var result = await authService.CompleteMfaChallengeAsync(request, cancellationToken);
     return result.Success ? Results.Ok(result) : Results.BadRequest(result);
 });
 
@@ -492,9 +525,10 @@ dropsGroup.MapGet("/", async (HttpContext httpContext, UrbanArtDbContext dbConte
         .Include(x => x.LocationPhotos)
         .AsNoTracking()
         .ToListAsync(cancellationToken);
+    var configuration = await GetConfigurationAsync(dbContext, cancellationToken);
 
     var response = drops
-        .Select(drop => ToDropResponse(drop, httpContext.Request))
+        .Select(drop => ToDropResponse(drop, httpContext.Request, configuration))
         .ToList();
     return Results.Ok(response);
 });
@@ -507,7 +541,13 @@ dropsGroup.MapGet("/{id:guid}", async (Guid id, HttpContext httpContext, UrbanAr
         .AsNoTracking()
         .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
-    return drop is null ? Results.NotFound() : Results.Ok(ToDropResponse(drop, httpContext.Request));
+    if (drop is null)
+    {
+        return Results.NotFound();
+    }
+
+    var configuration = await GetConfigurationAsync(dbContext, cancellationToken);
+    return Results.Ok(ToDropResponse(drop, httpContext.Request, configuration));
 });
 
 dropsGroup.MapPost("/", async (
@@ -555,8 +595,8 @@ dropsGroup.MapPost("/", async (
 
         await dbContext.Drops.AddAsync(drop, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
-
-        return Results.Created($"/api/drops/{drop.Id}", ToDropResponse(drop, httpContext.Request));
+        var configuration = await GetConfigurationAsync(dbContext, cancellationToken);
+        return Results.Created($"/api/drops/{drop.Id}", ToDropResponse(drop, httpContext.Request, configuration));
     }
     catch (DomainValidationException ex)
     {
@@ -667,12 +707,13 @@ dropsGroup.MapPut("/{id:guid}", async (
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        var configuration = await GetConfigurationAsync(dbContext, cancellationToken);
         var reloadedDrop = await dbContext.Drops
             .Include(x => x.Items)
             .Include(x => x.LocationPhotos)
             .AsNoTracking()
             .FirstAsync(x => x.Id == id, cancellationToken);
-        return Results.Ok(ToDropResponse(reloadedDrop, httpContext.Request));
+        return Results.Ok(ToDropResponse(reloadedDrop, httpContext.Request, configuration));
     }
     catch (DomainValidationException ex)
     {
@@ -807,6 +848,7 @@ dropsGroup.MapPost("/{dropId:guid}/items/{itemId:guid}/claim", async (
     Guid dropId,
     Guid itemId,
     ClaimDropItemRequest request,
+    HttpContext httpContext,
     UrbanArtDbContext dbContext,
     DropClaimApplicationService dropClaimService,
     CancellationToken cancellationToken) =>
@@ -826,9 +868,110 @@ dropsGroup.MapPost("/{dropId:guid}/items/{itemId:guid}/claim", async (
         return Results.NotFound();
     }
 
+    var claimActor = await ResolveClaimActorAsync(httpContext, dbContext, request.HunterUserId, cancellationToken);
+    if (claimActor.Failure is not null)
+    {
+        return claimActor.Failure;
+    }
+
     try
     {
-        await dropClaimService.ClaimAsync(drop, item, request.HunterUserId, request.AnonymousNickname, cancellationToken);
+        await dropClaimService.ClaimAsync(
+            drop,
+            item,
+            claimActor.HunterUserId,
+            claimActor.AnonymousNickname ?? request.AnonymousNickname,
+            cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return Results.Ok();
+    }
+    catch (DomainValidationException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+});
+
+var claimsGroup = app.MapGroup("/api/claims");
+claimsGroup.MapGet("/by-token/{qrToken}", async (
+    string qrToken,
+    UrbanArtDbContext dbContext,
+    CancellationToken cancellationToken) =>
+{
+    var normalizedToken = qrToken.Trim();
+    var dropItem = await dbContext.DropItems
+        .AsNoTracking()
+        .FirstOrDefaultAsync(item => item.QrToken == normalizedToken, cancellationToken);
+    if (dropItem is null)
+    {
+        return Results.NotFound();
+    }
+
+    var drop = await dbContext.Drops
+        .AsNoTracking()
+        .FirstOrDefaultAsync(entry => entry.Id == dropItem.DropId, cancellationToken);
+    if (drop is null)
+    {
+        return Results.NotFound();
+    }
+
+    var artPiece = await dbContext.ArtPieces
+        .AsNoTracking()
+        .FirstOrDefaultAsync(entry => entry.Id == drop.ArtPieceId, cancellationToken);
+    if (artPiece is null)
+    {
+        return Results.NotFound();
+    }
+
+    string? claimedByDisplayName = null;
+    if (dropItem.ClaimedByUserId.HasValue)
+    {
+        var claimedByUser = await dbContext.UserAccounts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(user => user.Id == dropItem.ClaimedByUserId.Value, cancellationToken);
+        claimedByDisplayName = claimedByUser?.UserName;
+    }
+
+    claimedByDisplayName ??= dropItem.ClaimedByAnonymousNickname;
+    return Results.Ok(ToClaimPreviewResponse(drop, dropItem, artPiece, claimedByDisplayName));
+});
+
+claimsGroup.MapPost("/by-token", async (
+    ClaimDropItemByTokenRequest request,
+    HttpContext httpContext,
+    UrbanArtDbContext dbContext,
+    DropClaimApplicationService dropClaimService,
+    CancellationToken cancellationToken) =>
+{
+    var normalizedToken = request.QrToken.Trim();
+    var dropItem = await dbContext.DropItems
+        .FirstOrDefaultAsync(item => item.QrToken == normalizedToken, cancellationToken);
+    if (dropItem is null)
+    {
+        return Results.NotFound();
+    }
+
+    var drop = await dbContext.Drops
+        .Include(entry => entry.Items)
+        .FirstOrDefaultAsync(entry => entry.Id == dropItem.DropId, cancellationToken);
+    if (drop is null)
+    {
+        return Results.NotFound();
+    }
+
+    var claimActor = await ResolveClaimActorAsync(httpContext, dbContext, request.HunterUserId, cancellationToken);
+    if (claimActor.Failure is not null)
+    {
+        return claimActor.Failure;
+    }
+
+    try
+    {
+        await dropClaimService.ClaimAsync(
+            drop,
+            dropItem,
+            claimActor.HunterUserId,
+            claimActor.AnonymousNickname ?? request.AnonymousNickname,
+            cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
         return Results.Ok();
     }
@@ -1321,6 +1464,7 @@ adminGroup.MapPut("/configuration", async (
 {
     var config = await GetConfigurationAsync(dbContext, cancellationToken);
     config.SmtpHost = request.SmtpHost;
+    config.PublicAppBaseUrl = NormalizeOptionalBaseUrl(request.PublicAppBaseUrl);
     config.MainMapRadiusKm = request.MainMapRadiusKm;
     config.MiniMapRadiusKm = request.MiniMapRadiusKm;
     config.UnclaimedDropRadiusKm = request.UnclaimedDropRadiusKm;
@@ -1513,6 +1657,17 @@ static async Task<AppConfiguration> GetConfigurationAsync(UrbanArtDbContext dbCo
     return config;
 }
 
+static string? NormalizeOptionalBaseUrl(string? value)
+{
+    var normalized = value?.Trim();
+    if (string.IsNullOrWhiteSpace(normalized))
+    {
+        return null;
+    }
+
+    return normalized.TrimEnd('/');
+}
+
 static async Task<(UserAccount? Actor, IResult? Failure)> ResolveAuthenticatedActorAsync(
     HttpContext httpContext,
     UrbanArtDbContext dbContext,
@@ -1537,6 +1692,43 @@ static async Task<(UserAccount? Actor, IResult? Failure)> ResolveAuthenticatedAc
     }
 
     return (actor, null);
+}
+
+static async Task<(Guid? HunterUserId, string? AnonymousNickname, IResult? Failure)> ResolveClaimActorAsync(
+    HttpContext httpContext,
+    UrbanArtDbContext dbContext,
+    Guid? requestedHunterUserId,
+    CancellationToken cancellationToken)
+{
+    if (TryGetAuthenticatedUserId(httpContext.User, out var authenticatedUserId))
+    {
+        if (requestedHunterUserId.HasValue && requestedHunterUserId.Value != authenticatedUserId)
+        {
+            return (null, null, Results.BadRequest(new { error = "Authenticated claim user does not match requested hunter user." }));
+        }
+
+        var actor = await dbContext.UserAccounts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(user => user.Id == authenticatedUserId, cancellationToken);
+        if (actor is null)
+        {
+            return (null, null, Results.Unauthorized());
+        }
+
+        if (!actor.IsApproved || actor.IsSuspended)
+        {
+            return (null, null, Results.StatusCode(StatusCodes.Status403Forbidden));
+        }
+
+        return (actor.Id, null, null);
+    }
+
+    if (requestedHunterUserId.HasValue)
+    {
+        return (null, null, Results.BadRequest(new { error = "Anonymous claims cannot impersonate a registered hunter." }));
+    }
+
+    return (null, null, null);
 }
 
 static async Task<(UserAccount? Actor, IResult? Failure)> ResolveModerationActorAsync(
@@ -1757,16 +1949,18 @@ static string ResolveCommentAuthorDisplayName(DropComment comment, IReadOnlyDict
     return string.IsNullOrWhiteSpace(nickname) ? "-" : nickname;
 }
 
-static DropResponseDto ToDropResponse(Drop drop, HttpRequest request)
+static DropResponseDto ToDropResponse(Drop drop, HttpRequest request, AppConfiguration? configuration = null)
 {
-    var baseUri = $"{request.Scheme}://{request.Host}";
+    var apiBaseUri = $"{request.Scheme}://{request.Host}";
+    var appBaseUri = ResolvePublicAppBaseUrl(configuration, request);
     var locationPhotos = drop.LocationPhotos
-        .Select(photo => new PhotoReferenceDto(photo.Id, $"{baseUri}/api/media/drop-location-photos/{photo.Id}"))
+        .Select(photo => new PhotoReferenceDto(photo.Id, $"{apiBaseUri}/api/media/drop-location-photos/{photo.Id}"))
         .ToList();
     var items = drop.Items
         .Select(item => new DropItemResponseDto(
             item.Id,
             item.QrToken,
+            BuildClaimUrl(appBaseUri, item.QrToken),
             item.IsClaimed,
             item.ClaimedByUserId,
             item.ClaimedByAnonymousNickname,
@@ -1785,6 +1979,25 @@ static DropResponseDto ToDropResponse(Drop drop, HttpRequest request)
         locationPhotos,
         items);
 }
+
+static ClaimPreviewResponseDto ToClaimPreviewResponse(
+    Drop drop,
+    DropItem dropItem,
+    ArtPiece artPiece,
+    string? claimedByDisplayName)
+    => new(
+        drop.Id,
+        dropItem.Id,
+        drop.ArtPieceId,
+        artPiece.Title,
+        dropItem.IsClaimed,
+        claimedByDisplayName);
+
+static string ResolvePublicAppBaseUrl(AppConfiguration? configuration, HttpRequest request)
+    => NormalizeOptionalBaseUrl(configuration?.PublicAppBaseUrl) ?? $"{request.Scheme}://{request.Host}";
+
+static string BuildClaimUrl(string appBaseUri, string qrToken)
+    => $"{appBaseUri}/hunter/claim?token={Uri.EscapeDataString(qrToken)}";
 
 static ManagedUserResponseDto ToManagedUserResponse(UserAccount user, bool includeEmail)
     => new(
@@ -2174,6 +2387,7 @@ internal sealed record ArtPieceResponseDto(
 internal sealed record DropItemResponseDto(
     Guid Id,
     string QrToken,
+    string ClaimUrl,
     bool IsClaimed,
     Guid? ClaimedByUserId,
     string? ClaimedByAnonymousNickname,
@@ -2190,6 +2404,14 @@ internal sealed record DropResponseDto(
     bool IsPublished,
     IReadOnlyCollection<PhotoReferenceDto> LocationPhotos,
     IReadOnlyCollection<DropItemResponseDto> Items);
+
+internal sealed record ClaimPreviewResponseDto(
+    Guid DropId,
+    Guid DropItemId,
+    Guid ArtPieceId,
+    string ArtPieceTitle,
+    bool IsClaimed,
+    string? ClaimedByDisplayName);
 
 internal sealed record ManagedUserResponseDto(
     Guid Id,

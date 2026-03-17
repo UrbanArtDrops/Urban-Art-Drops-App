@@ -49,6 +49,12 @@ class AuthResultModel {
     required this.accessToken,
     required this.accessTokenExpiresAtUtc,
     required this.tokenType,
+    required this.requiresMfa,
+    required this.mfaSetupRequired,
+    required this.mfaChallengeToken,
+    required this.mfaChallengeExpiresAtUtc,
+    required this.mfaManualEntryKey,
+    required this.mfaProvisioningUri,
   });
 
   factory AuthResultModel.fromJson(Map<String, dynamic> json) {
@@ -61,6 +67,11 @@ class AuthResultModel {
       json,
       "accessTokenExpiresAtUtc",
       "AccessTokenExpiresAtUtc",
+    );
+    final mfaChallengeExpiresAtRaw = _readNullableString(
+      json,
+      "mfaChallengeExpiresAtUtc",
+      "MfaChallengeExpiresAtUtc",
     );
 
     return AuthResultModel(
@@ -78,6 +89,26 @@ class AuthResultModel {
           ? null
           : DateTime.tryParse(accessTokenExpiresAtRaw),
       tokenType: _readNullableString(json, "tokenType", "TokenType"),
+      requiresMfa: _readBool(json, "requiresMfa", "RequiresMfa"),
+      mfaSetupRequired: _readBool(json, "mfaSetupRequired", "MfaSetupRequired"),
+      mfaChallengeToken: _readNullableString(
+        json,
+        "mfaChallengeToken",
+        "MfaChallengeToken",
+      ),
+      mfaChallengeExpiresAtUtc: mfaChallengeExpiresAtRaw == null
+          ? null
+          : DateTime.tryParse(mfaChallengeExpiresAtRaw),
+      mfaManualEntryKey: _readNullableString(
+        json,
+        "mfaManualEntryKey",
+        "MfaManualEntryKey",
+      ),
+      mfaProvisioningUri: _readNullableString(
+        json,
+        "mfaProvisioningUri",
+        "MfaProvisioningUri",
+      ),
     );
   }
 
@@ -91,6 +122,12 @@ class AuthResultModel {
   final String? accessToken;
   final DateTime? accessTokenExpiresAtUtc;
   final String? tokenType;
+  final bool requiresMfa;
+  final bool mfaSetupRequired;
+  final String? mfaChallengeToken;
+  final DateTime? mfaChallengeExpiresAtUtc;
+  final String? mfaManualEntryKey;
+  final String? mfaProvisioningUri;
 }
 
 class ArtPieceModel {
@@ -184,6 +221,7 @@ class DropItemModel {
   const DropItemModel({
     required this.id,
     required this.qrToken,
+    required this.claimUrl,
     required this.isClaimed,
     required this.claimedByUserId,
     required this.claimedByAnonymousNickname,
@@ -200,6 +238,7 @@ class DropItemModel {
     return DropItemModel(
       id: _readString(json, "id", "Id"),
       qrToken: _readString(json, "qrToken", "QrToken"),
+      claimUrl: _readString(json, "claimUrl", "ClaimUrl"),
       isClaimed: _readBool(json, "isClaimed", "IsClaimed"),
       claimedByUserId: _readNullableString(
         json,
@@ -219,6 +258,7 @@ class DropItemModel {
 
   final String id;
   final String qrToken;
+  final String claimUrl;
   final bool isClaimed;
   final String? claimedByUserId;
   final String? claimedByAnonymousNickname;
@@ -532,6 +572,7 @@ class ReportedArtPieceModel {
 class AppConfigurationModel {
   const AppConfigurationModel({
     required this.smtpHost,
+    required this.publicAppBaseUrl,
     required this.mainMapRadiusKm,
     required this.miniMapRadiusKm,
     required this.unclaimedDropRadiusKm,
@@ -541,6 +582,11 @@ class AppConfigurationModel {
   factory AppConfigurationModel.fromJson(Map<String, dynamic> json) {
     return AppConfigurationModel(
       smtpHost: _readString(json, "smtpHost", "SmtpHost"),
+      publicAppBaseUrl: _readString(
+        json,
+        "publicAppBaseUrl",
+        "PublicAppBaseUrl",
+      ),
       mainMapRadiusKm: _readInt(json, "mainMapRadiusKm", "MainMapRadiusKm"),
       miniMapRadiusKm: _readInt(json, "miniMapRadiusKm", "MiniMapRadiusKm"),
       unclaimedDropRadiusKm: _readInt(
@@ -558,6 +604,7 @@ class AppConfigurationModel {
 
   static const AppConfigurationModel defaults = AppConfigurationModel(
     smtpHost: "",
+    publicAppBaseUrl: "",
     mainMapRadiusKm: 30,
     miniMapRadiusKm: 5,
     unclaimedDropRadiusKm: 3,
@@ -565,10 +612,44 @@ class AppConfigurationModel {
   );
 
   final String smtpHost;
+  final String publicAppBaseUrl;
   final int mainMapRadiusKm;
   final int miniMapRadiusKm;
   final int unclaimedDropRadiusKm;
   final bool showExactPositionWhenFullyClaimed;
+}
+
+class ClaimPreviewModel {
+  const ClaimPreviewModel({
+    required this.dropId,
+    required this.dropItemId,
+    required this.artPieceId,
+    required this.artPieceTitle,
+    required this.isClaimed,
+    required this.claimedByDisplayName,
+  });
+
+  factory ClaimPreviewModel.fromJson(Map<String, dynamic> json) {
+    return ClaimPreviewModel(
+      dropId: _readString(json, "dropId", "DropId"),
+      dropItemId: _readString(json, "dropItemId", "DropItemId"),
+      artPieceId: _readString(json, "artPieceId", "ArtPieceId"),
+      artPieceTitle: _readString(json, "artPieceTitle", "ArtPieceTitle"),
+      isClaimed: _readBool(json, "isClaimed", "IsClaimed"),
+      claimedByDisplayName: _readNullableString(
+        json,
+        "claimedByDisplayName",
+        "ClaimedByDisplayName",
+      ),
+    );
+  }
+
+  final String dropId;
+  final String dropItemId;
+  final String artPieceId;
+  final String artPieceTitle;
+  final bool isClaimed;
+  final String? claimedByDisplayName;
 }
 
 class CreateDropInput {

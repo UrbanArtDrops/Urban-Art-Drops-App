@@ -10,6 +10,8 @@ public interface IUserAccountStore
 
     Task<UserAccount?> GetByEmailAsync(string email, CancellationToken cancellationToken);
 
+    Task<UserAccount?> GetByIdAsync(Guid userId, CancellationToken cancellationToken);
+
     Task<UserAccount?> GetByProviderSubjectAsync(string provider, string providerSubject, CancellationToken cancellationToken);
 
     Task AddAsync(UserAccount user, string? providerSubject, CancellationToken cancellationToken);

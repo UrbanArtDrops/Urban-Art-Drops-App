@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Security.Cryptography;
 using Microsoft.Extensions.DependencyInjection;
 using UrbanArtDropFinder.Domain.Users;
 using UrbanArtDropFinder.Persistence.Db;
@@ -35,6 +36,11 @@ internal static class TestAuthUtilities
             user.MarkEmailVerified();
         }
 
+        if (role is UserRole.Admin or UserRole.Moderator)
+        {
+            user.EnableMfa("JBSWY3DPEHPK3PXP");
+        }
+
         user.SetSuspended(suspended);
         await dbContext.UserAccounts.AddAsync(user);
         await dbContext.SaveChangesAsync();
@@ -56,6 +62,30 @@ internal static class TestAuthUtilities
         loginResponse.EnsureSuccessStatusCode();
 
         var loginPayload = await loginResponse.Content.ReadFromJsonAsync<LoginResultDto>();
+        if (loginPayload is null)
+        {
+            throw new InvalidOperationException("Login did not return a payload for the authenticated test user.");
+        }
+
+        if (loginPayload.RequiresMfa)
+        {
+            if (string.IsNullOrWhiteSpace(loginPayload.MfaChallengeToken))
+            {
+                throw new InvalidOperationException("MFA login did not return a challenge token.");
+            }
+
+            var code = CreateCurrentTotpCode("JBSWY3DPEHPK3PXP");
+            using var mfaResponse = await client.PostAsJsonAsync(
+                "/api/auth/mfa/complete",
+                new
+                {
+                    challengeToken = loginPayload.MfaChallengeToken,
+                    code
+                });
+            mfaResponse.EnsureSuccessStatusCode();
+            loginPayload = await mfaResponse.Content.ReadFromJsonAsync<LoginResultDto>();
+        }
+
         if (loginPayload is null || string.IsNullOrWhiteSpace(loginPayload.AccessToken))
         {
             throw new InvalidOperationException("Login did not return a bearer token for the authenticated test user.");
@@ -109,5 +139,62 @@ internal static class TestAuthUtilities
         return client.SendAsync(request);
     }
 
-    private sealed record LoginResultDto(string? AccessToken);
+    internal static string CreateCurrentTotpCode(string secretKey, DateTimeOffset? nowUtc = null)
+    {
+        var secret = DecodeBase32(secretKey);
+        var unixTime = (nowUtc ?? DateTimeOffset.UtcNow).ToUnixTimeSeconds();
+        var counter = unixTime / 30;
+        Span<byte> counterBytes = stackalloc byte[8];
+        for (var index = 7; index >= 0; index -= 1)
+        {
+            counterBytes[index] = (byte)(counter & 0xFF);
+            counter >>= 8;
+        }
+
+        using var hmac = new HMACSHA1(secret);
+        var hash = hmac.ComputeHash(counterBytes.ToArray());
+        var offset = hash[^1] & 0x0F;
+        var binaryCode =
+            ((hash[offset] & 0x7F) << 24) |
+            (hash[offset + 1] << 16) |
+            (hash[offset + 2] << 8) |
+            hash[offset + 3];
+        return (binaryCode % 1_000_000).ToString("D6");
+    }
+
+    private sealed record LoginResultDto(
+        string? AccessToken,
+        bool RequiresMfa,
+        string? MfaChallengeToken);
+
+    private static byte[] DecodeBase32(string input)
+    {
+        var normalized = input.Trim().TrimEnd('=').ToUpperInvariant();
+        if (normalized.Length == 0)
+        {
+            return [];
+        }
+
+        var output = new List<byte>((normalized.Length * 5) / 8);
+        var buffer = 0;
+        var bitsInBuffer = 0;
+        foreach (var character in normalized)
+        {
+            var value = character switch
+            {
+                >= 'A' and <= 'Z' => character - 'A',
+                >= '2' and <= '7' => character - '2' + 26,
+                _ => throw new InvalidOperationException("Invalid base32 character.")
+            };
+            buffer = (buffer << 5) | value;
+            bitsInBuffer += 5;
+            while (bitsInBuffer >= 8)
+            {
+                bitsInBuffer -= 8;
+                output.Add((byte)((buffer >> bitsInBuffer) & 0xFF));
+            }
+        }
+
+        return output.ToArray();
+    }
 }

@@ -11,3 +11,5 @@ public sealed record CreateDropRequest(
     int ItemCount);
 
 public sealed record ClaimDropItemRequest(Guid? HunterUserId, string? AnonymousNickname);
+
+public sealed record ClaimDropItemByTokenRequest(string QrToken, Guid? HunterUserId, string? AnonymousNickname);

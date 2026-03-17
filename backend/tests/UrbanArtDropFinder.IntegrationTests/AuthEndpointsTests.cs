@@ -122,6 +122,102 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
         await EnsureSuccessWithBodyAsync(adminResponse);
     }
 
+    [Fact]
+    public async Task RegisterProviderAndLoginProvider_ForHunter_ReturnsBearerToken()
+    {
+        var uniqueId = Guid.NewGuid().ToString("N");
+        var email = $"provider.hunter.{uniqueId}@example.com";
+        var userName = $"provider-hunter-{uniqueId}";
+        var providerSubject = $"provider-subject-{uniqueId}";
+
+        var registerResponse = await _client.PostAsJsonAsync(
+            "/api/auth/register-provider",
+            new
+            {
+                provider = "google",
+                providerSubject,
+                email,
+                userName,
+                role = UserRole.Hunter
+            });
+        await EnsureSuccessWithBodyAsync(registerResponse);
+
+        var loginResponse = await _client.PostAsJsonAsync(
+            "/api/auth/login-provider",
+            new
+            {
+                provider = "google",
+                providerSubject,
+                email
+            });
+        await EnsureSuccessWithBodyAsync(loginResponse);
+
+        var loginResult = await loginResponse.Content.ReadFromJsonAsync<AuthResultDto>();
+        Assert.NotNull(loginResult);
+        Assert.False(loginResult!.RequiresMfa);
+        Assert.False(string.IsNullOrWhiteSpace(loginResult.AccessToken));
+        Assert.Equal("Bearer", loginResult.TokenType);
+    }
+
+    [Fact]
+    public async Task LoginProvider_ForModeratorProviderAccount_RequiresMfaAndReturnsBearerTokenAfterChallenge()
+    {
+        var uniqueId = Guid.NewGuid().ToString("N");
+        var email = $"provider.moderator.{uniqueId}@example.com";
+        var providerSubject = $"provider-moderator-subject-{uniqueId}";
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<UrbanArtDbContext>();
+            var user = UserAccount.CreateProvider(
+                email,
+                $"provider-moderator-{uniqueId}",
+                UserRole.Moderator,
+                "microsoft",
+                approved: true);
+            user.EnableMfa("JBSWY3DPEHPK3PXP");
+            dbContext.UserAccounts.Add(user);
+            dbContext.UserProviderLinks.Add(new UserProviderLink
+            {
+                UserAccountId = user.Id,
+                Provider = "microsoft",
+                ProviderSubject = providerSubject
+            });
+            await dbContext.SaveChangesAsync();
+        }
+
+        var loginResponse = await _client.PostAsJsonAsync(
+            "/api/auth/login-provider",
+            new
+            {
+                provider = "microsoft",
+                providerSubject,
+                email
+            });
+        await EnsureSuccessWithBodyAsync(loginResponse);
+
+        var loginResult = await loginResponse.Content.ReadFromJsonAsync<AuthResultDto>();
+        Assert.NotNull(loginResult);
+        Assert.True(loginResult!.RequiresMfa);
+        Assert.NotNull(loginResult.MfaChallengeToken);
+        Assert.Null(loginResult.AccessToken);
+
+        var mfaResponse = await _client.PostAsJsonAsync(
+            "/api/auth/mfa/complete",
+            new
+            {
+                challengeToken = loginResult.MfaChallengeToken,
+                code = TestAuthUtilities.CreateCurrentTotpCode("JBSWY3DPEHPK3PXP")
+            });
+        await EnsureSuccessWithBodyAsync(mfaResponse);
+
+        var mfaResult = await mfaResponse.Content.ReadFromJsonAsync<AuthResultDto>();
+        Assert.NotNull(mfaResult);
+        Assert.False(mfaResult!.RequiresMfa);
+        Assert.False(string.IsNullOrWhiteSpace(mfaResult.AccessToken));
+        Assert.Equal("Bearer", mfaResult.TokenType);
+    }
+
     private sealed record AuthResultDto(
         bool Success,
         string Message,
@@ -132,7 +228,11 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
         DateTimeOffset? RetryAfterUtc,
         string? AccessToken,
         DateTimeOffset? AccessTokenExpiresAtUtc,
-        string? TokenType);
+        string? TokenType,
+        bool RequiresMfa,
+        bool MfaSetupRequired,
+        string? MfaChallengeToken,
+        DateTimeOffset? MfaChallengeExpiresAtUtc);
 
     private static async Task EnsureSuccessWithBodyAsync(HttpResponseMessage response)
     {

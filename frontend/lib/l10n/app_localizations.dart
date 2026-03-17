@@ -1052,6 +1052,66 @@ abstract class AppLocalizations {
   /// **'Claim now'**
   String get claimButton;
 
+  /// No description provided for @claimLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load claim data.'**
+  String get claimLoadError;
+
+  /// No description provided for @claimMissingToken.
+  ///
+  /// In en, this message translates to:
+  /// **'No QR token is available.'**
+  String get claimMissingToken;
+
+  /// No description provided for @claimTokenLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'QR token'**
+  String get claimTokenLabel;
+
+  /// No description provided for @claimAuthenticatedAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Claiming as account: {name}'**
+  String claimAuthenticatedAs(Object name);
+
+  /// No description provided for @claimAnonymousHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Without sign-in, a unique nickname is required.'**
+  String get claimAnonymousHint;
+
+  /// No description provided for @claimPreviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Art piece'**
+  String get claimPreviewTitle;
+
+  /// No description provided for @claimPreviewItemLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Item'**
+  String get claimPreviewItemLabel;
+
+  /// No description provided for @claimAlreadyClaimed.
+  ///
+  /// In en, this message translates to:
+  /// **'This item has already been claimed.'**
+  String get claimAlreadyClaimed;
+
+  /// No description provided for @claimAlreadyClaimedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Already claimed by: {name}'**
+  String claimAlreadyClaimedBy(Object name);
+
+  /// No description provided for @claimSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Item claimed successfully.'**
+  String get claimSuccess;
+
   /// No description provided for @rankEntry.
   ///
   /// In en, this message translates to:
@@ -1094,6 +1154,72 @@ abstract class AppLocalizations {
   /// **'Provider login is prepared in the product, but not wired into this local screen yet.'**
   String get authProviderLoginComingSoon;
 
+  /// No description provided for @authProviderLoginHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider accounts use the provider, provider subject, and email from the external identity.'**
+  String get authProviderLoginHint;
+
+  /// No description provided for @authProviderRegistrationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a linked provider account with the external provider, provider subject, email, and target role.'**
+  String get authProviderRegistrationHint;
+
+  /// No description provided for @authProviderLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider'**
+  String get authProviderLabel;
+
+  /// No description provided for @authProviderSubjectLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider subject'**
+  String get authProviderSubjectLabel;
+
+  /// No description provided for @authSelectProviderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a provider'**
+  String get authSelectProviderHint;
+
+  /// No description provided for @authMfaTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Second factor'**
+  String get authMfaTitle;
+
+  /// No description provided for @authMfaCodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'MFA code'**
+  String get authMfaCodeLabel;
+
+  /// No description provided for @authMfaSetupHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan the QR code in your authenticator app or enter the key manually.'**
+  String get authMfaSetupHint;
+
+  /// No description provided for @authMfaManualKeyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual key'**
+  String get authMfaManualKeyLabel;
+
+  /// No description provided for @authMfaContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm MFA'**
+  String get authMfaContinue;
+
+  /// No description provided for @authMfaRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'MFA is required for this account.'**
+  String get authMfaRequired;
+
   /// No description provided for @authHunterRegistrationSuccess.
   ///
   /// In en, this message translates to:
@@ -1105,6 +1231,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Account created. Email verification was simulated for local development. Approval is now pending.'**
   String get authApprovalRequestSubmitted;
+
+  /// No description provided for @authHunterProviderRegistrationSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Hunter provider account created. You can sign in now.'**
+  String get authHunterProviderRegistrationSuccess;
+
+  /// No description provided for @authProviderApprovalRequestSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider account created. Approval is now pending.'**
+  String get authProviderApprovalRequestSubmitted;
 
   /// No description provided for @authHunterSelfServiceHint.
   ///
@@ -1147,6 +1285,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Provider login'**
   String get providerLoginTitle;
+
+  /// No description provided for @providerRegisterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider registration'**
+  String get providerRegisterTitle;
+
+  /// No description provided for @publicAppBaseUrlLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Public app base URL'**
+  String get publicAppBaseUrlLabel;
+
+  /// No description provided for @configLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load configuration.'**
+  String get configLoadError;
+
+  /// No description provided for @configSaveSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Configuration saved.'**
+  String get configSaveSuccess;
 
   /// No description provided for @usernameLabel.
   ///

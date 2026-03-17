@@ -1026,7 +1026,7 @@ class _MakeDropWizardPageState extends State<MakeDropWizardPage> {
                   separatorBuilder: (context, _) => const SizedBox(height: 12),
                   itemBuilder: (context, index) => _QrCodeCard(
                     title: l10n.makeDropQrCodeLabel(index + 1),
-                    qrValue: _draft.items[index].qrToken,
+                    qrValue: _draft.items[index].claimUrl,
                   ),
                 ),
               ),

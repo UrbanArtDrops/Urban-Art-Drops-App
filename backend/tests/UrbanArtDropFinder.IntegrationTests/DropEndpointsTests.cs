@@ -1,7 +1,11 @@
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using UrbanArtDropFinder.Domain.Art;
 using UrbanArtDropFinder.Domain.Users;
+using UrbanArtDropFinder.Persistence.Db;
 
 namespace UrbanArtDropFinder.IntegrationTests;
 
@@ -131,6 +135,81 @@ public sealed class DropEndpointsTests : IClassFixture<TestWebApplicationFactory
         Assert.Equal(HttpStatusCode.BadRequest, invalidUpdateResponse.StatusCode);
     }
 
+    [Fact]
+    public async Task ClaimByToken_ReturnsPreviewAndClaimsItemUsingConfiguredAppBaseUrl()
+    {
+        var uniqueId = Guid.NewGuid().ToString("N");
+        var admin = await _factory.CreateAuthenticatedUserAsync(UserRole.Admin, $"admin.drop.claim.{uniqueId}");
+
+        Guid artPieceId;
+        const string artPieceTitle = "Echoes of the Alley";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<UrbanArtDbContext>();
+            var configuration = await dbContext.AppConfigurations.SingleAsync();
+            configuration.PublicAppBaseUrl = "https://app.urbanartdrops.test";
+
+            var artPiece = ArtPiece.Create(
+                Guid.NewGuid(),
+                artPieceTitle,
+                "A descriptive mural concept with enough text to satisfy validation.",
+                ArtPieceAssetKind.Image);
+            artPiece.AddPhoto([0x01], "image/png");
+            dbContext.ArtPieces.Add(artPiece);
+            await dbContext.SaveChangesAsync();
+            artPieceId = artPiece.Id;
+        }
+
+        var createResponse = await _client.PostAuthorizedAsJsonAsync(
+            "/api/drops/",
+            new
+            {
+                artPieceId,
+                dropMakerId = Guid.NewGuid(),
+                isStationary = true,
+                portableItemCount = (int?)null,
+                latitude = 50.1109,
+                longitude = 8.6821,
+                locationPhotoUrls = new[] { SamplePngDataUrl },
+                itemCount = 1
+            },
+            admin.AccessToken);
+        await EnsureSuccessWithBodyAsync(createResponse);
+
+        var createdDrop = await createResponse.Content.ReadFromJsonAsync<DropResponseDto>();
+        Assert.NotNull(createdDrop);
+        var createdItem = createdDrop!.Items.Single();
+        Assert.Equal(
+            $"https://app.urbanartdrops.test/hunter/claim?token={Uri.EscapeDataString(createdItem.QrToken)}",
+            createdItem.ClaimUrl);
+
+        var previewResponse = await _client.GetAsync($"/api/claims/by-token/{Uri.EscapeDataString(createdItem.QrToken)}");
+        await EnsureSuccessWithBodyAsync(previewResponse);
+        var preview = await previewResponse.Content.ReadFromJsonAsync<ClaimPreviewResponseDto>();
+        Assert.NotNull(preview);
+        Assert.Equal(createdDrop.Id, preview!.DropId);
+        Assert.Equal(createdItem.Id, preview.DropItemId);
+        Assert.Equal(artPieceId, preview.ArtPieceId);
+        Assert.Equal(artPieceTitle, preview.ArtPieceTitle);
+        Assert.False(preview.IsClaimed);
+
+        var claimResponse = await _client.PostAsJsonAsync(
+            "/api/claims/by-token",
+            new
+            {
+                qrToken = createdItem.QrToken,
+                anonymousNickname = "street-hunter"
+            });
+        await EnsureSuccessWithBodyAsync(claimResponse);
+
+        var claimedPreviewResponse = await _client.GetAsync($"/api/claims/by-token/{Uri.EscapeDataString(createdItem.QrToken)}");
+        await EnsureSuccessWithBodyAsync(claimedPreviewResponse);
+        var claimedPreview = await claimedPreviewResponse.Content.ReadFromJsonAsync<ClaimPreviewResponseDto>();
+        Assert.NotNull(claimedPreview);
+        Assert.True(claimedPreview!.IsClaimed);
+        Assert.Equal("street-hunter", claimedPreview.ClaimedByDisplayName);
+    }
+
     private sealed record DropResponseDto(
         Guid Id,
         Guid ArtPieceId,
@@ -148,10 +227,19 @@ public sealed class DropEndpointsTests : IClassFixture<TestWebApplicationFactory
     private sealed record DropItemResponseDto(
         Guid Id,
         string QrToken,
+        string ClaimUrl,
         bool IsClaimed,
         Guid? ClaimedByUserId,
         string? ClaimedByAnonymousNickname,
         DateTimeOffset? ClaimedAtUtc);
+
+    private sealed record ClaimPreviewResponseDto(
+        Guid DropId,
+        Guid DropItemId,
+        Guid ArtPieceId,
+        string ArtPieceTitle,
+        bool IsClaimed,
+        string? ClaimedByDisplayName);
 
     private static async Task EnsureSuccessWithBodyAsync(HttpResponseMessage response)
     {

@@ -65,6 +65,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUserAccountStore, UserAccountStore>();
         services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
         services.AddSingleton<ITokenGenerator, SecureTokenGenerator>();
+        services.AddSingleton<ITotpService, TotpService>();
+        services.AddSingleton<IMfaChallengeTokenService, JwtMfaChallengeTokenService>();
         services.AddSingleton<IAccessTokenIssuer, JwtAccessTokenIssuer>();
         services.AddSingleton<IClock, SystemClock>();
         services.AddScoped<AuthApplicationService>();

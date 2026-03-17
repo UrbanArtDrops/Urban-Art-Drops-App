@@ -245,6 +245,26 @@
   "claimInstruction": "Scan QR and submit nickname or account claim.",
   "nicknameLabel": "Nickname",
   "claimButton": "Claim now",
+  "claimLoadError": "Failed to load claim data.",
+  "claimMissingToken": "No QR token is available.",
+  "claimTokenLabel": "QR token",
+  "claimAuthenticatedAs": "Claiming as account: {name}",
+  "@claimAuthenticatedAs": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "claimAnonymousHint": "Without sign-in, a unique nickname is required.",
+  "claimPreviewTitle": "Art piece",
+  "claimPreviewItemLabel": "Item",
+  "claimAlreadyClaimed": "This item has already been claimed.",
+  "claimAlreadyClaimedBy": "Already claimed by: {name}",
+  "@claimAlreadyClaimedBy": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "claimSuccess": "Item claimed successfully.",
   "rankEntry": "#{rank} - {name}",
   "@rankEntry": {
     "placeholders": {
@@ -258,8 +278,21 @@
   "authFillRegistrationHint": "Fill in username, email, and password.",
   "authRoleManagedAtRegistration": "The account type is stored when the account is created. You do not select it again during login.",
   "authProviderLoginComingSoon": "Provider login is prepared in the product, but not wired into this local screen yet.",
+  "authProviderLoginHint": "Provider accounts use the provider, provider subject, and email from the external identity.",
+  "authProviderRegistrationHint": "Create a linked provider account with the external provider, provider subject, email, and target role.",
+  "authProviderLabel": "Provider",
+  "authProviderSubjectLabel": "Provider subject",
+  "authSelectProviderHint": "Select a provider",
+  "authMfaTitle": "Second factor",
+  "authMfaCodeLabel": "MFA code",
+  "authMfaSetupHint": "Scan the QR code in your authenticator app or enter the key manually.",
+  "authMfaManualKeyLabel": "Manual key",
+  "authMfaContinue": "Confirm MFA",
+  "authMfaRequired": "MFA is required for this account.",
   "authHunterRegistrationSuccess": "Hunter account created. The verification step was simulated for local development. You can sign in now.",
   "authApprovalRequestSubmitted": "Account created. Email verification was simulated for local development. Approval is now pending.",
+  "authHunterProviderRegistrationSuccess": "Hunter provider account created. You can sign in now.",
+  "authProviderApprovalRequestSubmitted": "Provider account created. Approval is now pending.",
   "authHunterSelfServiceHint": "Hunters can register directly and start signing in after verification.",
   "authArtistApprovalHint": "Artists can request an account. An admin must approve the account before login is allowed.",
   "authDropMakerApprovalHint": "Drop-makers can request an account. An admin must approve the account before login is allowed.",
@@ -267,6 +300,10 @@
   "boolYes": "Yes",
   "boolNo": "No",
   "providerLoginTitle": "Provider login",
+  "providerRegisterTitle": "Provider registration",
+  "publicAppBaseUrlLabel": "Public app base URL",
+  "configLoadError": "Failed to load configuration.",
+  "configSaveSuccess": "Configuration saved.",
   "usernameLabel": "Username",
   "roleHunter": "Hunter",
   "roleArtist": "Artist",

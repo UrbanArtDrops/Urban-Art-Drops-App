@@ -32,6 +32,9 @@ public sealed class UserAccountStore : IUserAccountStore
         return _dbContext.UserAccounts.FirstOrDefaultAsync(x => x.Email == normalized, cancellationToken);
     }
 
+    public Task<UserAccount?> GetByIdAsync(Guid userId, CancellationToken cancellationToken)
+        => _dbContext.UserAccounts.FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
+
     public async Task<UserAccount?> GetByProviderSubjectAsync(string provider, string providerSubject, CancellationToken cancellationToken)
     {
         var link = await _dbContext.UserProviderLinks.FirstOrDefaultAsync(

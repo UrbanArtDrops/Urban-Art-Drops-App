@@ -14,6 +14,8 @@ public sealed class UserAccount
     public bool IsProviderAccount { get; private set; }
     public string? Provider { get; private set; }
     public string? PasswordHash { get; private set; }
+    public bool IsMfaEnabled { get; private set; }
+    public string? MfaSecretKey { get; private set; }
     public int FailedLoginAttempts { get; private set; }
     public DateTimeOffset? NextLoginAllowedAtUtc { get; private set; }
     public DateTimeOffset CreatedAtUtc { get; private set; } = DateTimeOffset.UtcNow;
@@ -90,6 +92,23 @@ public sealed class UserAccount
         }
 
         UserName = userName.Trim();
+    }
+
+    public void EnableMfa(string secretKey)
+    {
+        if (string.IsNullOrWhiteSpace(secretKey))
+        {
+            throw new DomainValidationException("MFA secret key is required.");
+        }
+
+        MfaSecretKey = secretKey.Trim();
+        IsMfaEnabled = true;
+    }
+
+    public void DisableMfa()
+    {
+        IsMfaEnabled = false;
+        MfaSecretKey = null;
     }
 
     public bool CanAttemptLogin(DateTimeOffset nowUtc) =>

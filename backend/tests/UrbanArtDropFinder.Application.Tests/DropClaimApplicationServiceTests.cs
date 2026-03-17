@@ -34,6 +34,8 @@ public sealed class DropClaimApplicationServiceTests
 
         public Task<UserAccount?> GetByEmailAsync(string email, CancellationToken cancellationToken) => Task.FromResult<UserAccount?>(null);
 
+        public Task<UserAccount?> GetByIdAsync(Guid userId, CancellationToken cancellationToken) => Task.FromResult<UserAccount?>(null);
+
         public Task<UserAccount?> GetByProviderSubjectAsync(string provider, string providerSubject, CancellationToken cancellationToken) => Task.FromResult<UserAccount?>(null);
 
         public Task AddAsync(UserAccount user, string? providerSubject, CancellationToken cancellationToken) => Task.CompletedTask;

@@ -60,7 +60,7 @@ void main() {
       userName: "admin",
       role: AppUserRole.admin,
       accessToken: "admin-token",
-      accessTokenExpiresAtUtc: DateTime.utc(2026, 3, 17, 18),
+      accessTokenExpiresAtUtc: DateTime.utc(2099, 3, 17, 18),
     );
     final router = createAppRouter(authSessionCubit);
 

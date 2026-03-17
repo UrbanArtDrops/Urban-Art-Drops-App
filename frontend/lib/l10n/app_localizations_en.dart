@@ -534,6 +534,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String get claimButton => 'Claim now';
 
   @override
+  String get claimLoadError => 'Failed to load claim data.';
+
+  @override
+  String get claimMissingToken => 'No QR token is available.';
+
+  @override
+  String get claimTokenLabel => 'QR token';
+
+  @override
+  String claimAuthenticatedAs(Object name) {
+    return 'Claiming as account: $name';
+  }
+
+  @override
+  String get claimAnonymousHint =>
+      'Without sign-in, a unique nickname is required.';
+
+  @override
+  String get claimPreviewTitle => 'Art piece';
+
+  @override
+  String get claimPreviewItemLabel => 'Item';
+
+  @override
+  String get claimAlreadyClaimed => 'This item has already been claimed.';
+
+  @override
+  String claimAlreadyClaimedBy(Object name) {
+    return 'Already claimed by: $name';
+  }
+
+  @override
+  String get claimSuccess => 'Item claimed successfully.';
+
+  @override
   String rankEntry(Object rank, Object name) {
     return '#$rank - $name';
   }
@@ -560,12 +595,56 @@ class AppLocalizationsEn extends AppLocalizations {
       'Provider login is prepared in the product, but not wired into this local screen yet.';
 
   @override
+  String get authProviderLoginHint =>
+      'Provider accounts use the provider, provider subject, and email from the external identity.';
+
+  @override
+  String get authProviderRegistrationHint =>
+      'Create a linked provider account with the external provider, provider subject, email, and target role.';
+
+  @override
+  String get authProviderLabel => 'Provider';
+
+  @override
+  String get authProviderSubjectLabel => 'Provider subject';
+
+  @override
+  String get authSelectProviderHint => 'Select a provider';
+
+  @override
+  String get authMfaTitle => 'Second factor';
+
+  @override
+  String get authMfaCodeLabel => 'MFA code';
+
+  @override
+  String get authMfaSetupHint =>
+      'Scan the QR code in your authenticator app or enter the key manually.';
+
+  @override
+  String get authMfaManualKeyLabel => 'Manual key';
+
+  @override
+  String get authMfaContinue => 'Confirm MFA';
+
+  @override
+  String get authMfaRequired => 'MFA is required for this account.';
+
+  @override
   String get authHunterRegistrationSuccess =>
       'Hunter account created. The verification step was simulated for local development. You can sign in now.';
 
   @override
   String get authApprovalRequestSubmitted =>
       'Account created. Email verification was simulated for local development. Approval is now pending.';
+
+  @override
+  String get authHunterProviderRegistrationSuccess =>
+      'Hunter provider account created. You can sign in now.';
+
+  @override
+  String get authProviderApprovalRequestSubmitted =>
+      'Provider account created. Approval is now pending.';
 
   @override
   String get authHunterSelfServiceHint =>
@@ -591,6 +670,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get providerLoginTitle => 'Provider login';
+
+  @override
+  String get providerRegisterTitle => 'Provider registration';
+
+  @override
+  String get publicAppBaseUrlLabel => 'Public app base URL';
+
+  @override
+  String get configLoadError => 'Failed to load configuration.';
+
+  @override
+  String get configSaveSuccess => 'Configuration saved.';
 
   @override
   String get usernameLabel => 'Username';

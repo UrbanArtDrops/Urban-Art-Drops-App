@@ -10,6 +10,7 @@
 - Authentication__Jwt__Audience
 - Authentication__Jwt__SigningKey
 - SMTP host settings
+- Public app base URL setting
 - Map radius configuration
   - `MainMapRadiusKm` (default 30)
   - `MiniMapRadiusKm` (default 5)
@@ -30,10 +31,13 @@
 
 ## Authentication
 - Local registration persists the selected account type directly on the user account record
+- Provider registration persists provider, provider subject and role directly on the linked account record
 - Hunters are approved immediately after registration, while Artist and Drop-Maker accounts remain pending until admin approval
 - Local login consumes the stored backend role and identity payload instead of accepting a client-side role selection
+- Provider login consumes the stored provider link and returns the same JWT session payload as local login
 - Admin accounts are only created or assigned through the user-management flow
 - Local login returns a JWT bearer token with expiry metadata and the Flutter client attaches that token automatically to protected API calls
+- Admin and Moderator logins require a TOTP-based MFA challenge; the login call returns a setup or verification challenge and the access token is only issued after `/api/auth/mfa/complete`
 - Startup route guards redirect unauthenticated users away from protected artist, drop-maker, moderation and admin screens to `/auth/login`
 - Admin endpoints require an authenticated admin token; moderation endpoints require a moderator/admin token or the scoped artist/drop-maker ownership rules enforced by the API
 - For local development without an explicit signing key, the API can run with an ephemeral process-local JWT key; use user-secrets or environment variables when sessions must survive API restarts
@@ -70,6 +74,13 @@
 ## Drop-Maker Wizard
 - Drop creation in the web client is a multi-step process: artwork review, artwork selection, production confirmation, quantity capture, QR review, placement and optional publish
 - The wizard persists a draft drop through `POST /api/drops` before the QR step so the backend becomes the source of truth for item and token generation
+- QR review now shows the public claim URL for each generated item instead of only the raw token
 - After the QR step, the wizard can be paused and later resumed from My Drops by reopening the stored draft drop
 - Returning to the quantity step updates the draft by preserving claimed items and keeping existing reusable QR tokens whenever possible
 - Final placement writes coordinates and location photos through `PUT /api/drops/{id}` and can publish the drop immediately afterwards
+
+## Claim Flow
+- `GET /api/claims/by-token/{qrToken}` returns a claim preview for app and browser fallback
+- `POST /api/claims/by-token` resolves the QR token to the drop item and executes the claim
+- Authenticated hunters claim under their JWT identity; anonymous users can only claim with a nickname and cannot impersonate a registered user id
+- Public claim URLs use the persisted admin configuration field `PublicAppBaseUrl`; when it is empty the API falls back to the current request origin

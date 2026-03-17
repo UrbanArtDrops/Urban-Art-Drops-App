@@ -12,7 +12,7 @@ void main() {
       userName: "hunter.one",
       role: AppUserRole.hunter,
       accessToken: "token-1",
-      accessTokenExpiresAtUtc: DateTime.utc(2026, 3, 17, 18),
+      accessTokenExpiresAtUtc: DateTime.utc(2099, 3, 17, 18),
     );
 
     expect(cubit.state.isAuthenticated, isTrue);

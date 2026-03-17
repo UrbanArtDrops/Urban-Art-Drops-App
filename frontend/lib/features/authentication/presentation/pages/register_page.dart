@@ -13,11 +13,27 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  static const List<String> _providers = <String>[
+    "google",
+    "facebook",
+    "instagram",
+    "tiktok",
+    "microsoft",
+  ];
+
   final AppApiClient _apiClient = AppApiClient();
   final TextEditingController _userNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _providerUserNameController =
+      TextEditingController();
+  final TextEditingController _providerEmailController =
+      TextEditingController();
+  final TextEditingController _providerSubjectController =
+      TextEditingController();
   int _selectedRole = 0;
+  int _selectedProviderRole = 0;
+  String _selectedProvider = _providers.first;
   bool _isSaving = false;
 
   @override
@@ -25,6 +41,9 @@ class _RegisterPageState extends State<RegisterPage> {
     _userNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _providerUserNameController.dispose();
+    _providerEmailController.dispose();
+    _providerSubjectController.dispose();
     super.dispose();
   }
 
@@ -79,8 +98,60 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-  String _roleHint(AppLocalizations l10n) {
-    switch (_selectedRole) {
+  Future<void> _registerProvider() async {
+    final l10n = AppLocalizations.of(context)!;
+    final userName = _providerUserNameController.text.trim();
+    final email = _providerEmailController.text.trim();
+    final providerSubject = _providerSubjectController.text.trim();
+    if (userName.isEmpty || email.isEmpty || providerSubject.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.authFillRegistrationHint)));
+      return;
+    }
+
+    setState(() => _isSaving = true);
+    try {
+      final result = await _apiClient.registerProvider(
+        provider: _selectedProvider,
+        providerSubject: providerSubject,
+        email: email,
+        userName: userName,
+        role: _selectedProviderRole,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (!result.success) {
+        throw ApiException(result.message);
+      }
+
+      final successMessage = _selectedProviderRole == 0
+          ? l10n.authHunterProviderRegistrationSuccess
+          : l10n.authProviderApprovalRequestSubmitted;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(successMessage)));
+      context.go("/auth/login");
+    } on ApiException catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
+  }
+
+  String _roleHint(AppLocalizations l10n, int role) {
+    switch (role) {
       case 1:
         return l10n.authArtistApprovalHint;
       case 2:
@@ -144,7 +215,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     decoration: InputDecoration(labelText: l10n.roleLabel),
                   ),
                   const SizedBox(height: 12),
-                  Text(_roleHint(l10n)),
+                  Text(_roleHint(l10n, _selectedRole)),
                   const SizedBox(height: 12),
                   FilledButton(
                     onPressed: _isSaving ? null : _register,
@@ -160,8 +231,109 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             ),
           ),
+          const SizedBox(height: 12),
+          Card.outlined(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.providerRegisterTitle,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(l10n.authProviderRegistrationHint),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _providers
+                        .map(
+                          (provider) => ChoiceChip(
+                            label: Text(_providerLabel(provider)),
+                            selected: _selectedProvider == provider,
+                            onSelected: _isSaving
+                                ? null
+                                : (selected) {
+                                    if (selected) {
+                                      setState(
+                                        () => _selectedProvider = provider,
+                                      );
+                                    }
+                                  },
+                          ),
+                        )
+                        .toList(growable: false),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _providerUserNameController,
+                    decoration: InputDecoration(labelText: l10n.usernameLabel),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _providerEmailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: InputDecoration(labelText: l10n.emailLabel),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _providerSubjectController,
+                    decoration: InputDecoration(
+                      labelText: l10n.authProviderSubjectLabel,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<int>(
+                    initialValue: _selectedProviderRole,
+                    items: [
+                      DropdownMenuItem(value: 0, child: Text(l10n.roleHunter)),
+                      DropdownMenuItem(value: 1, child: Text(l10n.roleArtist)),
+                      DropdownMenuItem(
+                        value: 2,
+                        child: Text(l10n.roleDropMaker),
+                      ),
+                    ],
+                    onChanged: _isSaving
+                        ? null
+                        : (value) {
+                            if (value != null) {
+                              setState(() => _selectedProviderRole = value);
+                            }
+                          },
+                    decoration: InputDecoration(labelText: l10n.roleLabel),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(_roleHint(l10n, _selectedProviderRole)),
+                  const SizedBox(height: 12),
+                  OutlinedButton(
+                    onPressed: _isSaving ? null : _registerProvider,
+                    child: Text(l10n.providerRegisterTitle),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  String _providerLabel(String provider) {
+    switch (provider) {
+      case "google":
+        return "Google";
+      case "facebook":
+        return "Facebook";
+      case "instagram":
+        return "Instagram";
+      case "tiktok":
+        return "TikTok";
+      case "microsoft":
+        return "Microsoft";
+      default:
+        return provider;
+    }
   }
 }

@@ -20,7 +20,7 @@ public sealed class JwtAccessTokenIssuer : IAccessTokenIssuer
         _clock = clock;
     }
 
-    public AccessTokenEnvelope IssueToken(UserAccount user)
+    public AccessTokenEnvelope IssueToken(UserAccount user, bool mfaVerified)
     {
         var issuedAtUtc = _clock.UtcNow;
         var expiresAtUtc = issuedAtUtc.AddMinutes(_options.AccessTokenLifetimeMinutes);
@@ -34,6 +34,7 @@ public sealed class JwtAccessTokenIssuer : IAccessTokenIssuer
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Name, user.UserName),
             new Claim(ClaimTypes.Role, user.Role.ToString()),
+            new Claim("urbanart:mfa", mfaVerified ? "true" : "false"),
         };
 
         var token = new JwtSecurityToken(

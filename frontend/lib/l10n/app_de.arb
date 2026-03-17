@@ -245,6 +245,26 @@
   "claimInstruction": "QR scannen und mit Nickname oder Konto beanspruchen.",
   "nicknameLabel": "Nickname",
   "claimButton": "Jetzt beanspruchen",
+  "claimLoadError": "Claim-Daten konnten nicht geladen werden.",
+  "claimMissingToken": "Kein QR-Token vorhanden.",
+  "claimTokenLabel": "QR-Token",
+  "claimAuthenticatedAs": "Beansprucht als Konto: {name}",
+  "@claimAuthenticatedAs": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "claimAnonymousHint": "Ohne Anmeldung wird ein eindeutiger Nickname benoetigt.",
+  "claimPreviewTitle": "Kunstwerk",
+  "claimPreviewItemLabel": "Gegenstand",
+  "claimAlreadyClaimed": "Dieser Gegenstand wurde bereits beansprucht.",
+  "claimAlreadyClaimedBy": "Bereits beansprucht von: {name}",
+  "@claimAlreadyClaimedBy": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "claimSuccess": "Gegenstand erfolgreich beansprucht.",
   "rankEntry": "#{rank} - {name}",
   "@rankEntry": {
     "placeholders": {
@@ -258,8 +278,21 @@
   "authFillRegistrationHint": "Bitte Benutzername, E-Mail und Passwort ausfuellen.",
   "authRoleManagedAtRegistration": "Der Account-Typ wird bei der Registrierung gespeichert und beim Login nicht erneut ausgewaehlt.",
   "authProviderLoginComingSoon": "Provider-Anmeldung ist fachlich vorgesehen, aber in diesem lokalen Screen noch nicht verdrahtet.",
+  "authProviderLoginHint": "Provider-Konten verwenden Provider, Provider-Subject und E-Mail aus der externen Identitaet.",
+  "authProviderRegistrationHint": "Lege ein verknuepftes Provider-Konto ueber Provider, Provider-Subject, E-Mail und Zielrolle an.",
+  "authProviderLabel": "Provider",
+  "authProviderSubjectLabel": "Provider-Subject",
+  "authSelectProviderHint": "Provider auswaehlen",
+  "authMfaTitle": "Zweiter Faktor",
+  "authMfaCodeLabel": "MFA-Code",
+  "authMfaSetupHint": "Scanne den QR-Code in deiner Authenticator-App oder trage den Schluessel manuell ein.",
+  "authMfaManualKeyLabel": "Manueller Schluessel",
+  "authMfaContinue": "MFA bestaetigen",
+  "authMfaRequired": "MFA ist fuer dieses Konto erforderlich.",
   "authHunterRegistrationSuccess": "Hunter-Konto erstellt. Die Verifikation wurde fuer die lokale Entwicklung simuliert. Du kannst dich jetzt anmelden.",
   "authApprovalRequestSubmitted": "Konto erstellt. Die Verifikation wurde fuer die lokale Entwicklung simuliert. Die Freigabe ist jetzt ausstehend.",
+  "authHunterProviderRegistrationSuccess": "Hunter-Provider-Konto erstellt. Du kannst dich jetzt anmelden.",
+  "authProviderApprovalRequestSubmitted": "Provider-Konto erstellt. Die Freigabe ist jetzt ausstehend.",
   "authHunterSelfServiceHint": "Hunter koennen sich selbst registrieren und sich nach der Verifikation direkt anmelden.",
   "authArtistApprovalHint": "Artists koennen eine Freigabe anfordern. Ein Admin muss das Konto vor dem Login freigeben.",
   "authDropMakerApprovalHint": "Drop-Maker koennen eine Freigabe anfordern. Ein Admin muss das Konto vor dem Login freigeben.",
@@ -267,6 +300,10 @@
   "boolYes": "Ja",
   "boolNo": "Nein",
   "providerLoginTitle": "Provider-Anmeldung",
+  "providerRegisterTitle": "Provider-Registrierung",
+  "publicAppBaseUrlLabel": "Oeffentliche App-Basis-URL",
+  "configLoadError": "Konfiguration konnte nicht geladen werden.",
+  "configSaveSuccess": "Konfiguration gespeichert.",
   "usernameLabel": "Benutzername",
   "roleHunter": "Hunter",
   "roleArtist": "Artist",

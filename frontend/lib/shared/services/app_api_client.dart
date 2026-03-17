@@ -54,6 +54,28 @@ class AppApiClient {
     return AuthResultModel.fromJson(_decodeObjectResponse(response));
   }
 
+  Future<AuthResultModel> registerProvider({
+    required String provider,
+    required String providerSubject,
+    required String email,
+    required String userName,
+    required int role,
+  }) async {
+    final response = await _httpClient.post(
+      _uri("/api/auth/register-provider"),
+      headers: _jsonHeaders(includeAuthorization: false),
+      body: jsonEncode({
+        "provider": provider,
+        "providerSubject": providerSubject,
+        "email": email,
+        "userName": userName,
+        "role": role,
+      }),
+    );
+    _ensureSuccess(response, "Failed to register provider account.");
+    return AuthResultModel.fromJson(_decodeObjectResponse(response));
+  }
+
   Future<AuthResultModel> loginLocal({
     required String email,
     required String password,
@@ -64,6 +86,37 @@ class AppApiClient {
       body: jsonEncode({"email": email, "password": password}),
     );
     _ensureSuccess(response, "Failed to login.");
+    return AuthResultModel.fromJson(_decodeObjectResponse(response));
+  }
+
+  Future<AuthResultModel> loginProvider({
+    required String provider,
+    required String providerSubject,
+    required String email,
+  }) async {
+    final response = await _httpClient.post(
+      _uri("/api/auth/login-provider"),
+      headers: _jsonHeaders(includeAuthorization: false),
+      body: jsonEncode({
+        "provider": provider,
+        "providerSubject": providerSubject,
+        "email": email,
+      }),
+    );
+    _ensureSuccess(response, "Failed to login with provider.");
+    return AuthResultModel.fromJson(_decodeObjectResponse(response));
+  }
+
+  Future<AuthResultModel> completeMfaChallenge({
+    required String challengeToken,
+    required String code,
+  }) async {
+    final response = await _httpClient.post(
+      _uri("/api/auth/mfa/complete"),
+      headers: _jsonHeaders(includeAuthorization: false),
+      body: jsonEncode({"challengeToken": challengeToken, "code": code}),
+    );
+    _ensureSuccess(response, "Failed to complete MFA challenge.");
     return AuthResultModel.fromJson(_decodeObjectResponse(response));
   }
 
@@ -400,6 +453,52 @@ class AppApiClient {
   Future<AppConfigurationModel> getAppConfiguration() async {
     final data = await _getObject("/api/admin/configuration");
     return AppConfigurationModel.fromJson(data);
+  }
+
+  Future<AppConfigurationModel> updateAppConfiguration({
+    required String smtpHost,
+    required String publicAppBaseUrl,
+    required int mainMapRadiusKm,
+    required int miniMapRadiusKm,
+    required int unclaimedDropRadiusKm,
+    required bool showExactPositionWhenFullyClaimed,
+  }) async {
+    final response = await _httpClient.put(
+      _uri("/api/admin/configuration"),
+      headers: _jsonHeaders(),
+      body: jsonEncode({
+        "smtpHost": smtpHost,
+        "publicAppBaseUrl": publicAppBaseUrl,
+        "mainMapRadiusKm": mainMapRadiusKm,
+        "miniMapRadiusKm": miniMapRadiusKm,
+        "unclaimedDropRadiusKm": unclaimedDropRadiusKm,
+        "showExactPositionWhenFullyClaimed": showExactPositionWhenFullyClaimed,
+      }),
+    );
+    _ensureSuccess(response, "Failed to update configuration.");
+    return AppConfigurationModel.fromJson(_decodeObjectResponse(response));
+  }
+
+  Future<ClaimPreviewModel> getClaimPreview(String qrToken) async {
+    final data = await _getObject("/api/claims/by-token/$qrToken");
+    return ClaimPreviewModel.fromJson(data);
+  }
+
+  Future<void> claimByToken({
+    required String qrToken,
+    String? hunterUserId,
+    String? anonymousNickname,
+  }) async {
+    final response = await _httpClient.post(
+      _uri("/api/claims/by-token"),
+      headers: _jsonHeaders(),
+      body: jsonEncode({
+        "qrToken": qrToken,
+        "hunterUserId": hunterUserId,
+        "anonymousNickname": anonymousNickname,
+      }),
+    );
+    _ensureSuccess(response, "Failed to claim drop item.");
   }
 
   Future<List<Map<String, dynamic>>> _getList(String path) async {

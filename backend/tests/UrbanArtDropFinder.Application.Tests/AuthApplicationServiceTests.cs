@@ -101,9 +101,99 @@ public sealed class AuthApplicationServiceTests
         Assert.Equal("Bearer", result.TokenType);
     }
 
+    [Fact]
+    public async Task LoginLocalAsync_ForAdmin_RequiresMfaSetup()
+    {
+        var store = new InMemoryUserAccountStore();
+        var hasher = new FakePasswordHasher();
+        var service = CreateService(store, hasher, new FixedClock());
+
+        var user = UserAccount.CreateLocal("admin@example.com", "admin", UserRole.Admin, hasher.Hash("Aaaaaaaaaaaaaaa!"), approved: true);
+        user.MarkEmailVerified();
+        await store.AddAsync(user, null, CancellationToken.None);
+
+        var result = await service.LoginLocalAsync(
+            new LoginLocalRequest("admin@example.com", "Aaaaaaaaaaaaaaa!"),
+            CancellationToken.None);
+
+        Assert.True(result.Success);
+        Assert.True(result.RequiresMfa);
+        Assert.True(result.MfaSetupRequired);
+        Assert.NotNull(result.MfaChallengeToken);
+        Assert.NotNull(result.MfaManualEntryKey);
+        Assert.NotNull(result.MfaProvisioningUri);
+        Assert.Null(result.AccessToken);
+    }
+
+    [Fact]
+    public async Task LoginProviderAsync_ForModeratorWithEnabledMfa_ReturnsVerificationChallenge()
+    {
+        var store = new InMemoryUserAccountStore();
+        var hasher = new FakePasswordHasher();
+        var service = CreateService(store, hasher, new FixedClock());
+
+        var user = UserAccount.CreateProvider(
+            "moderator@example.com",
+            "moderator",
+            UserRole.Moderator,
+            "microsoft",
+            approved: true);
+        user.EnableMfa("EXISTINGSECRET123");
+        await store.AddAsync(user, "provider-subject", CancellationToken.None);
+
+        var result = await service.LoginProviderAsync(
+            new LoginProviderRequest("microsoft", "provider-subject", "moderator@example.com"),
+            CancellationToken.None);
+
+        Assert.True(result.Success);
+        Assert.True(result.RequiresMfa);
+        Assert.False(result.MfaSetupRequired);
+        Assert.NotNull(result.MfaChallengeToken);
+        Assert.Null(result.AccessToken);
+    }
+
+    [Fact]
+    public async Task CompleteMfaChallengeAsync_ForSetup_EnablesMfaAndReturnsAccessToken()
+    {
+        var store = new InMemoryUserAccountStore();
+        var hasher = new FakePasswordHasher();
+        var service = CreateService(store, hasher, new FixedClock());
+
+        var user = UserAccount.CreateLocal(
+            "admin@example.com",
+            "admin",
+            UserRole.Admin,
+            hasher.Hash("Aaaaaaaaaaaaaaa!"),
+            approved: true);
+        user.MarkEmailVerified();
+        await store.AddAsync(user, null, CancellationToken.None);
+
+        var loginResult = await service.LoginLocalAsync(
+            new LoginLocalRequest("admin@example.com", "Aaaaaaaaaaaaaaa!"),
+            CancellationToken.None);
+
+        var mfaResult = await service.CompleteMfaChallengeAsync(
+            new CompleteMfaChallengeRequest(loginResult.MfaChallengeToken!, "123456"),
+            CancellationToken.None);
+
+        Assert.True(mfaResult.Success);
+        Assert.Equal("test-access-token", mfaResult.AccessToken);
+
+        var storedUser = await store.GetByIdAsync(user.Id, CancellationToken.None);
+        Assert.NotNull(storedUser);
+        Assert.True(storedUser!.IsMfaEnabled);
+        Assert.Equal("TESTSECRET123", storedUser.MfaSecretKey);
+    }
+
     private static AuthApplicationService CreateService(IUserAccountStore store, IPasswordHasher hasher, IClock clock)
     {
-        return new AuthApplicationService(store, hasher, new FakeAccessTokenIssuer(), clock);
+        return new AuthApplicationService(
+            store,
+            hasher,
+            new FakeAccessTokenIssuer(),
+            new FakeTotpService(),
+            new FakeMfaChallengeTokenService(),
+            clock);
     }
 
     private sealed class InMemoryUserAccountStore : IUserAccountStore
@@ -119,6 +209,9 @@ public sealed class AuthApplicationServiceTests
 
         public Task<UserAccount?> GetByEmailAsync(string email, CancellationToken cancellationToken)
             => Task.FromResult(_users.FirstOrDefault(x => string.Equals(x.Email, email, StringComparison.OrdinalIgnoreCase)));
+
+        public Task<UserAccount?> GetByIdAsync(Guid userId, CancellationToken cancellationToken)
+            => Task.FromResult(_users.FirstOrDefault(x => x.Id == userId));
 
         public Task<UserAccount?> GetByProviderSubjectAsync(string provider, string providerSubject, CancellationToken cancellationToken)
         {
@@ -160,7 +253,64 @@ public sealed class AuthApplicationServiceTests
 
     private sealed class FakeAccessTokenIssuer : IAccessTokenIssuer
     {
-        public AccessTokenEnvelope IssueToken(UserAccount user)
+        public AccessTokenEnvelope IssueToken(UserAccount user, bool mfaVerified)
             => new("test-access-token", DateTimeOffset.Parse("2026-03-09T18:00:00+00:00"));
+    }
+
+    private sealed class FakeTotpService : ITotpService
+    {
+        public string GenerateSecretKey() => "TESTSECRET123";
+
+        public string BuildProvisioningUri(string accountName, string secretKey)
+            => $"otpauth://totp/UrbanArtDrops:{accountName}?secret={secretKey}";
+
+        public bool VerifyCode(string secretKey, string code, DateTimeOffset nowUtc)
+            => secretKey == "TESTSECRET123" && code == "123456";
+    }
+
+    private sealed class FakeMfaChallengeTokenService : IMfaChallengeTokenService
+    {
+        public MfaChallengeTokenEnvelope CreateVerificationChallenge(UserAccount user)
+            => new($"verify:{user.Id}", DateTimeOffset.Parse("2026-03-09T10:10:00+00:00"));
+
+        public MfaChallengeTokenEnvelope CreateSetupChallenge(UserAccount user, string secretKey)
+            => new($"setup:{user.Id}:{secretKey}", DateTimeOffset.Parse("2026-03-09T10:10:00+00:00"));
+
+        public MfaChallengePayload? ReadChallenge(string token)
+            => token.StartsWith("setup:", StringComparison.Ordinal)
+                ? ParseSetupChallenge(token)
+                : token.StartsWith("verify:", StringComparison.Ordinal)
+                ? ParseVerificationChallenge(token)
+                : null;
+
+        private static MfaChallengePayload? ParseSetupChallenge(string token)
+        {
+            var parts = token.Split(':', 3, StringSplitOptions.None);
+            if (parts.Length != 3 || !Guid.TryParse(parts[1], out var userId))
+            {
+                return null;
+            }
+
+            return new MfaChallengePayload(
+                userId,
+                MfaChallengeMode.Setup,
+                parts[2],
+                DateTimeOffset.Parse("2026-03-09T10:10:00+00:00"));
+        }
+
+        private static MfaChallengePayload? ParseVerificationChallenge(string token)
+        {
+            var parts = token.Split(':', 2, StringSplitOptions.None);
+            if (parts.Length != 2 || !Guid.TryParse(parts[1], out var userId))
+            {
+                return null;
+            }
+
+            return new MfaChallengePayload(
+                userId,
+                MfaChallengeMode.Verify,
+                null,
+                DateTimeOffset.Parse("2026-03-09T10:10:00+00:00"));
+        }
     }
 }

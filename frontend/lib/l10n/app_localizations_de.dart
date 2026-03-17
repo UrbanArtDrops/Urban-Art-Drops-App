@@ -539,6 +539,42 @@ class AppLocalizationsDe extends AppLocalizations {
   String get claimButton => 'Jetzt beanspruchen';
 
   @override
+  String get claimLoadError => 'Claim-Daten konnten nicht geladen werden.';
+
+  @override
+  String get claimMissingToken => 'Kein QR-Token vorhanden.';
+
+  @override
+  String get claimTokenLabel => 'QR-Token';
+
+  @override
+  String claimAuthenticatedAs(Object name) {
+    return 'Beansprucht als Konto: $name';
+  }
+
+  @override
+  String get claimAnonymousHint =>
+      'Ohne Anmeldung wird ein eindeutiger Nickname benoetigt.';
+
+  @override
+  String get claimPreviewTitle => 'Kunstwerk';
+
+  @override
+  String get claimPreviewItemLabel => 'Gegenstand';
+
+  @override
+  String get claimAlreadyClaimed =>
+      'Dieser Gegenstand wurde bereits beansprucht.';
+
+  @override
+  String claimAlreadyClaimedBy(Object name) {
+    return 'Bereits beansprucht von: $name';
+  }
+
+  @override
+  String get claimSuccess => 'Gegenstand erfolgreich beansprucht.';
+
+  @override
   String rankEntry(Object rank, Object name) {
     return '#$rank - $name';
   }
@@ -565,12 +601,56 @@ class AppLocalizationsDe extends AppLocalizations {
       'Provider-Anmeldung ist fachlich vorgesehen, aber in diesem lokalen Screen noch nicht verdrahtet.';
 
   @override
+  String get authProviderLoginHint =>
+      'Provider-Konten verwenden Provider, Provider-Subject und E-Mail aus der externen Identitaet.';
+
+  @override
+  String get authProviderRegistrationHint =>
+      'Lege ein verknuepftes Provider-Konto ueber Provider, Provider-Subject, E-Mail und Zielrolle an.';
+
+  @override
+  String get authProviderLabel => 'Provider';
+
+  @override
+  String get authProviderSubjectLabel => 'Provider-Subject';
+
+  @override
+  String get authSelectProviderHint => 'Provider auswaehlen';
+
+  @override
+  String get authMfaTitle => 'Zweiter Faktor';
+
+  @override
+  String get authMfaCodeLabel => 'MFA-Code';
+
+  @override
+  String get authMfaSetupHint =>
+      'Scanne den QR-Code in deiner Authenticator-App oder trage den Schluessel manuell ein.';
+
+  @override
+  String get authMfaManualKeyLabel => 'Manueller Schluessel';
+
+  @override
+  String get authMfaContinue => 'MFA bestaetigen';
+
+  @override
+  String get authMfaRequired => 'MFA ist fuer dieses Konto erforderlich.';
+
+  @override
   String get authHunterRegistrationSuccess =>
       'Hunter-Konto erstellt. Die Verifikation wurde fuer die lokale Entwicklung simuliert. Du kannst dich jetzt anmelden.';
 
   @override
   String get authApprovalRequestSubmitted =>
       'Konto erstellt. Die Verifikation wurde fuer die lokale Entwicklung simuliert. Die Freigabe ist jetzt ausstehend.';
+
+  @override
+  String get authHunterProviderRegistrationSuccess =>
+      'Hunter-Provider-Konto erstellt. Du kannst dich jetzt anmelden.';
+
+  @override
+  String get authProviderApprovalRequestSubmitted =>
+      'Provider-Konto erstellt. Die Freigabe ist jetzt ausstehend.';
 
   @override
   String get authHunterSelfServiceHint =>
@@ -596,6 +676,18 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get providerLoginTitle => 'Provider-Anmeldung';
+
+  @override
+  String get providerRegisterTitle => 'Provider-Registrierung';
+
+  @override
+  String get publicAppBaseUrlLabel => 'Oeffentliche App-Basis-URL';
+
+  @override
+  String get configLoadError => 'Konfiguration konnte nicht geladen werden.';
+
+  @override
+  String get configSaveSuccess => 'Konfiguration gespeichert.';
 
   @override
   String get usernameLabel => 'Benutzername';
