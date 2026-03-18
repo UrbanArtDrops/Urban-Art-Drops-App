@@ -184,7 +184,7 @@ public sealed class AuthApplicationService
             return new AuthResult(false, "User account does not exist.");
         }
 
-        if (!IsMfaRequired(user))
+        if (challenge.Mode == MfaChallengeMode.Verify && !IsMfaRequired(user))
         {
             return CreateSuccessResult("MFA is not required for this account.", user, mfaVerified: false);
         }
@@ -209,6 +209,48 @@ public sealed class AuthApplicationService
         }
 
         return CreateSuccessResult("MFA verification successful.", user, includeAccessToken: true, mfaVerified: true);
+    }
+
+    public AuthResult BeginCurrentUserMfaSetup(UserAccount user)
+    {
+        var secretKey = _totpService.GenerateSecretKey();
+        var setupChallenge = _mfaChallengeTokenService.CreateSetupChallenge(user, secretKey);
+        return new AuthResult(
+            true,
+            "MFA setup is ready.",
+            user.Id,
+            user.Role,
+            user.UserName,
+            user.Email,
+            RequiresMfa: true,
+            MfaSetupRequired: true,
+            MfaChallengeToken: setupChallenge.Token,
+            MfaChallengeExpiresAtUtc: setupChallenge.ExpiresAtUtc,
+            MfaManualEntryKey: secretKey,
+            MfaProvisioningUri: _totpService.BuildProvisioningUri(user.Email, secretKey));
+    }
+
+    public async Task<AuthResult> DisableCurrentUserMfaAsync(Guid userId, string code, CancellationToken cancellationToken)
+    {
+        var user = await _userAccountStore.GetByIdAsync(userId, cancellationToken);
+        if (user is null)
+        {
+            return new AuthResult(false, "User account does not exist.");
+        }
+
+        if (!user.IsMfaEnabled || string.IsNullOrWhiteSpace(user.MfaSecretKey))
+        {
+            return new AuthResult(false, "MFA is not enabled for this account.");
+        }
+
+        if (!_totpService.VerifyCode(user.MfaSecretKey, code, _clock.UtcNow))
+        {
+            return new AuthResult(false, "The MFA code is invalid.");
+        }
+
+        user.DisableMfa();
+        await _userAccountStore.SaveChangesAsync(cancellationToken);
+        return new AuthResult(true, "MFA has been disabled.", user.Id, user.Role, user.UserName, user.Email);
     }
 
     private AuthResult CreateLoginResult(string message, UserAccount user)

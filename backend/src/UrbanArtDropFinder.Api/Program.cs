@@ -15,6 +15,7 @@ using UrbanArtDropFinder.Contracts.Auth;
 using UrbanArtDropFinder.Contracts.Comments;
 using UrbanArtDropFinder.Contracts.Drops;
 using UrbanArtDropFinder.Contracts.Moderation;
+using UrbanArtDropFinder.Contracts.Profile;
 using UrbanArtDropFinder.Domain.Art;
 using UrbanArtDropFinder.Domain.Comments;
 using UrbanArtDropFinder.Domain.Configuration;
@@ -191,6 +192,17 @@ mediaGroup.MapGet("/drop-location-photos/{photoId:guid}", async (
         : Results.File(photo.BinaryData, photo.ContentType, enableRangeProcessing: false);
 });
 
+mediaGroup.MapGet("/user-profile-images/{photoId:guid}", async (
+    Guid photoId,
+    UrbanArtDbContext dbContext,
+    CancellationToken cancellationToken) =>
+{
+    var photo = await dbContext.UserProfileImages.AsNoTracking().FirstOrDefaultAsync(x => x.Id == photoId, cancellationToken);
+    return photo is null
+        ? Results.NotFound()
+        : Results.File(photo.BinaryData, photo.ContentType, enableRangeProcessing: false);
+});
+
 var authGroup = app.MapGroup("/api/auth");
 authGroup.MapPost("/register-local", async (
     RegisterLocalRequest request,
@@ -280,6 +292,135 @@ authGroup.MapPost("/verify-email/{userId:guid}", async (
     await dbContext.SaveChangesAsync(cancellationToken);
     return Results.Ok();
 });
+
+var profileGroup = app.MapGroup("/api/profile");
+profileGroup.MapGet("/", async (
+    HttpContext httpContext,
+    UrbanArtDbContext dbContext,
+    CancellationToken cancellationToken) =>
+{
+    var actorResolution = await ResolveAuthenticatedActorAsync(httpContext, dbContext, cancellationToken);
+    if (actorResolution.Failure is not null)
+    {
+        return actorResolution.Failure;
+    }
+
+    var actor = actorResolution.Actor!;
+    var profileImage = await dbContext.UserProfileImages
+        .AsNoTracking()
+        .FirstOrDefaultAsync(image => image.UserAccountId == actor.Id, cancellationToken);
+
+    return Results.Ok(ToCurrentUserProfileResponse(actor, profileImage, httpContext.Request));
+}).RequireAuthorization(AuthPolicies.ApprovedAccount);
+
+profileGroup.MapPut("/", async (
+    UpdateCurrentUserProfileRequest request,
+    HttpContext httpContext,
+    UrbanArtDbContext dbContext,
+    IHttpClientFactory httpClientFactory,
+    CancellationToken cancellationToken) =>
+{
+    var actorResolution = await ResolveAuthenticatedActorAsync(httpContext, dbContext, cancellationToken);
+    if (actorResolution.Failure is not null)
+    {
+        return actorResolution.Failure;
+    }
+
+    var actor = actorResolution.Actor!;
+    var user = await dbContext.UserAccounts.FirstOrDefaultAsync(account => account.Id == actor.Id, cancellationToken);
+    if (user is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    try
+    {
+        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        if (await dbContext.UserAccounts.AnyAsync(
+                account => account.Id != user.Id && account.Email == normalizedEmail,
+                cancellationToken))
+        {
+            return Results.BadRequest(new { error = "Email already exists." });
+        }
+
+        var normalizedUserName = request.UserName.Trim();
+        if (await dbContext.UserAccounts.AnyAsync(
+                account => account.Id != user.Id && account.UserName == normalizedUserName,
+                cancellationToken))
+        {
+            return Results.BadRequest(new { error = "User name already exists." });
+        }
+
+        user.ChangeEmail(request.Email);
+        user.ChangeUserName(request.UserName);
+        await ReplaceUserProfileImageAsync(
+            user.Id,
+            request.ProfileImageSource,
+            dbContext,
+            httpClientFactory,
+            cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        var profileImage = await dbContext.UserProfileImages
+            .AsNoTracking()
+            .FirstOrDefaultAsync(image => image.UserAccountId == user.Id, cancellationToken);
+        return Results.Ok(ToCurrentUserProfileResponse(user, profileImage, httpContext.Request));
+    }
+    catch (DomainValidationException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+}).RequireAuthorization(AuthPolicies.ApprovedAccount);
+
+profileGroup.MapPost("/mfa/setup", async (
+    HttpContext httpContext,
+    UrbanArtDbContext dbContext,
+    AuthApplicationService authService,
+    CancellationToken cancellationToken) =>
+{
+    var actorResolution = await ResolveAuthenticatedActorAsync(httpContext, dbContext, cancellationToken);
+    if (actorResolution.Failure is not null)
+    {
+        return actorResolution.Failure;
+    }
+
+    var result = authService.BeginCurrentUserMfaSetup(actorResolution.Actor!);
+    return Results.Ok(result);
+}).RequireAuthorization(AuthPolicies.ApprovedAccount);
+
+profileGroup.MapPost("/mfa/disable", async (
+    DisableCurrentUserMfaRequest request,
+    HttpContext httpContext,
+    UrbanArtDbContext dbContext,
+    AuthApplicationService authService,
+    CancellationToken cancellationToken) =>
+{
+    var actorResolution = await ResolveAuthenticatedActorAsync(httpContext, dbContext, cancellationToken);
+    if (actorResolution.Failure is not null)
+    {
+        return actorResolution.Failure;
+    }
+
+    var actor = actorResolution.Actor!;
+    var result = await authService.DisableCurrentUserMfaAsync(actor.Id, request.Code, cancellationToken);
+    if (!result.Success)
+    {
+        return Results.BadRequest(result);
+    }
+
+    var updatedUser = await dbContext.UserAccounts
+        .AsNoTracking()
+        .FirstOrDefaultAsync(account => account.Id == actor.Id, cancellationToken);
+    if (updatedUser is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var profileImage = await dbContext.UserProfileImages
+        .AsNoTracking()
+        .FirstOrDefaultAsync(image => image.UserAccountId == updatedUser.Id, cancellationToken);
+    return Results.Ok(ToCurrentUserProfileResponse(updatedUser, profileImage, httpContext.Request));
+}).RequireAuthorization(AuthPolicies.ApprovedAccount);
 
 var usersGroup = app.MapGroup("/api/users");
 usersGroup.MapGet("/directory", async (UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
@@ -2135,6 +2276,32 @@ static ManagedUserResponseDto ToManagedUserResponse(UserAccount user, bool inclu
         user.IsEmailVerified,
         user.IsProviderAccount);
 
+static CurrentUserProfileResponse ToCurrentUserProfileResponse(
+    UserAccount user,
+    UserProfileImage? profileImage,
+    HttpRequest request)
+{
+    var baseUri = $"{request.Scheme}://{request.Host}";
+    var profileImageReference = profileImage is null
+        ? null
+        : new ProfileImageReferenceResponse(
+            profileImage.Id,
+            $"{baseUri}/api/media/user-profile-images/{profileImage.Id}");
+
+    return new CurrentUserProfileResponse(
+        user.Id,
+        user.Email,
+        user.UserName,
+        user.Role,
+        user.IsProviderAccount,
+        user.IsMfaEnabled,
+        IsMfaRequiredByPolicy(user),
+        profileImageReference);
+}
+
+static bool IsMfaRequiredByPolicy(UserAccount user)
+    => user.Role is UserRole.Admin or UserRole.Moderator;
+
 static async Task<IReadOnlyList<ResolvedPhotoPayload>> ResolvePhotoSourcesAsync(
     IEnumerable<string>? photoSources,
     UrbanArtDbContext dbContext,
@@ -2275,6 +2442,18 @@ static async Task<ResolvedPhotoPayload> ReadStoredPhotoPayloadAsync(
         return new ResolvedPhotoPayload(artPiecePhoto.BinaryData, artPiecePhoto.ContentType);
     }
 
+    if (mediaKind == MediaPhotoKind.UserProfile)
+    {
+        var userProfileImage = await dbContext.UserProfileImages.AsNoTracking().FirstOrDefaultAsync(x => x.Id == photoId, cancellationToken);
+        if (userProfileImage is null)
+        {
+            throw new DomainValidationException("Referenced profile image does not exist.");
+        }
+
+        ValidateBinaryPhotoPayload(userProfileImage.BinaryData);
+        return new ResolvedPhotoPayload(userProfileImage.BinaryData, userProfileImage.ContentType);
+    }
+
     var dropLocationPhoto = await dbContext.DropLocationPhotos.AsNoTracking().FirstOrDefaultAsync(x => x.Id == photoId, cancellationToken);
     if (dropLocationPhoto is null)
     {
@@ -2341,7 +2520,59 @@ static bool TryParseMediaPhotoReference(string source, out MediaPhotoKind mediaK
         return true;
     }
 
+    if (segments[2].Equals("user-profile-images", StringComparison.OrdinalIgnoreCase))
+    {
+        mediaKind = MediaPhotoKind.UserProfile;
+        return true;
+    }
+
     return false;
+}
+
+static async Task ReplaceUserProfileImageAsync(
+    Guid userId,
+    string? profileImageSource,
+    UrbanArtDbContext dbContext,
+    IHttpClientFactory httpClientFactory,
+    CancellationToken cancellationToken)
+{
+    if (profileImageSource is null)
+    {
+        return;
+    }
+
+    var existingImage = await dbContext.UserProfileImages
+        .FirstOrDefaultAsync(image => image.UserAccountId == userId, cancellationToken);
+    if (string.IsNullOrWhiteSpace(profileImageSource))
+    {
+        if (existingImage is not null)
+        {
+            dbContext.UserProfileImages.Remove(existingImage);
+        }
+
+        return;
+    }
+
+    var payload = await ResolvePhotoSourceAsync(
+        profileImageSource,
+        dbContext,
+        httpClientFactory,
+        cancellationToken);
+    if (existingImage is null)
+    {
+        await dbContext.UserProfileImages.AddAsync(
+            new UserProfileImage
+            {
+                UserAccountId = userId,
+                BinaryData = payload.BinaryData,
+                ContentType = payload.ContentType
+            },
+            cancellationToken);
+        return;
+    }
+
+    existingImage.BinaryData = payload.BinaryData;
+    existingImage.ContentType = payload.ContentType;
 }
 
 static bool TryParseArtPieceAssetReference(string source, out Guid assetId)
@@ -2557,7 +2788,8 @@ internal readonly record struct ResolvedAssetPayload(byte[] BinaryData, string C
 internal enum MediaPhotoKind
 {
     ArtPiece = 0,
-    DropLocation = 1
+    DropLocation = 1,
+    UserProfile = 2
 }
 
 internal sealed record CreateManagedUserRequest(

@@ -17,6 +17,8 @@
 - Moderation and admin actions no longer trust caller-supplied user headers; the backend resolves the acting user from validated JWT claims
 - The Flutter client persists the authenticated session locally and restores it on startup so route guards and API calls continue to use the server-issued access token across app reloads
 - Provider login follows the same JWT session path as local login; privileged provider accounts also pass through the same MFA challenge and completion flow
+- Signed-in users manage their own profile under `My profile`, including email address, display name, profile image, and app-based MFA lifecycle actions
+- Profile images are stored as binary blobs in SQL and served through dedicated media endpoints instead of file-system paths
 
 ## Core Domain Rules
 - Art piece requires title, description and at least one photo before publish
@@ -55,6 +57,7 @@
 - Debug and sample content seeding is disabled; a fresh database starts without demo users, art pieces, drops, comments, or reports
 - When no admin exists yet, the platform exposes a one-time bootstrap flow that creates the first approved and verified local admin account; later admin and moderator assignments stay inside admin user management
 - Admin user management can edit both user name and email address, in addition to approval, blocking and role changes
+- Self-service profile changes update the persisted account record directly; the Flutter session mirrors changed email, display name, and profile image URL locally after save
 - JWT signing keys must be supplied outside source control for stable environments; local development can fall back to an ephemeral in-memory signing key for the running process
 - Admin configuration is persisted in SQL and currently drives SMTP host, public app base URL, map radii and exact-position rendering behavior
 - Backup target: daily with 14-day retention

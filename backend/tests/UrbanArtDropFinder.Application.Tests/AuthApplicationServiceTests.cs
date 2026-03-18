@@ -185,6 +185,35 @@ public sealed class AuthApplicationServiceTests
         Assert.Equal("TESTSECRET123", storedUser.MfaSecretKey);
     }
 
+    [Fact]
+    public async Task CompleteMfaChallengeAsync_ForHunterProfileSetup_EnablesMfa()
+    {
+        var store = new InMemoryUserAccountStore();
+        var hasher = new FakePasswordHasher();
+        var service = CreateService(store, hasher, new FixedClock());
+
+        var user = UserAccount.CreateLocal(
+            "hunter@example.com",
+            "hunter",
+            UserRole.Hunter,
+            hasher.Hash("Aaaaaaaaaaaaaaa!"),
+            approved: true);
+        user.MarkEmailVerified();
+        await store.AddAsync(user, null, CancellationToken.None);
+
+        var setupResult = service.BeginCurrentUserMfaSetup(user);
+        var mfaResult = await service.CompleteMfaChallengeAsync(
+            new CompleteMfaChallengeRequest(setupResult.MfaChallengeToken!, "123456"),
+            CancellationToken.None);
+
+        Assert.True(mfaResult.Success);
+
+        var storedUser = await store.GetByIdAsync(user.Id, CancellationToken.None);
+        Assert.NotNull(storedUser);
+        Assert.True(storedUser!.IsMfaEnabled);
+        Assert.Equal("TESTSECRET123", storedUser.MfaSecretKey);
+    }
+
     private static AuthApplicationService CreateService(IUserAccountStore store, IPasswordHasher hasher, IClock clock)
     {
         return new AuthApplicationService(

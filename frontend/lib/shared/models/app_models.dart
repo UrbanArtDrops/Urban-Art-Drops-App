@@ -130,6 +130,57 @@ class AuthResultModel {
   final String? mfaProvisioningUri;
 }
 
+class CurrentUserProfileModel {
+  const CurrentUserProfileModel({
+    required this.userId,
+    required this.email,
+    required this.userName,
+    required this.role,
+    required this.isProviderAccount,
+    required this.isMfaEnabled,
+    required this.isMfaRequiredByPolicy,
+    required this.profileImageUrl,
+  });
+
+  factory CurrentUserProfileModel.fromJson(Map<String, dynamic> json) {
+    final profileImageEntry = _readNullableMap(
+      json,
+      "profileImage",
+      "ProfileImage",
+    );
+
+    return CurrentUserProfileModel(
+      userId: _readString(json, "userId", "UserId"),
+      email: _readString(json, "email", "Email"),
+      userName: _readString(json, "userName", "UserName"),
+      role: _readInt(json, "role", "Role"),
+      isProviderAccount: _readBool(
+        json,
+        "isProviderAccount",
+        "IsProviderAccount",
+      ),
+      isMfaEnabled: _readBool(json, "isMfaEnabled", "IsMfaEnabled"),
+      isMfaRequiredByPolicy: _readBool(
+        json,
+        "isMfaRequiredByPolicy",
+        "IsMfaRequiredByPolicy",
+      ),
+      profileImageUrl: profileImageEntry == null
+          ? null
+          : _readNullableString(profileImageEntry, "url", "Url"),
+    );
+  }
+
+  final String userId;
+  final String email;
+  final String userName;
+  final int role;
+  final bool isProviderAccount;
+  final bool isMfaEnabled;
+  final bool isMfaRequiredByPolicy;
+  final String? profileImageUrl;
+}
+
 class BootstrapStatusModel {
   const BootstrapStatusModel({
     required this.bootstrapRequired,

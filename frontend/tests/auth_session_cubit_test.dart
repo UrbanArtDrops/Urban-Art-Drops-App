@@ -45,4 +45,33 @@ void main() {
     expect(reader.state.role, AppUserRole.artist);
     expect(reader.state.accessToken, "token-2");
   });
+
+  test("updateProfile updates persisted profile fields", () async {
+    final storage = InMemoryAuthSessionStorage();
+    final cubit = AuthSessionCubit(storage: storage);
+    cubit.signIn(
+      userId: "user-3",
+      email: "before@example.com",
+      userName: "Before",
+      role: AppUserRole.hunter,
+      accessToken: "token-3",
+      accessTokenExpiresAtUtc: DateTime.utc(2099, 3, 17, 18),
+    );
+
+    cubit.updateProfile(
+      email: "after@example.com",
+      userName: "After",
+      profileImageUrl: "http://localhost/profile.png",
+    );
+
+    expect(cubit.state.email, "after@example.com");
+    expect(cubit.state.userName, "After");
+    expect(cubit.state.profileImageUrl, "http://localhost/profile.png");
+
+    final reader = AuthSessionCubit(storage: storage);
+    await reader.hydrate();
+    expect(reader.state.email, "after@example.com");
+    expect(reader.state.userName, "After");
+    expect(reader.state.profileImageUrl, "http://localhost/profile.png");
+  });
 }

@@ -154,6 +154,50 @@ class AppApiClient {
     _ensureSuccess(response, "Failed to verify email.");
   }
 
+  Future<CurrentUserProfileModel> getCurrentUserProfile() async {
+    final data = await _getObject("/api/profile");
+    return CurrentUserProfileModel.fromJson(data);
+  }
+
+  Future<CurrentUserProfileModel> updateCurrentUserProfile({
+    required String email,
+    required String userName,
+    String? profileImageSource,
+  }) async {
+    final response = await _httpClient.put(
+      _uri("/api/profile"),
+      headers: _jsonHeaders(),
+      body: jsonEncode({
+        "email": email,
+        "userName": userName,
+        "profileImageSource": profileImageSource,
+      }),
+    );
+    _ensureSuccess(response, "Failed to update profile.");
+    return CurrentUserProfileModel.fromJson(_decodeObjectResponse(response));
+  }
+
+  Future<AuthResultModel> beginCurrentUserMfaSetup() async {
+    final response = await _httpClient.post(
+      _uri("/api/profile/mfa/setup"),
+      headers: _headers(),
+    );
+    _ensureSuccess(response, "Failed to start MFA setup.");
+    return AuthResultModel.fromJson(_decodeObjectResponse(response));
+  }
+
+  Future<CurrentUserProfileModel> disableCurrentUserMfa({
+    required String code,
+  }) async {
+    final response = await _httpClient.post(
+      _uri("/api/profile/mfa/disable"),
+      headers: _jsonHeaders(),
+      body: jsonEncode({"code": code}),
+    );
+    _ensureSuccess(response, "Failed to disable MFA.");
+    return CurrentUserProfileModel.fromJson(_decodeObjectResponse(response));
+  }
+
   Future<List<ManagedUser>> getUsers() async {
     final data = await _getList("/api/admin/users");
     return data.map(ManagedUser.fromJson).toList(growable: false);

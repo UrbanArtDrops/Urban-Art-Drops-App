@@ -15,6 +15,7 @@ public sealed class UrbanArtDbContext : DbContext
     }
 
     public DbSet<UserAccount> UserAccounts => Set<UserAccount>();
+    public DbSet<UserProfileImage> UserProfileImages => Set<UserProfileImage>();
     public DbSet<UserProviderLink> UserProviderLinks => Set<UserProviderLink>();
     public DbSet<ArtPiece> ArtPieces => Set<ArtPiece>();
     public DbSet<ArtPieceAssetFile> ArtPieceAssetFiles => Set<ArtPieceAssetFile>();
@@ -36,6 +37,14 @@ public sealed class UrbanArtDbContext : DbContext
             entity.Property(x => x.MfaSecretKey).HasMaxLength(128);
             entity.HasIndex(x => x.Email).IsUnique();
             entity.HasIndex(x => x.UserName).IsUnique();
+        });
+
+        modelBuilder.Entity<UserProfileImage>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.BinaryData).IsRequired();
+            entity.Property(x => x.ContentType).IsRequired().HasMaxLength(255);
+            entity.HasIndex(x => x.UserAccountId).IsUnique();
         });
 
         modelBuilder.Entity<UserProviderLink>(entity =>

@@ -14,6 +14,7 @@ class AuthSessionState {
     this.userId,
     this.email,
     this.userName,
+    this.profileImageUrl,
     this.role,
     this.accessToken,
     this.accessTokenExpiresAtUtc,
@@ -25,6 +26,7 @@ class AuthSessionState {
       userId = null,
       email = null,
       userName = null,
+      profileImageUrl = null,
       role = null,
       accessToken = null,
       accessTokenExpiresAtUtc = null,
@@ -34,6 +36,7 @@ class AuthSessionState {
   final String? userId;
   final String? email;
   final String? userName;
+  final String? profileImageUrl;
   final AppUserRole? role;
   final String? accessToken;
   final DateTime? accessTokenExpiresAtUtc;
@@ -71,6 +74,7 @@ class AuthSessionState {
     required String userId,
     required String email,
     required String userName,
+    String? profileImageUrl,
     required AppUserRole role,
     required String accessToken,
     required DateTime? accessTokenExpiresAtUtc,
@@ -80,6 +84,7 @@ class AuthSessionState {
     userId: userId.trim(),
     email: email.trim(),
     userName: userName.trim(),
+    profileImageUrl: profileImageUrl?.trim(),
     role: role,
     accessToken: accessToken.trim(),
     accessTokenExpiresAtUtc: accessTokenExpiresAtUtc,
@@ -90,6 +95,7 @@ class AuthSessionState {
     "userId": userId,
     "email": email,
     "userName": userName,
+    "profileImageUrl": profileImageUrl,
     "role": role?.index,
     "accessToken": accessToken,
     "accessTokenExpiresAtUtc": accessTokenExpiresAtUtc?.toIso8601String(),
@@ -100,6 +106,7 @@ class AuthSessionState {
     final userId = json["userId"]?.toString().trim();
     final email = json["email"]?.toString().trim();
     final userName = json["userName"]?.toString().trim();
+    final profileImageUrl = json["profileImageUrl"]?.toString().trim();
     final accessToken = json["accessToken"]?.toString().trim();
     final tokenType = json["tokenType"]?.toString().trim();
 
@@ -131,6 +138,9 @@ class AuthSessionState {
       userId: userId,
       email: email,
       userName: userName,
+      profileImageUrl: profileImageUrl == null || profileImageUrl.isEmpty
+          ? null
+          : profileImageUrl,
       role: role,
       accessToken: accessToken,
       accessTokenExpiresAtUtc: expiresAtUtc,
@@ -184,6 +194,7 @@ class AuthSessionCubit extends Cubit<AuthSessionState> {
     required String userId,
     required String email,
     required String userName,
+    String? profileImageUrl,
     required AppUserRole role,
     required String accessToken,
     required DateTime? accessTokenExpiresAtUtc,
@@ -193,10 +204,39 @@ class AuthSessionCubit extends Cubit<AuthSessionState> {
       userId: userId,
       email: email,
       userName: userName.trim().isEmpty ? email : userName,
+      profileImageUrl: profileImageUrl,
       role: role,
       accessToken: accessToken,
       accessTokenExpiresAtUtc: accessTokenExpiresAtUtc,
       tokenType: tokenType,
+    );
+    emit(nextState);
+    unawaited(_storage.write(jsonEncode(nextState.toStorageJson())));
+  }
+
+  void updateProfile({
+    required String email,
+    required String userName,
+    String? profileImageUrl,
+  }) {
+    final currentState = state;
+    if (!currentState.isAuthenticated ||
+        currentState.userId == null ||
+        currentState.role == null ||
+        currentState.accessToken == null ||
+        currentState.tokenType == null) {
+      return;
+    }
+
+    final nextState = currentState.authenticated(
+      userId: currentState.userId!,
+      email: email,
+      userName: userName,
+      profileImageUrl: profileImageUrl,
+      role: currentState.role!,
+      accessToken: currentState.accessToken!,
+      accessTokenExpiresAtUtc: currentState.accessTokenExpiresAtUtc,
+      tokenType: currentState.tokenType!,
     );
     emit(nextState);
     unawaited(_storage.write(jsonEncode(nextState.toStorageJson())));

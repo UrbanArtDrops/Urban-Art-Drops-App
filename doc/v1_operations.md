@@ -39,12 +39,15 @@
 - After the first admin exists, admin and moderator accounts are created or assigned only through the user-management flow
 - Local login returns a JWT bearer token with expiry metadata and the Flutter client attaches that token automatically to protected API calls
 - Admin and Moderator logins require a TOTP-based MFA challenge; the login call returns a setup or verification challenge and the access token is only issued after `/api/auth/mfa/complete`
+- Authenticated users can call `/api/profile` to read or update their own email address, display name, and optional profile image without entering the admin area
+- Authenticated users can start MFA setup through `/api/profile/mfa/setup` and disable an existing authenticator through `/api/profile/mfa/disable`
 - Startup route guards redirect unauthenticated users away from protected artist, drop-maker, moderation and admin screens to `/auth/login`
 - Admin endpoints require an authenticated admin token; moderation endpoints require a moderator/admin token or the scoped artist/drop-maker ownership rules enforced by the API
 - For local development without an explicit signing key, the API can run with an ephemeral process-local JWT key; use user-secrets or environment variables when sessions must survive API restarts
 - Local IDE launch profiles must set `ASPNETCORE_ENVIRONMENT=Development` or `DOTNET_ENVIRONMENT=Development` so the development-only JWT fallback is available during debugging
 - Local IDE launch profiles must use the API project directory as the working directory so `appsettings.json` and `appsettings.Development.json` are loaded and the SQL connection string is available at startup
 - Admin user management supports editing both user name and email address after account creation
+- Profile images are served from `/api/media/user-profile-images/{id}` and remain inside the SQL-backed persistence model
 
 ## Backup
 - Daily backup job

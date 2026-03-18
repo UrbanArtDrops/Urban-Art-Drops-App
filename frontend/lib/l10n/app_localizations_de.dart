@@ -66,9 +66,83 @@ class AppLocalizationsDe extends AppLocalizations {
   String get profileNotLoggedIn => 'Du bist derzeit nicht angemeldet.';
 
   @override
+  String get profileLoadFailed => 'Dein Profil konnte nicht geladen werden.';
+
+  @override
   String profileRoleLabel(Object role) {
     return 'Rolle: $role';
   }
+
+  @override
+  String get profileContactSectionTitle => 'Kontodaten';
+
+  @override
+  String get profileDisplayNameLabel => 'Anzeigename';
+
+  @override
+  String get profileImageSectionTitle => 'Profilbild';
+
+  @override
+  String get profileImageHint =>
+      'Lade ein Profilbild hoch oder entferne das aktuelle Bild. Die Aenderung wird mit dem Profilformular gespeichert.';
+
+  @override
+  String get profileImageUploadAction => 'Bild hochladen';
+
+  @override
+  String get profileImageRemoveAction => 'Bild entfernen';
+
+  @override
+  String get profileImagePickerFailed =>
+      'Das ausgewaehlte Profilbild konnte nicht geladen werden.';
+
+  @override
+  String get profileLocalAccountChip => 'Lokales Konto';
+
+  @override
+  String get profileProviderAccountChip => 'Provider-Konto';
+
+  @override
+  String get profileSaveSuccess => 'Profil gespeichert.';
+
+  @override
+  String get profileMfaSectionTitle => 'Multi-Faktor-Authentifizierung';
+
+  @override
+  String get profileMfaEnabled => 'MFA aktiv';
+
+  @override
+  String get profileMfaDisabled => 'MFA nicht aktiv';
+
+  @override
+  String get profileMfaRequiredByPolicy =>
+      'Diese Rolle verlangt eine app-basierte MFA.';
+
+  @override
+  String get profileMfaOptionalHint =>
+      'Du kannst fuer dieses Konto eine app-basierte MFA aktivieren.';
+
+  @override
+  String get profileMfaSetupAction => 'MFA einrichten';
+
+  @override
+  String get profileMfaReconfigureAction => 'MFA neu einrichten';
+
+  @override
+  String get profileMfaDisableAction => 'MFA deaktivieren';
+
+  @override
+  String get profileMfaDisableHint =>
+      'Gib einen aktuellen MFA-Code ein, um den konfigurierten Authenticator zu deaktivieren.';
+
+  @override
+  String get profileMfaCodeRequired => 'Bitte den aktuellen MFA-Code eingeben.';
+
+  @override
+  String get profileMfaSetupSuccess => 'MFA wurde eingerichtet.';
+
+  @override
+  String get profileMfaDisableSuccess => 'MFA wurde deaktiviert.';
 
   @override
   String get logoutButton => 'Abmelden';

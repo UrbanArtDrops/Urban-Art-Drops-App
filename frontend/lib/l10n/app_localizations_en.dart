@@ -66,9 +66,82 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileNotLoggedIn => 'You are currently not signed in.';
 
   @override
+  String get profileLoadFailed => 'Your profile could not be loaded.';
+
+  @override
   String profileRoleLabel(Object role) {
     return 'Role: $role';
   }
+
+  @override
+  String get profileContactSectionTitle => 'Account data';
+
+  @override
+  String get profileDisplayNameLabel => 'Display name';
+
+  @override
+  String get profileImageSectionTitle => 'Profile image';
+
+  @override
+  String get profileImageHint =>
+      'Upload a profile image or remove the current one. Changes are saved with the profile form.';
+
+  @override
+  String get profileImageUploadAction => 'Upload image';
+
+  @override
+  String get profileImageRemoveAction => 'Remove image';
+
+  @override
+  String get profileImagePickerFailed =>
+      'The selected profile image could not be loaded.';
+
+  @override
+  String get profileLocalAccountChip => 'Local account';
+
+  @override
+  String get profileProviderAccountChip => 'Provider account';
+
+  @override
+  String get profileSaveSuccess => 'Profile saved.';
+
+  @override
+  String get profileMfaSectionTitle => 'Multi-factor authentication';
+
+  @override
+  String get profileMfaEnabled => 'MFA enabled';
+
+  @override
+  String get profileMfaDisabled => 'MFA not enabled';
+
+  @override
+  String get profileMfaRequiredByPolicy => 'This role requires app-based MFA.';
+
+  @override
+  String get profileMfaOptionalHint =>
+      'You can enable app-based MFA for this account.';
+
+  @override
+  String get profileMfaSetupAction => 'Set up MFA';
+
+  @override
+  String get profileMfaReconfigureAction => 'Reconfigure MFA';
+
+  @override
+  String get profileMfaDisableAction => 'Disable MFA';
+
+  @override
+  String get profileMfaDisableHint =>
+      'Enter a current MFA code to disable the configured authenticator.';
+
+  @override
+  String get profileMfaCodeRequired => 'Enter the current MFA code.';
+
+  @override
+  String get profileMfaSetupSuccess => 'MFA was configured.';
+
+  @override
+  String get profileMfaDisableSuccess => 'MFA was disabled.';
 
   @override
   String get logoutButton => 'Logout';

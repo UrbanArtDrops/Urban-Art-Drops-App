@@ -212,11 +212,149 @@ abstract class AppLocalizations {
   /// **'You are currently not signed in.'**
   String get profileNotLoggedIn;
 
+  /// No description provided for @profileLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile could not be loaded.'**
+  String get profileLoadFailed;
+
   /// No description provided for @profileRoleLabel.
   ///
   /// In en, this message translates to:
   /// **'Role: {role}'**
   String profileRoleLabel(Object role);
+
+  /// No description provided for @profileContactSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Account data'**
+  String get profileContactSectionTitle;
+
+  /// No description provided for @profileDisplayNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Display name'**
+  String get profileDisplayNameLabel;
+
+  /// No description provided for @profileImageSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile image'**
+  String get profileImageSectionTitle;
+
+  /// No description provided for @profileImageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload a profile image or remove the current one. Changes are saved with the profile form.'**
+  String get profileImageHint;
+
+  /// No description provided for @profileImageUploadAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload image'**
+  String get profileImageUploadAction;
+
+  /// No description provided for @profileImageRemoveAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove image'**
+  String get profileImageRemoveAction;
+
+  /// No description provided for @profileImagePickerFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The selected profile image could not be loaded.'**
+  String get profileImagePickerFailed;
+
+  /// No description provided for @profileLocalAccountChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Local account'**
+  String get profileLocalAccountChip;
+
+  /// No description provided for @profileProviderAccountChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider account'**
+  String get profileProviderAccountChip;
+
+  /// No description provided for @profileSaveSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile saved.'**
+  String get profileSaveSuccess;
+
+  /// No description provided for @profileMfaSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Multi-factor authentication'**
+  String get profileMfaSectionTitle;
+
+  /// No description provided for @profileMfaEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'MFA enabled'**
+  String get profileMfaEnabled;
+
+  /// No description provided for @profileMfaDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'MFA not enabled'**
+  String get profileMfaDisabled;
+
+  /// No description provided for @profileMfaRequiredByPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'This role requires app-based MFA.'**
+  String get profileMfaRequiredByPolicy;
+
+  /// No description provided for @profileMfaOptionalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You can enable app-based MFA for this account.'**
+  String get profileMfaOptionalHint;
+
+  /// No description provided for @profileMfaSetupAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up MFA'**
+  String get profileMfaSetupAction;
+
+  /// No description provided for @profileMfaReconfigureAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconfigure MFA'**
+  String get profileMfaReconfigureAction;
+
+  /// No description provided for @profileMfaDisableAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Disable MFA'**
+  String get profileMfaDisableAction;
+
+  /// No description provided for @profileMfaDisableHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a current MFA code to disable the configured authenticator.'**
+  String get profileMfaDisableHint;
+
+  /// No description provided for @profileMfaCodeRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the current MFA code.'**
+  String get profileMfaCodeRequired;
+
+  /// No description provided for @profileMfaSetupSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'MFA was configured.'**
+  String get profileMfaSetupSuccess;
+
+  /// No description provided for @profileMfaDisableSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'MFA was disabled.'**
+  String get profileMfaDisableSuccess;
 
   /// No description provided for @logoutButton.
   ///
