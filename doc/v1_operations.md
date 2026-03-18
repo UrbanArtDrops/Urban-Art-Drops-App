@@ -42,6 +42,7 @@
 - Startup route guards redirect unauthenticated users away from protected artist, drop-maker, moderation and admin screens to `/auth/login`
 - Admin endpoints require an authenticated admin token; moderation endpoints require a moderator/admin token or the scoped artist/drop-maker ownership rules enforced by the API
 - For local development without an explicit signing key, the API can run with an ephemeral process-local JWT key; use user-secrets or environment variables when sessions must survive API restarts
+- Local IDE launch profiles must set `ASPNETCORE_ENVIRONMENT=Development` or `DOTNET_ENVIRONMENT=Development` so the development-only JWT fallback is available during debugging
 - Admin user management supports editing both user name and email address after account creation
 
 ## Backup
