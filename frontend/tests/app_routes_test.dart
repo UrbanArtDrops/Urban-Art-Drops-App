@@ -5,6 +5,7 @@ import "package:flutter_bloc/flutter_bloc.dart";
 import "package:urban_art_drops_app/app/app.dart";
 import "package:urban_art_drops_app/app/router/app_router.dart";
 import "package:urban_art_drops_app/features/admin/presentation/pages/admin_configuration_page.dart";
+import "package:urban_art_drops_app/features/artist_area/presentation/pages/artist_art_pieces_page.dart";
 import "package:urban_art_drops_app/features/authentication/presentation/bloc/auth_session_cubit.dart";
 import "package:urban_art_drops_app/features/authentication/presentation/pages/login_page.dart";
 import "package:urban_art_drops_app/features/navigation/presentation/bloc/navigation_cubit.dart";
@@ -78,5 +79,35 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(AdminConfigurationPage), findsOneWidget);
+  });
+
+  testWidgets("allows authenticated admins to open the art pieces manager", (
+    tester,
+  ) async {
+    final authSessionCubit = AuthSessionCubit();
+    authSessionCubit.signIn(
+      userId: "admin-1",
+      email: "admin@example.com",
+      userName: "admin",
+      role: AppUserRole.admin,
+      accessToken: "admin-token",
+      accessTokenExpiresAtUtc: DateTime.utc(2099, 3, 17, 18),
+    );
+    final router = createAppRouter(authSessionCubit);
+
+    await tester.pumpWidget(
+      BlocProvider.value(
+        value: authSessionCubit,
+        child: MaterialApp.router(
+          routerConfig: router,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+        ),
+      ),
+    );
+    router.go("/artist/art-pieces");
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ArtistArtPiecesPage), findsOneWidget);
   });
 }

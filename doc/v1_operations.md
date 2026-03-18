@@ -72,6 +72,7 @@
 
 ## Artist Workspace
 - Artists manage artworks end-to-end in the web client: create, inspect, edit, publish, depublish and delete
+- Admins can open the same full artwork management screen to inspect and manage all artworks across artists
 - Artwork metadata includes an optional subtitle that is editable in the artist workspace and reused in discovery and drop creation screens
 - Artwork photos are selected locally in the client and stored as binary media in the backend database
 - Model-based artworks additionally upload a binary 3D asset that remains replaceable in edit mode and downloadable from the detail view

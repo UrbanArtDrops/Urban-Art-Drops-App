@@ -364,8 +364,12 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
 
     return BlocBuilder<AuthSessionCubit, AuthSessionState>(
       builder: (context, authState) {
+        final pageTitle = authState.role == AppUserRole.admin
+            ? l10n.menuArtWorks
+            : l10n.menuMyArt;
+
         return PageShell(
-          title: l10n.menuMyArt,
+          title: pageTitle,
           body: _isLoading
               ? Center(child: Text(l10n.loadingData))
               : _error != null

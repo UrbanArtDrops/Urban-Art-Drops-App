@@ -90,6 +90,17 @@ void main() {
       expect(_drawerTitles(tester), contains("Moderation"));
     },
   );
+
+  testWidgets("shows artworks navigation for admins", (tester) async {
+    await tester.pumpWidget(
+      _TestHarness(
+        role: AppUserRole.admin,
+        child: const PageShell(title: "Test", body: SizedBox.shrink()),
+      ),
+    );
+
+    expect(_drawerTitles(tester), contains("Artworks"));
+  });
 }
 
 class _TestHarness extends StatelessWidget {
