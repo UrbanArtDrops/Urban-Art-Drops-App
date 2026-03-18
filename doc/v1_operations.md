@@ -43,6 +43,7 @@
 - Admin endpoints require an authenticated admin token; moderation endpoints require a moderator/admin token or the scoped artist/drop-maker ownership rules enforced by the API
 - For local development without an explicit signing key, the API can run with an ephemeral process-local JWT key; use user-secrets or environment variables when sessions must survive API restarts
 - Local IDE launch profiles must set `ASPNETCORE_ENVIRONMENT=Development` or `DOTNET_ENVIRONMENT=Development` so the development-only JWT fallback is available during debugging
+- Local IDE launch profiles must use the API project directory as the working directory so `appsettings.json` and `appsettings.Development.json` are loaded and the SQL connection string is available at startup
 - Admin user management supports editing both user name and email address after account creation
 
 ## Backup

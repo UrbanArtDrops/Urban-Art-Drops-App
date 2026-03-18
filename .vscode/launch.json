@@ -8,7 +8,7 @@
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/backend/src/UrbanArtDropFinder.Api/bin/Debug/net9.0/UrbanArtDropFinder.Api.exe", // Pfad anpassen!
             "args": [],
-            "cwd": "${workspaceFolder}/backend",
+            "cwd": "${workspaceFolder}/backend/src/UrbanArtDropFinder.Api",
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development",
                 "DOTNET_ENVIRONMENT": "Development",
