@@ -10,7 +10,9 @@ import "../../../../shared/widgets/page_shell.dart";
 import "../bloc/auth_session_cubit.dart";
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  const LoginPage({super.key, this.apiClient});
+
+  final AppApiClient? apiClient;
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -25,7 +27,6 @@ class _LoginPageState extends State<LoginPage> {
     "microsoft",
   ];
 
-  final AppApiClient _apiClient = AppApiClient();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _providerEmailController =
@@ -239,13 +240,15 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final isMfaChallengeActive = _mfaChallengeToken != null;
 
     return PageShell(
       title: l10n.navLogin,
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
-          if (!_isCheckingBootstrap &&
+          if (!isMfaChallengeActive &&
+              !_isCheckingBootstrap &&
               _bootstrapStatus?.bootstrapRequired == true) ...[
             Card.outlined(
               child: Padding(
@@ -271,7 +274,7 @@ class _LoginPageState extends State<LoginPage> {
             ),
             const SizedBox(height: 12),
           ],
-          if (_mfaChallengeToken != null) ...[
+          if (isMfaChallengeActive) ...[
             Card.outlined(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -331,115 +334,121 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
-          ],
-          Card.outlined(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.authRoleManagedAtRegistration,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: InputDecoration(labelText: l10n.emailLabel),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _passwordController,
-                    obscureText: true,
-                    decoration: InputDecoration(labelText: l10n.passwordLabel),
-                    onSubmitted: (_) {
-                      if (!_isSaving) {
-                        _loginLocal();
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  FilledButton(
-                    onPressed: _isSaving ? null : _loginLocal,
-                    child: _isSaving
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(l10n.navLogin),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Card.outlined(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.providerLoginTitle,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(l10n.authProviderLoginHint),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _providers
-                        .map(
-                          (provider) => ChoiceChip(
-                            label: Text(_providerLabel(provider)),
-                            selected: _selectedProvider == provider,
-                            onSelected: _isSaving
-                                ? null
-                                : (selected) {
-                                    if (selected) {
-                                      setState(
-                                        () => _selectedProvider = provider,
-                                      );
-                                    }
-                                  },
-                          ),
-                        )
-                        .toList(growable: false),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _providerEmailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: InputDecoration(labelText: l10n.emailLabel),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _providerSubjectController,
-                    decoration: InputDecoration(
-                      labelText: l10n.authProviderSubjectLabel,
+          ] else ...[
+            Card.outlined(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.authRoleManagedAtRegistration,
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
-                    onSubmitted: (_) {
-                      if (!_isSaving) {
-                        _loginProvider();
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  OutlinedButton(
-                    onPressed: _isSaving ? null : _loginProvider,
-                    child: Text(l10n.providerLoginTitle),
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: InputDecoration(labelText: l10n.emailLabel),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _passwordController,
+                      obscureText: true,
+                      decoration: InputDecoration(
+                        labelText: l10n.passwordLabel,
+                      ),
+                      onSubmitted: (_) {
+                        if (!_isSaving) {
+                          _loginLocal();
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    FilledButton(
+                      onPressed: _isSaving ? null : _loginLocal,
+                      child: _isSaving
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(l10n.navLogin),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
+            const SizedBox(height: 12),
+            Card.outlined(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.providerLoginTitle,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(l10n.authProviderLoginHint),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _providers
+                          .map(
+                            (provider) => ChoiceChip(
+                              label: Text(_providerLabel(provider)),
+                              selected: _selectedProvider == provider,
+                              onSelected: _isSaving
+                                  ? null
+                                  : (selected) {
+                                      if (selected) {
+                                        setState(
+                                          () => _selectedProvider = provider,
+                                        );
+                                      }
+                                    },
+                            ),
+                          )
+                          .toList(growable: false),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _providerEmailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: InputDecoration(labelText: l10n.emailLabel),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _providerSubjectController,
+                      decoration: InputDecoration(
+                        labelText: l10n.authProviderSubjectLabel,
+                      ),
+                      onSubmitted: (_) {
+                        if (!_isSaving) {
+                          _loginProvider();
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton(
+                      onPressed: _isSaving ? null : _loginProvider,
+                      child: Text(l10n.providerLoginTitle),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
+  }
+
+  AppApiClient get _apiClient {
+    return widget.apiClient ?? AppApiClient();
   }
 
   String _providerLabel(String provider) {
