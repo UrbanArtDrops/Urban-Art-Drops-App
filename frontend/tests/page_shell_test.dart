@@ -101,6 +101,17 @@ void main() {
 
     expect(_drawerTitles(tester), contains("Artworks"));
   });
+
+  testWidgets("shows my drops navigation for admins", (tester) async {
+    await tester.pumpWidget(
+      _TestHarness(
+        role: AppUserRole.admin,
+        child: const PageShell(title: "Test", body: SizedBox.shrink()),
+      ),
+    );
+
+    expect(_drawerTitles(tester), contains("My drops"));
+  });
 }
 
 class _TestHarness extends StatelessWidget {

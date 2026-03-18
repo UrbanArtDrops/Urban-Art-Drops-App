@@ -356,6 +356,36 @@ abstract class AppLocalizations {
   /// **'MFA was disabled.'**
   String get profileMfaDisableSuccess;
 
+  /// No description provided for @profileNotificationsSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get profileNotificationsSectionTitle;
+
+  /// No description provided for @profileNotificationsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'There are no notifications yet.'**
+  String get profileNotificationsEmpty;
+
+  /// No description provided for @profileNotificationMarkReadAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as read'**
+  String get profileNotificationMarkReadAction;
+
+  /// No description provided for @profileNotificationReadState.
+  ///
+  /// In en, this message translates to:
+  /// **'Read'**
+  String get profileNotificationReadState;
+
+  /// No description provided for @profileNotificationUnreadState.
+  ///
+  /// In en, this message translates to:
+  /// **'Unread'**
+  String get profileNotificationUnreadState;
+
   /// No description provided for @logoutButton.
   ///
   /// In en, this message translates to:

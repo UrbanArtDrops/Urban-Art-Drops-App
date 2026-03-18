@@ -159,6 +159,11 @@ class AppApiClient {
     return CurrentUserProfileModel.fromJson(data);
   }
 
+  Future<List<UserNotificationModel>> getCurrentUserNotifications() async {
+    final data = await _getList("/api/profile/notifications");
+    return data.map(UserNotificationModel.fromJson).toList(growable: false);
+  }
+
   Future<CurrentUserProfileModel> updateCurrentUserProfile({
     required String email,
     required String userName,
@@ -196,6 +201,17 @@ class AppApiClient {
     );
     _ensureSuccess(response, "Failed to disable MFA.");
     return CurrentUserProfileModel.fromJson(_decodeObjectResponse(response));
+  }
+
+  Future<UserNotificationModel> markCurrentUserNotificationRead(
+    String notificationId,
+  ) async {
+    final response = await _httpClient.post(
+      _uri("/api/profile/notifications/$notificationId/mark-read"),
+      headers: _headers(),
+    );
+    _ensureSuccess(response, "Failed to mark notification as read.");
+    return UserNotificationModel.fromJson(_decodeObjectResponse(response));
   }
 
   Future<List<ManagedUser>> getUsers() async {

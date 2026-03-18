@@ -181,6 +181,57 @@ class CurrentUserProfileModel {
   final String? profileImageUrl;
 }
 
+class UserNotificationModel {
+  const UserNotificationModel({
+    required this.id,
+    required this.title,
+    required this.message,
+    required this.category,
+    required this.isRead,
+    required this.createdAtUtc,
+    required this.relatedEntityId,
+    required this.relatedEntityType,
+  });
+
+  factory UserNotificationModel.fromJson(Map<String, dynamic> json) {
+    final createdAtRaw = _readNullableString(
+      json,
+      "createdAtUtc",
+      "CreatedAtUtc",
+    );
+
+    return UserNotificationModel(
+      id: _readString(json, "id", "Id"),
+      title: _readString(json, "title", "Title"),
+      message: _readString(json, "message", "Message"),
+      category: _readString(json, "category", "Category"),
+      isRead: _readBool(json, "isRead", "IsRead"),
+      createdAtUtc: createdAtRaw == null
+          ? null
+          : DateTime.tryParse(createdAtRaw),
+      relatedEntityId: _readNullableString(
+        json,
+        "relatedEntityId",
+        "RelatedEntityId",
+      ),
+      relatedEntityType: _readNullableString(
+        json,
+        "relatedEntityType",
+        "RelatedEntityType",
+      ),
+    );
+  }
+
+  final String id;
+  final String title;
+  final String message;
+  final String category;
+  final bool isRead;
+  final DateTime? createdAtUtc;
+  final String? relatedEntityId;
+  final String? relatedEntityType;
+}
+
 class BootstrapStatusModel {
   const BootstrapStatusModel({
     required this.bootstrapRequired,

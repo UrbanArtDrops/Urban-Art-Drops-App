@@ -34,11 +34,13 @@ class _ProfilePageState extends State<ProfilePage> {
   final TextEditingController _mfaCodeController = TextEditingController();
 
   CurrentUserProfileModel? _profile;
+  List<UserNotificationModel> _notifications = const [];
   bool _isLoading = true;
   bool _isSaving = false;
   String? _loadError;
   String? _profileImageSource;
   bool _profileImageDirty = false;
+  String? _markingNotificationId;
   String? _mfaChallengeToken;
   bool _mfaSetupRequired = false;
   String? _mfaManualEntryKey;
@@ -65,13 +67,20 @@ class _ProfilePageState extends State<ProfilePage> {
     });
 
     try {
-      final profile = await _apiClient.getCurrentUserProfile();
+      final results = await Future.wait<Object>([
+        _apiClient.getCurrentUserProfile(),
+        _apiClient.getCurrentUserNotifications(),
+      ]);
       if (!mounted) {
         return;
       }
 
+      final profile = results[0] as CurrentUserProfileModel;
+      final notifications = results[1] as List<UserNotificationModel>;
+
       setState(() {
         _applyProfile(profile);
+        _notifications = notifications;
         _isLoading = false;
       });
       _syncSessionProfile(profile);
@@ -84,6 +93,35 @@ class _ProfilePageState extends State<ProfilePage> {
         _isLoading = false;
         _loadError = error.message;
       });
+    }
+  }
+
+  Future<void> _markNotificationRead(String notificationId) async {
+    setState(() => _markingNotificationId = notificationId);
+    try {
+      final updatedNotification = await _apiClient
+          .markCurrentUserNotificationRead(notificationId);
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _notifications = _notifications
+            .map(
+              (notification) => notification.id == updatedNotification.id
+                  ? updatedNotification
+                  : notification,
+            )
+            .toList(growable: false);
+        _markingNotificationId = null;
+      });
+    } on ApiException catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() => _markingNotificationId = null);
+      _showSnackBar(error.message);
     }
   }
 
@@ -304,6 +342,24 @@ class _ProfilePageState extends State<ProfilePage> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  String? _formatNotificationTimestamp(
+    BuildContext context,
+    DateTime? createdAtUtc,
+  ) {
+    if (createdAtUtc == null) {
+      return null;
+    }
+
+    final localTime = createdAtUtc.toLocal();
+    final localizations = MaterialLocalizations.of(context);
+    final dateLabel = localizations.formatShortDate(localTime);
+    final timeLabel = localizations.formatTimeOfDay(
+      TimeOfDay.fromDateTime(localTime),
+      alwaysUse24HourFormat: true,
+    );
+    return "$dateLabel $timeLabel";
   }
 
   @override
@@ -584,6 +640,120 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                         ),
                       ],
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Card.outlined(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.profileNotificationsSectionTitle,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      if (_notifications.isEmpty)
+                        Text(l10n.profileNotificationsEmpty)
+                      else
+                        ..._notifications.map((notification) {
+                          final isMarking =
+                              _markingNotificationId == notification.id;
+                          final timestampLabel = _formatNotificationTimestamp(
+                            context,
+                            notification.createdAtUtc,
+                          );
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                color: notification.isRead
+                                    ? Theme.of(
+                                        context,
+                                      ).colorScheme.surfaceContainerLow
+                                    : Theme.of(
+                                        context,
+                                      ).colorScheme.secondaryContainer,
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                notification.title,
+                                                style: Theme.of(
+                                                  context,
+                                                ).textTheme.titleSmall,
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(notification.message),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Chip(
+                                          label: Text(
+                                            notification.isRead
+                                                ? l10n.profileNotificationReadState
+                                                : l10n.profileNotificationUnreadState,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    if (timestampLabel != null) ...[
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        timestampLabel,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodySmall,
+                                      ),
+                                    ],
+                                    if (!notification.isRead) ...[
+                                      const SizedBox(height: 8),
+                                      Align(
+                                        alignment: Alignment.centerRight,
+                                        child: TextButton(
+                                          onPressed: isMarking || _isSaving
+                                              ? null
+                                              : () => _markNotificationRead(
+                                                  notification.id,
+                                                ),
+                                          child: isMarking
+                                              ? const SizedBox(
+                                                  width: 16,
+                                                  height: 16,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                        strokeWidth: 2,
+                                                      ),
+                                                )
+                                              : Text(
+                                                  l10n.profileNotificationMarkReadAction,
+                                                ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }),
                     ],
                   ),
                 ),

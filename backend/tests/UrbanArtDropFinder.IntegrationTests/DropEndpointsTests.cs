@@ -223,6 +223,93 @@ public sealed class DropEndpointsTests : IClassFixture<TestWebApplicationFactory
         Assert.Equal("street-hunter", claimedPreview.ClaimedByDisplayName);
     }
 
+    [Fact]
+    public async Task UpdateDrop_WhenAdminEditsDrop_CreatesNotificationsForImpactedDropMakers()
+    {
+        var uniqueId = Guid.NewGuid().ToString("N");
+        var admin = await _factory.CreateAuthenticatedUserAsync(UserRole.Admin, $"admin.drop.notify.{uniqueId}");
+        var originalDropMaker = await _factory.CreateAuthenticatedUserAsync(UserRole.DropMaker, $"dropmaker.original.{uniqueId}");
+        var reassignedDropMaker =
+            await _factory.CreateAuthenticatedUserAsync(UserRole.DropMaker, $"dropmaker.reassigned.{uniqueId}");
+
+        Guid artPieceId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<UrbanArtDbContext>();
+            var artPiece = ArtPiece.Create(
+                Guid.NewGuid(),
+                $"Drop Notification Art {uniqueId}",
+                "Admin update notification test",
+                "A sufficiently detailed artwork description for the drop notification integration test.",
+                ArtPieceAssetKind.Image);
+            artPiece.AddPhoto([0x01], "image/png");
+            dbContext.ArtPieces.Add(artPiece);
+            await dbContext.SaveChangesAsync();
+            artPieceId = artPiece.Id;
+        }
+
+        var createResponse = await _client.PostAuthorizedAsJsonAsync(
+            "/api/drops/",
+            new
+            {
+                artPieceId,
+                dropMakerId = originalDropMaker.Id,
+                isStationary = true,
+                portableItemCount = (int?)null,
+                dropMakerComment = "Original comment",
+                socialChannels = new[] { "Instagram" },
+                latitude = 50.1109,
+                longitude = 8.6821,
+                locationPhotoUrls = new[] { SamplePngDataUrl },
+                itemCount = 1
+            },
+            admin.AccessToken);
+        await EnsureSuccessWithBodyAsync(createResponse);
+        var createdDrop = await createResponse.Content.ReadFromJsonAsync<DropResponseDto>();
+        Assert.NotNull(createdDrop);
+
+        var updateResponse = await _client.PutAuthorizedAsJsonAsync(
+            $"/api/drops/{createdDrop!.Id}",
+            new
+            {
+                artPieceId,
+                dropMakerId = reassignedDropMaker.Id,
+                isStationary = true,
+                portableItemCount = (int?)null,
+                dropMakerComment = "Updated by admin",
+                socialChannels = new[] { "Instagram", "TikTok" },
+                latitude = 50.1201,
+                longitude = 8.6901,
+                locationPhotoUrls = new[] { SamplePngDataUrl },
+                itemCount = 2
+            },
+            admin.AccessToken);
+        await EnsureSuccessWithBodyAsync(updateResponse);
+
+        var originalNotifications = await _client.GetAuthorizedAsync(
+            "/api/profile/notifications",
+            originalDropMaker.AccessToken);
+        await EnsureSuccessWithBodyAsync(originalNotifications);
+        var originalPayload = await originalNotifications.Content.ReadFromJsonAsync<List<UserNotificationDto>>();
+        Assert.NotNull(originalPayload);
+        Assert.Contains(
+            originalPayload!,
+            notification => notification.Category == "admin-drop"
+                && notification.RelatedEntityId == createdDrop.Id
+                && notification.Message.Contains("bearbeitet", StringComparison.OrdinalIgnoreCase));
+
+        var reassignedNotifications = await _client.GetAuthorizedAsync(
+            "/api/profile/notifications",
+            reassignedDropMaker.AccessToken);
+        await EnsureSuccessWithBodyAsync(reassignedNotifications);
+        var reassignedPayload = await reassignedNotifications.Content.ReadFromJsonAsync<List<UserNotificationDto>>();
+        Assert.NotNull(reassignedPayload);
+        Assert.Contains(
+            reassignedPayload!,
+            notification => notification.Category == "admin-drop"
+                && notification.RelatedEntityId == createdDrop.Id);
+    }
+
     private sealed record DropResponseDto(
         Guid Id,
         Guid ArtPieceId,
@@ -255,6 +342,16 @@ public sealed class DropEndpointsTests : IClassFixture<TestWebApplicationFactory
         string ArtPieceTitle,
         bool IsClaimed,
         string? ClaimedByDisplayName);
+
+    private sealed record UserNotificationDto(
+        Guid Id,
+        string Title,
+        string Message,
+        string Category,
+        bool IsRead,
+        DateTimeOffset CreatedAtUtc,
+        Guid? RelatedEntityId,
+        string? RelatedEntityType);
 
     private static async Task EnsureSuccessWithBodyAsync(HttpResponseMessage response)
     {

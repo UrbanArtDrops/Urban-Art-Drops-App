@@ -66,12 +66,12 @@ class _MyDropsPageState extends State<MyDropsPage> {
           .where((user) => user.role == 1 || user.role == 2)
           .toList(growable: false);
       final allUsers = (results[2] as List<ManagedUser>);
-      final currentUserId = context
-          .read<AuthSessionCubit>()
-          .state
-          .userId
-          ?.trim();
-      final visibleDrops = currentUserId == null || currentUserId.isEmpty
+      final authState = context.read<AuthSessionCubit>().state;
+      final currentUserId = authState.userId?.trim();
+      final isAdmin = authState.role == AppUserRole.admin;
+      final visibleDrops = isAdmin
+          ? (results[0] as List<DropModel>)
+          : currentUserId == null || currentUserId.isEmpty
           ? const <DropModel>[]
           : (results[0] as List<DropModel>)
                 .where((drop) => drop.dropMakerId == currentUserId)
@@ -468,10 +468,14 @@ class _MyDropsPageState extends State<MyDropsPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final authState = context.watch<AuthSessionCubit>().state;
+    final pageTitle = authState.role == AppUserRole.admin
+        ? l10n.navDrops
+        : l10n.menuMyDrops;
     final viewModels = _buildViewModels(l10n);
 
     return PageShell(
-      title: l10n.menuMyDrops,
+      title: pageTitle,
       body: _isLoading
           ? Center(child: Text(l10n.loadingData))
           : _error != null

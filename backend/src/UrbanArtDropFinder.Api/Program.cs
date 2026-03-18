@@ -313,6 +313,27 @@ profileGroup.MapGet("/", async (
     return Results.Ok(ToCurrentUserProfileResponse(actor, profileImage, httpContext.Request));
 }).RequireAuthorization(AuthPolicies.ApprovedAccount);
 
+profileGroup.MapGet("/notifications", async (
+    HttpContext httpContext,
+    UrbanArtDbContext dbContext,
+    CancellationToken cancellationToken) =>
+{
+    var actorResolution = await ResolveAuthenticatedActorAsync(httpContext, dbContext, cancellationToken);
+    if (actorResolution.Failure is not null)
+    {
+        return actorResolution.Failure;
+    }
+
+    var notifications = await dbContext.UserNotifications
+        .AsNoTracking()
+        .Where(notification => notification.UserAccountId == actorResolution.Actor!.Id)
+        .OrderByDescending(notification => notification.CreatedAtUtc)
+        .Take(50)
+        .ToListAsync(cancellationToken);
+
+    return Results.Ok(notifications.Select(ToUserNotificationResponse).ToList());
+}).RequireAuthorization(AuthPolicies.ApprovedAccount);
+
 profileGroup.MapPut("/", async (
     UpdateCurrentUserProfileRequest request,
     HttpContext httpContext,
@@ -370,6 +391,32 @@ profileGroup.MapPut("/", async (
     {
         return Results.BadRequest(new { error = ex.Message });
     }
+}).RequireAuthorization(AuthPolicies.ApprovedAccount);
+
+profileGroup.MapPost("/notifications/{notificationId:guid}/mark-read", async (
+    Guid notificationId,
+    HttpContext httpContext,
+    UrbanArtDbContext dbContext,
+    CancellationToken cancellationToken) =>
+{
+    var actorResolution = await ResolveAuthenticatedActorAsync(httpContext, dbContext, cancellationToken);
+    if (actorResolution.Failure is not null)
+    {
+        return actorResolution.Failure;
+    }
+
+    var notification = await dbContext.UserNotifications
+        .FirstOrDefaultAsync(
+            entry => entry.Id == notificationId && entry.UserAccountId == actorResolution.Actor!.Id,
+            cancellationToken);
+    if (notification is null)
+    {
+        return Results.NotFound();
+    }
+
+    notification.MarkRead();
+    await dbContext.SaveChangesAsync(cancellationToken);
+    return Results.Ok(ToUserNotificationResponse(notification));
 }).RequireAuthorization(AuthPolicies.ApprovedAccount);
 
 profileGroup.MapPost("/mfa/setup", async (
@@ -540,6 +587,7 @@ artGroup.MapPut("/{id:guid}", async (
 
     try
     {
+        var originalArtistId = artPiece.ArtistId;
         artPiece.UpdateDetails(
             request.ArtistId,
             request.Title,
@@ -611,6 +659,14 @@ artGroup.MapPut("/{id:guid}", async (
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        await NotifyAdminArtPieceStakeholdersAsync(
+            actorResolution.Actor!,
+            dbContext,
+            artPiece,
+            "bearbeitet",
+            cancellationToken,
+            originalArtistId,
+            request.ArtistId);
         var reloadedArtPiece = await dbContext.ArtPieces
             .Include(x => x.Photos)
             .Include(x => x.AssetFile)
@@ -650,6 +706,12 @@ artGroup.MapPost("/{id:guid}/publish", async (Guid id, HttpContext httpContext, 
     {
         artPiece.Publish();
         await dbContext.SaveChangesAsync(cancellationToken);
+        await NotifyAdminArtPieceStakeholdersAsync(
+            actorResolution.Actor!,
+            dbContext,
+            artPiece,
+            "veroeffentlicht",
+            cancellationToken);
         return Results.Ok();
     }
     catch (DomainValidationException ex)
@@ -679,6 +741,12 @@ artGroup.MapPost("/{id:guid}/depublish", async (Guid id, HttpContext httpContext
 
     artPiece.Depublish();
     await dbContext.SaveChangesAsync(cancellationToken);
+    await NotifyAdminArtPieceStakeholdersAsync(
+        actorResolution.Actor!,
+        dbContext,
+        artPiece,
+        "depubliziert",
+        cancellationToken);
     return Results.Ok();
 }).RequireAuthorization(AuthPolicies.ArtistOrAdmin);
 
@@ -720,6 +788,12 @@ artGroup.MapDelete("/{id:guid}", async (Guid id, HttpContext httpContext, UrbanA
 
     dbContext.ArtPieces.Remove(artPiece);
     await dbContext.SaveChangesAsync(cancellationToken);
+    await NotifyAdminArtPieceStakeholdersAsync(
+        actorResolution.Actor!,
+        dbContext,
+        artPiece,
+        "geloescht",
+        cancellationToken);
     return Results.NoContent();
 });
 
@@ -846,6 +920,7 @@ dropsGroup.MapPut("/{id:guid}", async (
 
     try
     {
+        var originalDropMakerId = drop.DropMakerId;
         drop.UpdateDetails(
             request.IsStationary,
             request.PortableItemCount,
@@ -948,6 +1023,14 @@ dropsGroup.MapPut("/{id:guid}", async (
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        await NotifyAdminDropStakeholdersAsync(
+            actorResolution.Actor!,
+            dbContext,
+            drop,
+            "bearbeitet",
+            cancellationToken,
+            originalDropMakerId,
+            request.DropMakerId);
         var configuration = await GetConfigurationAsync(dbContext, cancellationToken);
         var reloadedDrop = await dbContext.Drops
             .Include(x => x.Items)
@@ -990,6 +1073,12 @@ dropsGroup.MapPost("/{id:guid}/publish", async (Guid id, HttpContext httpContext
     {
         drop.Publish();
         await dbContext.SaveChangesAsync(cancellationToken);
+        await NotifyAdminDropStakeholdersAsync(
+            actorResolution.Actor!,
+            dbContext,
+            drop,
+            "veroeffentlicht",
+            cancellationToken);
         return Results.Ok();
     }
     catch (DomainValidationException ex)
@@ -1019,6 +1108,12 @@ dropsGroup.MapPost("/{id:guid}/depublish", async (Guid id, HttpContext httpConte
 
     drop.Depublish();
     await dbContext.SaveChangesAsync(cancellationToken);
+    await NotifyAdminDropStakeholdersAsync(
+        actorResolution.Actor!,
+        dbContext,
+        drop,
+        "depubliziert",
+        cancellationToken);
     return Results.Ok();
 }).RequireAuthorization(AuthPolicies.DropCreator);
 
@@ -1047,6 +1142,12 @@ dropsGroup.MapDelete("/{id:guid}", async (Guid id, HttpContext httpContext, Urba
 
     dbContext.Drops.Remove(drop);
     await dbContext.SaveChangesAsync(cancellationToken);
+    await NotifyAdminDropStakeholdersAsync(
+        actorResolution.Actor!,
+        dbContext,
+        drop,
+        "geloescht",
+        cancellationToken);
     return Results.NoContent();
 });
 
@@ -2209,6 +2310,17 @@ static string ResolveCommentAuthorDisplayName(DropComment comment, IReadOnlyDict
     return string.IsNullOrWhiteSpace(nickname) ? "-" : nickname;
 }
 
+static UserNotificationResponse ToUserNotificationResponse(UserNotification notification)
+    => new(
+        notification.Id,
+        notification.Title,
+        notification.Message,
+        notification.Category,
+        notification.IsRead,
+        notification.CreatedAtUtc,
+        notification.RelatedEntityId,
+        notification.RelatedEntityType);
+
 static DropResponseDto ToDropResponse(Drop drop, HttpRequest request, AppConfiguration? configuration = null)
 {
     var apiBaseUri = $"{request.Scheme}://{request.Host}";
@@ -2301,6 +2413,133 @@ static CurrentUserProfileResponse ToCurrentUserProfileResponse(
 
 static bool IsMfaRequiredByPolicy(UserAccount user)
     => user.Role is UserRole.Admin or UserRole.Moderator;
+
+static async Task NotifyAdminArtPieceStakeholdersAsync(
+    UserAccount actor,
+    UrbanArtDbContext dbContext,
+    ArtPiece artPiece,
+    string action,
+    CancellationToken cancellationToken,
+    Guid? previousArtistId = null,
+    Guid? requestedArtistId = null)
+{
+    if (actor.Role != UserRole.Admin)
+    {
+        return;
+    }
+
+    var recipientIds = new HashSet<Guid> { artPiece.ArtistId };
+    if (previousArtistId.HasValue)
+    {
+        recipientIds.Add(previousArtistId.Value);
+    }
+
+    if (requestedArtistId.HasValue)
+    {
+        recipientIds.Add(requestedArtistId.Value);
+    }
+
+    await QueueUserNotificationsAsync(
+        dbContext,
+        recipientIds,
+        actor.Id,
+        $"Admin hat Kunstwerk {action}",
+        $"Administrator {actor.UserName} hat das Kunstwerk \"{artPiece.Title}\" {action}.",
+        "admin-art-piece",
+        artPiece.Id,
+        nameof(ArtPiece),
+        cancellationToken);
+}
+
+static async Task NotifyAdminDropStakeholdersAsync(
+    UserAccount actor,
+    UrbanArtDbContext dbContext,
+    Drop drop,
+    string action,
+    CancellationToken cancellationToken,
+    Guid? previousDropMakerId = null,
+    Guid? requestedDropMakerId = null)
+{
+    if (actor.Role != UserRole.Admin)
+    {
+        return;
+    }
+
+    var recipientIds = new HashSet<Guid> { drop.DropMakerId };
+    if (previousDropMakerId.HasValue)
+    {
+        recipientIds.Add(previousDropMakerId.Value);
+    }
+
+    if (requestedDropMakerId.HasValue)
+    {
+        recipientIds.Add(requestedDropMakerId.Value);
+    }
+
+    var artPieceTitle = await dbContext.ArtPieces
+        .AsNoTracking()
+        .Where(artPiece => artPiece.Id == drop.ArtPieceId)
+        .Select(artPiece => artPiece.Title)
+        .FirstOrDefaultAsync(cancellationToken)
+        ?? drop.ArtPieceId.ToString();
+
+    await QueueUserNotificationsAsync(
+        dbContext,
+        recipientIds,
+        actor.Id,
+        $"Admin hat Drop {action}",
+        $"Administrator {actor.UserName} hat den Drop zu \"{artPieceTitle}\" {action}.",
+        "admin-drop",
+        drop.Id,
+        nameof(Drop),
+        cancellationToken);
+}
+
+static async Task QueueUserNotificationsAsync(
+    UrbanArtDbContext dbContext,
+    IEnumerable<Guid> recipientIds,
+    Guid actorUserId,
+    string title,
+    string message,
+    string category,
+    Guid relatedEntityId,
+    string relatedEntityType,
+    CancellationToken cancellationToken)
+{
+    var normalizedRecipients = recipientIds
+        .Where(recipientId => recipientId != Guid.Empty && recipientId != actorUserId)
+        .Distinct()
+        .ToList();
+    if (normalizedRecipients.Count == 0)
+    {
+        return;
+    }
+
+    var existingRecipientIds = await dbContext.UserAccounts
+        .AsNoTracking()
+        .Where(user => normalizedRecipients.Contains(user.Id))
+        .Select(user => user.Id)
+        .ToListAsync(cancellationToken);
+    if (existingRecipientIds.Count == 0)
+    {
+        return;
+    }
+
+    foreach (var recipientId in existingRecipientIds)
+    {
+        await dbContext.UserNotifications.AddAsync(
+            UserNotification.Create(
+                recipientId,
+                title,
+                message,
+                category,
+                relatedEntityId,
+                relatedEntityType),
+            cancellationToken);
+    }
+
+    await dbContext.SaveChangesAsync(cancellationToken);
+}
 
 static async Task<IReadOnlyList<ResolvedPhotoPayload>> ResolvePhotoSourcesAsync(
     IEnumerable<string>? photoSources,

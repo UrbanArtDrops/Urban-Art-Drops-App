@@ -48,6 +48,7 @@
 - Local IDE launch profiles must use the API project directory as the working directory so `appsettings.json` and `appsettings.Development.json` are loaded and the SQL connection string is available at startup
 - Admin user management supports editing both user name and email address after account creation
 - Profile images are served from `/api/media/user-profile-images/{id}` and remain inside the SQL-backed persistence model
+- In-app profile notifications are available through `GET /api/profile/notifications` and can be acknowledged through `POST /api/profile/notifications/{notificationId}/mark-read`
 
 ## Backup
 - Daily backup job
@@ -76,6 +77,7 @@
 ## Artist Workspace
 - Artists manage artworks end-to-end in the web client: create, inspect, edit, publish, depublish and delete
 - Admins can open the same full artwork management screen to inspect and manage all artworks across artists
+- Admin-triggered art-piece changes create persisted in-app notifications for the impacted artist accounts
 - Artwork metadata includes an optional subtitle that is editable in the artist workspace and reused in discovery and drop creation screens
 - Artwork photos are selected locally in the client and stored as binary media in the backend database
 - Model-based artworks additionally upload a binary 3D asset that remains replaceable in edit mode and downloadable from the detail view
@@ -88,6 +90,7 @@
 - Returning to the quantity step updates the draft by preserving claimed items and keeping existing reusable QR tokens whenever possible
 - Draft and persisted drops store an optional drop-maker comment plus a selected list of social channels
 - Final placement writes coordinates and location photos through `PUT /api/drops/{id}` and can publish the drop immediately afterwards
+- Admins can open the same drop management area to inspect and manage all drops across drop-makers, and admin-triggered drop changes create persisted in-app notifications for the impacted drop-maker accounts
 
 ## Claim Flow
 - `GET /api/claims/by-token/{qrToken}` returns a claim preview for app and browser fallback

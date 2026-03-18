@@ -19,6 +19,7 @@
 - Provider login follows the same JWT session path as local login; privileged provider accounts also pass through the same MFA challenge and completion flow
 - Signed-in users manage their own profile under `My profile`, including email address, display name, profile image, and app-based MFA lifecycle actions
 - Profile images are stored as binary blobs in SQL and served through dedicated media endpoints instead of file-system paths
+- The profile area also surfaces persisted in-app notifications so ownership-impacting system events can be reviewed without relying on external mail delivery
 
 ## Core Domain Rules
 - Art piece requires title, description and at least one photo before publish
@@ -32,6 +33,7 @@
 - Art piece CRUD supports full metadata updates for artist assignment, asset type, title, description, publish state and photo set
 - Art piece CRUD also supports 3D model upload, replacement and download, while model artworks require a stored asset before publish
 - The Flutter artist workspace uploads local artwork photos as data URLs, which the API resolves into persisted binary media records
+- Admin users can use the same management flows to edit any art piece and any drop across the platform instead of being limited to their own ownership scope
 - The Flutter drop-maker wizard creates a persisted draft drop before placement, so item quantities and backend-generated QR tokens are available mid-process
 - Persisted draft drops can be paused after QR generation and resumed later from the My Drops list by reopening the wizard with the stored drop identifier
 - Re-entering the quantity step of the drop-maker wizard preserves existing claimed and reusable QR items instead of recreating the entire item set on every update
@@ -58,6 +60,7 @@
 - When no admin exists yet, the platform exposes a one-time bootstrap flow that creates the first approved and verified local admin account; later admin and moderator assignments stay inside admin user management
 - Admin user management can edit both user name and email address, in addition to approval, blocking and role changes
 - Self-service profile changes update the persisted account record directly; the Flutter session mirrors changed email, display name, and profile image URL locally after save
+- When an admin edits, publishes, depublishes, or deletes an art piece or drop, the impacted artist or drop-maker receives a persisted in-app notification linked to that entity
 - JWT signing keys must be supplied outside source control for stable environments; local development can fall back to an ephemeral in-memory signing key for the running process
 - Admin configuration is persisted in SQL and currently drives SMTP host, public app base URL, map radii and exact-position rendering behavior
 - Backup target: daily with 14-day retention

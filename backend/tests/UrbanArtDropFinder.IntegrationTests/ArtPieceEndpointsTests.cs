@@ -114,6 +114,69 @@ public sealed class ArtPieceEndpointsTests : IClassFixture<TestWebApplicationFac
         Assert.Equal(System.Net.HttpStatusCode.NotFound, deletedGetResponse.StatusCode);
     }
 
+    [Fact]
+    public async Task UpdateArtPiece_WhenAdminEditsArtwork_CreatesNotificationsForImpactedArtists()
+    {
+        var uniqueId = Guid.NewGuid().ToString("N");
+        var admin = await _factory.CreateAuthenticatedUserAsync(UserRole.Admin, $"admin.notify.art.{uniqueId}");
+        var originalArtist = await _factory.CreateAuthenticatedUserAsync(UserRole.Artist, $"artist.original.{uniqueId}");
+        var reassignedArtist = await _factory.CreateAuthenticatedUserAsync(UserRole.Artist, $"artist.reassigned.{uniqueId}");
+
+        var createResponse = await _client.PostAuthorizedAsJsonAsync(
+            "/api/art-pieces/",
+            new
+            {
+                artistId = originalArtist.Id,
+                title = $"Neon Sparrow {uniqueId}",
+                subtitle = "Original owner",
+                description = "A long enough artwork description for the admin notification test.",
+                assetKind = ArtPieceAssetKind.Image,
+                photoUrls = new[] { SamplePngDataUrl }
+            },
+            admin.AccessToken);
+        await EnsureSuccessWithBodyAsync(createResponse);
+        var createdArtPiece = await createResponse.Content.ReadFromJsonAsync<ArtPieceResponseDto>();
+        Assert.NotNull(createdArtPiece);
+
+        var updateResponse = await _client.PutAuthorizedAsJsonAsync(
+            $"/api/art-pieces/{createdArtPiece!.Id}",
+            new
+            {
+                artistId = reassignedArtist.Id,
+                title = $"Neon Sparrow {uniqueId} Updated",
+                subtitle = "Reassigned owner",
+                description = "An updated artwork description that is also long enough for validation.",
+                assetKind = ArtPieceAssetKind.Image,
+                photoUrls = new[] { SamplePngDataUrl }
+            },
+            admin.AccessToken);
+        await EnsureSuccessWithBodyAsync(updateResponse);
+
+        var originalArtistNotifications = await _client.GetAuthorizedAsync(
+            "/api/profile/notifications",
+            originalArtist.AccessToken);
+        await EnsureSuccessWithBodyAsync(originalArtistNotifications);
+        var originalArtistPayload = await originalArtistNotifications.Content.ReadFromJsonAsync<List<UserNotificationDto>>();
+        Assert.NotNull(originalArtistPayload);
+        Assert.Contains(
+            originalArtistPayload!,
+            notification => notification.Category == "admin-art-piece"
+                && notification.RelatedEntityId == createdArtPiece.Id
+                && notification.Message.Contains("bearbeitet", StringComparison.OrdinalIgnoreCase));
+
+        var reassignedArtistNotifications = await _client.GetAuthorizedAsync(
+            "/api/profile/notifications",
+            reassignedArtist.AccessToken);
+        await EnsureSuccessWithBodyAsync(reassignedArtistNotifications);
+        var reassignedArtistPayload =
+            await reassignedArtistNotifications.Content.ReadFromJsonAsync<List<UserNotificationDto>>();
+        Assert.NotNull(reassignedArtistPayload);
+        Assert.Contains(
+            reassignedArtistPayload!,
+            notification => notification.Category == "admin-art-piece"
+                && notification.RelatedEntityId == createdArtPiece.Id);
+    }
+
     private sealed record ArtPieceResponseDto(
         Guid Id,
         Guid ArtistId,
@@ -127,6 +190,16 @@ public sealed class ArtPieceEndpointsTests : IClassFixture<TestWebApplicationFac
 
     private sealed record PhotoReferenceDto(Guid Id, string Url);
     private sealed record BinaryFileReferenceDto(Guid Id, string Url, string FileName, string ContentType, long SizeBytes);
+
+    private sealed record UserNotificationDto(
+        Guid Id,
+        string Title,
+        string Message,
+        string Category,
+        bool IsRead,
+        DateTimeOffset CreatedAtUtc,
+        Guid? RelatedEntityId,
+        string? RelatedEntityType);
 
     private static async Task EnsureSuccessWithBodyAsync(HttpResponseMessage response)
     {

@@ -145,6 +145,22 @@ class AppLocalizationsDe extends AppLocalizations {
   String get profileMfaDisableSuccess => 'MFA wurde deaktiviert.';
 
   @override
+  String get profileNotificationsSectionTitle => 'Benachrichtigungen';
+
+  @override
+  String get profileNotificationsEmpty =>
+      'Es liegen noch keine Benachrichtigungen vor.';
+
+  @override
+  String get profileNotificationMarkReadAction => 'Als gelesen markieren';
+
+  @override
+  String get profileNotificationReadState => 'Gelesen';
+
+  @override
+  String get profileNotificationUnreadState => 'Ungelesen';
+
+  @override
   String get logoutButton => 'Abmelden';
 
   @override

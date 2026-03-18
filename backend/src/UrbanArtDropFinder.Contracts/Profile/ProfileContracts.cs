@@ -11,6 +11,16 @@ public sealed record DisableCurrentUserMfaRequest(string Code);
 
 public sealed record ProfileImageReferenceResponse(Guid Id, string Url);
 
+public sealed record UserNotificationResponse(
+    Guid Id,
+    string Title,
+    string Message,
+    string Category,
+    bool IsRead,
+    DateTimeOffset CreatedAtUtc,
+    Guid? RelatedEntityId,
+    string? RelatedEntityType);
+
 public sealed record CurrentUserProfileResponse(
     Guid UserId,
     string Email,

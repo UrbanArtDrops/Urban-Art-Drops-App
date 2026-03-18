@@ -131,6 +131,75 @@ void main() {
     );
     expect(find.text(l10n.authMfaContinue), findsOneWidget);
   });
+
+  testWidgets("shows notifications and marks them as read", (tester) async {
+    tester.view.physicalSize = const Size(1200, 1800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final apiClient = _FakeAppApiClient(
+      profile: const CurrentUserProfileModel(
+        userId: "user-1",
+        email: "before@example.com",
+        userName: "Before",
+        role: 0,
+        isProviderAccount: false,
+        isMfaEnabled: false,
+        isMfaRequiredByPolicy: false,
+        profileImageUrl: null,
+      ),
+      notifications: const [
+        UserNotificationModel(
+          id: "notification-1",
+          title: "Admin bearbeitet Kunstwerk",
+          message: "Ein Administrator hat dein Kunstwerk bearbeitet.",
+          category: "admin-art-piece",
+          isRead: false,
+          createdAtUtc: null,
+          relatedEntityId: "art-piece-1",
+          relatedEntityType: "ArtPiece",
+        ),
+      ],
+    );
+    final authSessionCubit = AuthSessionCubit(
+      storage: InMemoryAuthSessionStorage(),
+    );
+    authSessionCubit.signIn(
+      userId: "user-1",
+      email: "before@example.com",
+      userName: "Before",
+      role: AppUserRole.artist,
+      accessToken: "token",
+      accessTokenExpiresAtUtc: DateTime.utc(2099, 3, 17, 18),
+    );
+
+    await tester.pumpWidget(
+      _ProfileHarness(
+        authSessionCubit: authSessionCubit,
+        apiClient: apiClient,
+        photoPicker: const _FakePhotoPicker([]),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final l10n = AppLocalizations.of(tester.element(find.byType(ProfilePage)))!;
+
+    expect(find.text(l10n.profileNotificationsSectionTitle), findsOneWidget);
+    expect(find.text("Admin bearbeitet Kunstwerk"), findsOneWidget);
+
+    final markReadButton = find.text(
+      l10n.profileNotificationMarkReadAction,
+      skipOffstage: false,
+    );
+    await tester.ensureVisible(markReadButton);
+    await tester.tap(markReadButton);
+    await tester.pumpAndSettle();
+
+    expect(apiClient.lastMarkedNotificationId, "notification-1");
+    expect(find.text(l10n.profileNotificationReadState), findsOneWidget);
+  });
 }
 
 class _ProfileHarness extends StatelessWidget {
@@ -176,16 +245,25 @@ Finder _findTextField(String labelText) {
 }
 
 class _FakeAppApiClient extends AppApiClient {
-  _FakeAppApiClient({required CurrentUserProfileModel profile})
-    : _profile = profile,
-      super(baseUrl: "http://localhost");
+  _FakeAppApiClient({
+    required CurrentUserProfileModel profile,
+    List<UserNotificationModel> notifications = const [],
+  }) : _profile = profile,
+       _notifications = List<UserNotificationModel>.from(notifications),
+       super(baseUrl: "http://localhost");
 
   CurrentUserProfileModel _profile;
+  List<UserNotificationModel> _notifications;
   String? lastUpdatedEmail;
   String? lastUpdatedUserName;
+  String? lastMarkedNotificationId;
 
   @override
   Future<CurrentUserProfileModel> getCurrentUserProfile() async => _profile;
+
+  @override
+  Future<List<UserNotificationModel>> getCurrentUserNotifications() async =>
+      List<UserNotificationModel>.from(_notifications);
 
   @override
   Future<CurrentUserProfileModel> updateCurrentUserProfile({
@@ -230,6 +308,32 @@ class _FakeAppApiClient extends AppApiClient {
       mfaManualEntryKey: "MANUALKEY",
       mfaProvisioningUri:
           "otpauth://totp/UrbanArtDrops:before@example.com?secret=MANUALKEY",
+    );
+  }
+
+  @override
+  Future<UserNotificationModel> markCurrentUserNotificationRead(
+    String notificationId,
+  ) async {
+    lastMarkedNotificationId = notificationId;
+    _notifications = _notifications
+        .map(
+          (notification) => notification.id == notificationId
+              ? UserNotificationModel(
+                  id: notification.id,
+                  title: notification.title,
+                  message: notification.message,
+                  category: notification.category,
+                  isRead: true,
+                  createdAtUtc: notification.createdAtUtc,
+                  relatedEntityId: notification.relatedEntityId,
+                  relatedEntityType: notification.relatedEntityType,
+                )
+              : notification,
+        )
+        .toList(growable: false);
+    return _notifications.firstWhere(
+      (notification) => notification.id == notificationId,
     );
   }
 }

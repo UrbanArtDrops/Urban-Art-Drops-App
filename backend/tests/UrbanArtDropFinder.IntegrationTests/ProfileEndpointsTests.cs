@@ -169,6 +169,62 @@ public sealed class ProfileEndpointsTests : IClassFixture<TestWebApplicationFact
         Assert.Null(storedUser.MfaSecretKey);
     }
 
+    [Fact]
+    public async Task ProfileNotifications_CanBeListedAndMarkedRead()
+    {
+        var authenticatedUser = await _factory.CreateAuthenticatedUserAsync(
+            UserRole.Artist,
+            $"profile.notifications.{Guid.NewGuid():N}");
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<UrbanArtDbContext>();
+            await dbContext.UserNotifications.AddRangeAsync(
+            [
+                UserNotification.Create(
+                    authenticatedUser.Id,
+                    "Admin bearbeitet Kunstwerk",
+                    "Ein Administrator hat ein Kunstwerk aktualisiert.",
+                    "admin-art-piece",
+                    Guid.NewGuid(),
+                    "ArtPiece"),
+                UserNotification.Create(
+                    authenticatedUser.Id,
+                    "Admin bearbeitet Drop",
+                    "Ein Administrator hat einen Drop aktualisiert.",
+                    "admin-drop",
+                    Guid.NewGuid(),
+                    "Drop")
+            ]);
+            await dbContext.SaveChangesAsync();
+        }
+
+        var listResponse = await _client.GetAuthorizedAsync(
+            "/api/profile/notifications",
+            authenticatedUser.AccessToken);
+        await EnsureSuccessWithBodyAsync(listResponse);
+
+        var notifications = await listResponse.Content.ReadFromJsonAsync<List<UserNotificationDto>>();
+        Assert.NotNull(notifications);
+        Assert.Equal(2, notifications!.Count);
+        Assert.All(notifications, notification => Assert.False(notification.IsRead));
+
+        var notificationToMarkRead = notifications[0];
+        var markReadResponse = await _client.PostAuthorizedAsync(
+            $"/api/profile/notifications/{notificationToMarkRead.Id}/mark-read",
+            authenticatedUser.AccessToken);
+        await EnsureSuccessWithBodyAsync(markReadResponse);
+        var markedNotification = await markReadResponse.Content.ReadFromJsonAsync<UserNotificationDto>();
+        Assert.NotNull(markedNotification);
+        Assert.True(markedNotification!.IsRead);
+
+        using var verificationScope = _factory.Services.CreateScope();
+        var verificationDbContext = verificationScope.ServiceProvider.GetRequiredService<UrbanArtDbContext>();
+        var storedNotification = await verificationDbContext.UserNotifications.FirstAsync(
+            notification => notification.Id == notificationToMarkRead.Id);
+        Assert.True(storedNotification.IsRead);
+    }
+
     private sealed record CurrentUserProfileDto(
         Guid UserId,
         string Email,
@@ -189,6 +245,16 @@ public sealed class ProfileEndpointsTests : IClassFixture<TestWebApplicationFact
         bool MfaSetupRequired,
         string? MfaChallengeToken,
         string? MfaManualEntryKey);
+
+    private sealed record UserNotificationDto(
+        Guid Id,
+        string Title,
+        string Message,
+        string Category,
+        bool IsRead,
+        DateTimeOffset CreatedAtUtc,
+        Guid? RelatedEntityId,
+        string? RelatedEntityType);
 
     private static async Task EnsureSuccessWithBodyAsync(HttpResponseMessage response)
     {
