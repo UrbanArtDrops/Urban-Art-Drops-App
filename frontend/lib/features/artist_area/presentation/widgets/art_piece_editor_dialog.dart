@@ -44,6 +44,7 @@ class _ArtPieceEditorDialog extends StatefulWidget {
 
 class _ArtPieceEditorDialogState extends State<_ArtPieceEditorDialog> {
   late final TextEditingController _titleController;
+  late final TextEditingController _subtitleController;
   late final TextEditingController _descriptionController;
   late ArtPieceEditorDraft _draft;
   List<ArtPieceDraftValidationError> _validationErrors = const [];
@@ -55,12 +56,14 @@ class _ArtPieceEditorDialogState extends State<_ArtPieceEditorDialog> {
     super.initState();
     _draft = widget.initialDraft;
     _titleController = TextEditingController(text: _draft.title);
+    _subtitleController = TextEditingController(text: _draft.subtitle);
     _descriptionController = TextEditingController(text: _draft.description);
   }
 
   @override
   void dispose() {
     _titleController.dispose();
+    _subtitleController.dispose();
     _descriptionController.dispose();
     super.dispose();
   }
@@ -124,6 +127,7 @@ class _ArtPieceEditorDialogState extends State<_ArtPieceEditorDialog> {
   void _save() {
     final nextDraft = _draft.copyWith(
       title: _titleController.text,
+      subtitle: _subtitleController.text,
       description: _descriptionController.text,
     );
     final validationErrors = nextDraft.validate();
@@ -233,6 +237,12 @@ class _ArtPieceEditorDialogState extends State<_ArtPieceEditorDialog> {
         TextField(
           controller: _titleController,
           decoration: InputDecoration(labelText: l10n.artPieceTitleLabel),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _subtitleController,
+          decoration: InputDecoration(labelText: l10n.artPieceSubtitleLabel),
+          maxLength: 200,
         ),
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
@@ -521,6 +531,8 @@ String _validationMessage(
       return l10n.artPieceArtistRequiredError;
     case ArtPieceDraftValidationError.titleTooShort:
       return l10n.artPieceTitleTooShortError;
+    case ArtPieceDraftValidationError.subtitleTooLong:
+      return l10n.artPieceSubtitleTooLongError;
     case ArtPieceDraftValidationError.descriptionTooShort:
       return l10n.artPieceDescriptionTooShortError;
     case ArtPieceDraftValidationError.descriptionTooLong:

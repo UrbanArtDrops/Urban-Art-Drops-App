@@ -25,6 +25,7 @@ void main() {
       id: "art-1",
       artistId: "artist-1",
       title: "Crystal Owl",
+      subtitle: "Limited city edition",
       description: "This description is definitely long enough.",
       assetKind: 1,
       isPublished: true,
@@ -45,6 +46,7 @@ void main() {
 
     expect(draft.id, artPiece.id);
     expect(draft.artistId, artPiece.artistId);
+    expect(draft.subtitle, artPiece.subtitle);
     expect(draft.assetKind, artPiece.assetKind);
     expect(draft.isPublished, isTrue);
     expect(draft.photoSources, artPiece.photoUrls);

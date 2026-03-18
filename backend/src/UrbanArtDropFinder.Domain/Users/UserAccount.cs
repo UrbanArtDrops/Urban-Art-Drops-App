@@ -94,6 +94,16 @@ public sealed class UserAccount
         UserName = userName.Trim();
     }
 
+    public void ChangeEmail(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            throw new DomainValidationException("Email is required.");
+        }
+
+        Email = email.Trim().ToLowerInvariant();
+    }
+
     public void EnableMfa(string secretKey)
     {
         if (string.IsNullOrWhiteSpace(secretKey))

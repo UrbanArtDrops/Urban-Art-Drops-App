@@ -479,5 +479,19 @@
   "globalArtPieceModerationTitle": "Globale Art-Piece-Moderation",
   "globalArtPieceModerationSubtitle": "Bearbeiten, löschen, veröffentlichen, depublizieren",
   "globalDropModerationTitle": "Globale Drop-Moderation",
-  "globalDropModerationSubtitle": "Bearbeiten, löschen, veröffentlichen, depublizieren"
+  "globalDropModerationSubtitle": "Bearbeiten, löschen, veröffentlichen, depublizieren",
+  "userEditProfileTitle": "Benutzerprofil bearbeiten",
+  "userEditProfileAction": "Profil bearbeiten",
+  "artPieceSubtitleLabel": "Untertitel",
+  "artPieceSubtitleTooLongError": "Der Untertitel darf maximal 200 Zeichen lang sein.",
+  "dropMakerCommentLabel": "Kommentar des Drop-Makers",
+  "dropMakerCommentHint": "Optionale Notiz für Produktion, Platzierung oder Kontext.",
+  "dropSocialChannelsLabel": "Social-Media-Kanäle",
+  "bootstrapAdminTitle": "Admin-Bootstrap",
+  "bootstrapAdminLoginHint": "Es existiert noch kein Admin-Konto. Erstelle zuerst den initialen Administrator.",
+  "bootstrapAdminAction": "Ersten Admin erstellen",
+  "bootstrapAdminDescription": "Erstelle den initialen Administrator für diese Installation. Das Konto wird sofort freigegeben und kann anschließend das System konfigurieren.",
+  "bootstrapAdminSuccess": "Der initiale Administrator wurde erstellt. Bitte melde dich jetzt an.",
+  "bootstrapAdminUnavailable": "Der Admin-Bootstrap ist nicht mehr verfügbar, weil bereits ein Administrator existiert.",
+  "bootstrapAdminLoadFailed": "Der Bootstrap-Status konnte nicht geladen werden."
 }

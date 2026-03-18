@@ -5,6 +5,8 @@ public sealed record CreateDropRequest(
     Guid DropMakerId,
     bool IsStationary,
     int? PortableItemCount,
+    string? DropMakerComment,
+    IReadOnlyCollection<string> SocialChannels,
     double? Latitude,
     double? Longitude,
     IReadOnlyCollection<string> LocationPhotoUrls,

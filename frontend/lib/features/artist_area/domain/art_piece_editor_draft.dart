@@ -45,6 +45,7 @@ class ArtPieceAssetDraft {
 enum ArtPieceDraftValidationError {
   missingArtist,
   titleTooShort,
+  subtitleTooLong,
   descriptionTooShort,
   descriptionTooLong,
   missingPhotos,
@@ -56,6 +57,7 @@ class ArtPieceEditorDraft {
     required this.id,
     required this.artistId,
     required this.title,
+    required this.subtitle,
     required this.description,
     required this.assetKind,
     required this.isPublished,
@@ -68,6 +70,7 @@ class ArtPieceEditorDraft {
       id: null,
       artistId: artistId,
       title: "",
+      subtitle: "",
       description: "",
       assetKind: 0,
       isPublished: false,
@@ -81,6 +84,7 @@ class ArtPieceEditorDraft {
       id: artPiece.id,
       artistId: artPiece.artistId,
       title: artPiece.title,
+      subtitle: artPiece.subtitle,
       description: artPiece.description,
       assetKind: artPiece.assetKind,
       isPublished: artPiece.isPublished,
@@ -96,6 +100,7 @@ class ArtPieceEditorDraft {
   final String? id;
   final String artistId;
   final String title;
+  final String subtitle;
   final String description;
   final int assetKind;
   final bool isPublished;
@@ -114,6 +119,7 @@ class ArtPieceEditorDraft {
     String? id,
     String? artistId,
     String? title,
+    String? subtitle,
     String? description,
     int? assetKind,
     bool? isPublished,
@@ -125,6 +131,7 @@ class ArtPieceEditorDraft {
       id: id ?? this.id,
       artistId: artistId ?? this.artistId,
       title: title ?? this.title,
+      subtitle: subtitle ?? this.subtitle,
       description: description ?? this.description,
       assetKind: assetKind ?? this.assetKind,
       isPublished: isPublished ?? this.isPublished,
@@ -142,6 +149,10 @@ class ArtPieceEditorDraft {
 
     if (title.trim().length < 3) {
       errors.add(ArtPieceDraftValidationError.titleTooShort);
+    }
+
+    if (subtitle.trim().length > 200) {
+      errors.add(ArtPieceDraftValidationError.subtitleTooLong);
     }
 
     final normalizedDescription = description.trim();

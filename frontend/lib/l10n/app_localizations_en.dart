@@ -1075,4 +1075,53 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get globalDropModerationSubtitle =>
       'Edit, delete, publish and depublish';
+
+  @override
+  String get userEditProfileTitle => 'Edit user profile';
+
+  @override
+  String get userEditProfileAction => 'Edit profile';
+
+  @override
+  String get artPieceSubtitleLabel => 'Subtitle';
+
+  @override
+  String get artPieceSubtitleTooLongError =>
+      'Subtitle must not exceed 200 characters.';
+
+  @override
+  String get dropMakerCommentLabel => 'Drop-maker comment';
+
+  @override
+  String get dropMakerCommentHint =>
+      'Optional note for production, placement, or context.';
+
+  @override
+  String get dropSocialChannelsLabel => 'Social channels';
+
+  @override
+  String get bootstrapAdminTitle => 'Bootstrap admin';
+
+  @override
+  String get bootstrapAdminLoginHint =>
+      'No admin account exists yet. Create the first administrator before continuing.';
+
+  @override
+  String get bootstrapAdminAction => 'Create first admin';
+
+  @override
+  String get bootstrapAdminDescription =>
+      'Create the initial administrator for this installation. The account is approved immediately and can configure the system afterwards.';
+
+  @override
+  String get bootstrapAdminSuccess =>
+      'Initial administrator created. Please sign in to continue.';
+
+  @override
+  String get bootstrapAdminUnavailable =>
+      'Admin bootstrap is no longer available because an administrator already exists.';
+
+  @override
+  String get bootstrapAdminLoadFailed =>
+      'Bootstrap status could not be loaded.';
 }

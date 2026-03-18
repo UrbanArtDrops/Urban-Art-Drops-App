@@ -130,11 +130,40 @@ class AuthResultModel {
   final String? mfaProvisioningUri;
 }
 
+class BootstrapStatusModel {
+  const BootstrapStatusModel({
+    required this.bootstrapRequired,
+    required this.adminUserExists,
+    required this.moderatorBootstrapAvailable,
+  });
+
+  factory BootstrapStatusModel.fromJson(Map<String, dynamic> json) {
+    return BootstrapStatusModel(
+      bootstrapRequired: _readBool(
+        json,
+        "bootstrapRequired",
+        "BootstrapRequired",
+      ),
+      adminUserExists: _readBool(json, "adminUserExists", "AdminUserExists"),
+      moderatorBootstrapAvailable: _readBool(
+        json,
+        "moderatorBootstrapAvailable",
+        "ModeratorBootstrapAvailable",
+      ),
+    );
+  }
+
+  final bool bootstrapRequired;
+  final bool adminUserExists;
+  final bool moderatorBootstrapAvailable;
+}
+
 class ArtPieceModel {
   const ArtPieceModel({
     required this.id,
     required this.artistId,
     required this.title,
+    required this.subtitle,
     required this.description,
     required this.assetKind,
     required this.isPublished,
@@ -163,6 +192,7 @@ class ArtPieceModel {
       id: _readString(json, "id", "Id"),
       artistId: _readString(json, "artistId", "ArtistId"),
       title: _readString(json, "title", "Title"),
+      subtitle: _readString(json, "subtitle", "Subtitle"),
       description: _readString(json, "description", "Description"),
       assetKind: _readInt(json, "assetKind", "AssetKind"),
       isPublished: _readBool(json, "isPublished", "IsPublished"),
@@ -181,6 +211,7 @@ class ArtPieceModel {
   final String id;
   final String artistId;
   final String title;
+  final String subtitle;
   final String description;
   final int assetKind;
   final bool isPublished;
@@ -272,6 +303,8 @@ class DropModel {
     required this.dropMakerId,
     required this.isStationary,
     required this.portableItemCount,
+    required this.dropMakerComment,
+    required this.socialChannels,
     required this.latitude,
     required this.longitude,
     required this.isPublished,
@@ -291,6 +324,7 @@ class DropModel {
         .map(DropItemModel.fromJson)
         .toList(growable: false);
     final locationEntries = _readList(json, "locationPhotos", "LocationPhotos");
+    final socialChannels = _readList(json, "socialChannels", "SocialChannels");
     final claimed = itemModels.where((entry) => entry.isClaimed).length;
 
     return DropModel(
@@ -303,6 +337,15 @@ class DropModel {
         "portableItemCount",
         "PortableItemCount",
       ),
+      dropMakerComment: _readNullableString(
+        json,
+        "dropMakerComment",
+        "DropMakerComment",
+      ),
+      socialChannels: socialChannels
+          .map((entry) => entry.toString().trim())
+          .where((entry) => entry.isNotEmpty)
+          .toList(growable: false),
       latitude: _readNullableDouble(json, "latitude", "Latitude"),
       longitude: _readNullableDouble(json, "longitude", "Longitude"),
       isPublished: _readBool(json, "isPublished", "IsPublished"),
@@ -322,6 +365,8 @@ class DropModel {
   final String dropMakerId;
   final bool isStationary;
   final int? portableItemCount;
+  final String? dropMakerComment;
+  final List<String> socialChannels;
   final double? latitude;
   final double? longitude;
   final bool isPublished;
@@ -658,6 +703,8 @@ class CreateDropInput {
     required this.dropMakerId,
     required this.isStationary,
     required this.portableItemCount,
+    required this.dropMakerComment,
+    required this.socialChannels,
     required this.latitude,
     required this.longitude,
     required this.locationPhotoUrls,
@@ -668,6 +715,8 @@ class CreateDropInput {
   final String dropMakerId;
   final bool isStationary;
   final int? portableItemCount;
+  final String? dropMakerComment;
+  final List<String> socialChannels;
   final double? latitude;
   final double? longitude;
   final List<String> locationPhotoUrls;

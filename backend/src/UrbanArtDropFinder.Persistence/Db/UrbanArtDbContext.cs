@@ -22,6 +22,7 @@ public sealed class UrbanArtDbContext : DbContext
     public DbSet<Drop> Drops => Set<Drop>();
     public DbSet<DropItem> DropItems => Set<DropItem>();
     public DbSet<DropLocationPhoto> DropLocationPhotos => Set<DropLocationPhoto>();
+    public DbSet<DropSocialChannelSelection> DropSocialChannelSelections => Set<DropSocialChannelSelection>();
     public DbSet<DropComment> DropComments => Set<DropComment>();
     public DbSet<AppConfiguration> AppConfigurations => Set<AppConfiguration>();
 
@@ -49,6 +50,7 @@ public sealed class UrbanArtDbContext : DbContext
         {
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Title).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.Subtitle).HasMaxLength(200).IsRequired();
             entity.Property(x => x.Description).HasMaxLength(3000).IsRequired();
             entity.Property(x => x.ReportReason).HasMaxLength(1000);
             entity.HasMany(x => x.Photos).WithOne().HasForeignKey(x => x.ArtPieceId);
@@ -74,8 +76,10 @@ public sealed class UrbanArtDbContext : DbContext
         modelBuilder.Entity<Drop>(entity =>
         {
             entity.HasKey(x => x.Id);
+            entity.Property(x => x.DropMakerComment).HasMaxLength(1000);
             entity.HasMany(x => x.Items).WithOne().HasForeignKey(x => x.DropId);
             entity.HasMany(x => x.LocationPhotos).WithOne().HasForeignKey(x => x.DropId);
+            entity.HasMany(x => x.SocialChannels).WithOne().HasForeignKey(x => x.DropId);
         });
 
         modelBuilder.Entity<DropItem>(entity =>
@@ -90,6 +94,13 @@ public sealed class UrbanArtDbContext : DbContext
             entity.HasKey(x => x.Id);
             entity.Property(x => x.BinaryData).IsRequired();
             entity.Property(x => x.ContentType).IsRequired().HasMaxLength(255);
+        });
+
+        modelBuilder.Entity<DropSocialChannelSelection>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Channel).IsRequired().HasMaxLength(64);
+            entity.HasIndex(x => new { x.DropId, x.Channel }).IsUnique();
         });
 
         modelBuilder.Entity<DropComment>(entity =>

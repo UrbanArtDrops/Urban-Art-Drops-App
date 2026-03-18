@@ -43,6 +43,12 @@ class MakeDropWizardPage extends StatefulWidget {
 }
 
 class _MakeDropWizardPageState extends State<MakeDropWizardPage> {
+  static const List<String> _commonSocialChannels = <String>[
+    "Facebook",
+    "Instagram",
+    "TikTok",
+  ];
+
   late final AppApiClient _apiClient = widget._apiClient ?? AppApiClient();
   late final LocalPhotoPicker _photoPicker =
       widget._photoPicker ?? const FilePickerLocalPhotoPicker();
@@ -55,6 +61,8 @@ class _MakeDropWizardPageState extends State<MakeDropWizardPage> {
     text: "1",
   );
   final TextEditingController _portableItemCountController =
+      TextEditingController();
+  final TextEditingController _dropMakerCommentController =
       TextEditingController();
   final TextEditingController _locationController = TextEditingController();
   final FocusNode _locationFocusNode = FocusNode();
@@ -87,6 +95,7 @@ class _MakeDropWizardPageState extends State<MakeDropWizardPage> {
     _locationSearchDebounce?.cancel();
     _itemCountController.dispose();
     _portableItemCountController.dispose();
+    _dropMakerCommentController.dispose();
     _locationController.dispose();
     _locationFocusNode.dispose();
     super.dispose();
@@ -167,6 +176,7 @@ class _MakeDropWizardPageState extends State<MakeDropWizardPage> {
       _itemCountController.text = nextDraft.itemCount.toString();
       _portableItemCountController.text =
           nextDraft.portableItemCount?.toString() ?? "";
+      _dropMakerCommentController.text = nextDraft.dropMakerComment;
       _locationController.text = nextDraft.locationLabel;
 
       setState(() {
@@ -339,8 +349,25 @@ class _MakeDropWizardPageState extends State<MakeDropWizardPage> {
     _draft = _draft.copyWith(
       itemCount: parsedItemCount,
       portableItemCount: parsedPortableCount,
+      dropMakerComment: _dropMakerCommentController.text,
       clearPortableItemCount: isStationary,
     );
+  }
+
+  void _toggleSocialChannel(String channel, bool selected) {
+    final nextChannels = _draft.socialChannels.toList(growable: true);
+    if (selected) {
+      if (!nextChannels.contains(channel)) {
+        nextChannels.add(channel);
+      }
+    } else {
+      nextChannels.remove(channel);
+    }
+
+    nextChannels.sort((first, second) => first.compareTo(second));
+    setState(() {
+      _draft = _draft.copyWith(socialChannels: nextChannels);
+    });
   }
 
   Future<void> _persistDraft() async {
@@ -893,6 +920,13 @@ class _MakeDropWizardPageState extends State<MakeDropWizardPage> {
                 _selectedArtPiece!.title,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
+              if (_selectedArtPiece!.subtitle.trim().isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  _selectedArtPiece!.subtitle,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
               const SizedBox(height: 8),
               if (_selectedArtPiece!.assetFile != null)
                 Card.outlined(
@@ -992,6 +1026,44 @@ class _MakeDropWizardPageState extends State<MakeDropWizardPage> {
                 ),
               ),
             ],
+            const SizedBox(height: 12),
+            TextField(
+              controller: _dropMakerCommentController,
+              minLines: 3,
+              maxLines: 5,
+              maxLength: 1000,
+              decoration: InputDecoration(
+                labelText: l10n.dropMakerCommentLabel,
+                hintText: l10n.dropMakerCommentHint,
+                alignLabelWithHint: true,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                l10n.dropSocialChannelsLabel,
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: {..._commonSocialChannels, ..._draft.socialChannels}
+                  .map((channel) {
+                    final isSelected = _draft.socialChannels.contains(channel);
+                    return FilterChip(
+                      label: Text(channel),
+                      selected: isSelected,
+                      onSelected: _isSaving
+                          ? null
+                          : (selected) =>
+                                _toggleSocialChannel(channel, selected),
+                    );
+                  })
+                  .toList(growable: false),
+            ),
             if (_draft.hasPersistedDrop) ...[
               const SizedBox(height: 12),
               Text(

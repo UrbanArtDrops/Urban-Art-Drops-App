@@ -17,6 +17,12 @@ class MyDropsPage extends StatefulWidget {
 }
 
 class _MyDropsPageState extends State<MyDropsPage> {
+  static const List<String> _commonSocialChannels = <String>[
+    "Facebook",
+    "Instagram",
+    "TikTok",
+  ];
+
   final AppApiClient _apiClient = AppApiClient();
   List<DropModel> _drops = const [];
   List<ArtPieceModel> _artPieces = const [];
@@ -115,9 +121,14 @@ class _MyDropsPageState extends State<MyDropsPage> {
     final locationPhotosController = TextEditingController(
       text: existing?.locationPhotoUrls.join(", ") ?? "",
     );
+    final dropMakerCommentController = TextEditingController(
+      text: existing?.dropMakerComment ?? "",
+    );
     final itemCountController = TextEditingController(
       text: existing?.itemCount.toString() ?? "1",
     );
+    final selectedSocialChannels =
+        (existing?.socialChannels ?? const <String>[]).toSet();
     var published = existing?.isPublished ?? false;
 
     final shouldSave = await showDialog<bool>(
@@ -219,6 +230,51 @@ class _MyDropsPageState extends State<MyDropsPage> {
                 ),
                 const SizedBox(height: 8),
                 TextField(
+                  controller: dropMakerCommentController,
+                  minLines: 3,
+                  maxLines: 5,
+                  maxLength: 1000,
+                  decoration: InputDecoration(
+                    labelText: l10n.dropMakerCommentLabel,
+                    hintText: l10n.dropMakerCommentHint,
+                    alignLabelWithHint: true,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    l10n.dropSocialChannelsLabel,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children:
+                      {..._commonSocialChannels, ...selectedSocialChannels}
+                          .map((channel) {
+                            return FilterChip(
+                              label: Text(channel),
+                              selected: selectedSocialChannels.contains(
+                                channel,
+                              ),
+                              onSelected: (selected) {
+                                setDialogState(() {
+                                  if (selected) {
+                                    selectedSocialChannels.add(channel);
+                                  } else {
+                                    selectedSocialChannels.remove(channel);
+                                  }
+                                });
+                              },
+                            );
+                          })
+                          .toList(growable: false),
+                ),
+                const SizedBox(height: 8),
+                TextField(
                   controller: itemCountController,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
@@ -260,6 +316,8 @@ class _MyDropsPageState extends State<MyDropsPage> {
       portableItemCount: isStationary
           ? null
           : int.tryParse(portableItemController.text.trim()),
+      dropMakerComment: dropMakerCommentController.text.trim(),
+      socialChannels: selectedSocialChannels.toList(growable: false),
       latitude: double.tryParse(latitudeController.text.trim()),
       longitude: double.tryParse(longitudeController.text.trim()),
       locationPhotoUrls: locationPhotosController.text
@@ -383,9 +441,15 @@ class _MyDropsPageState extends State<MyDropsPage> {
             drop: drop,
             id: drop.id,
             title: art?.title ?? l10n.dropFallbackTitle(drop.id),
-            subtitle:
-                "${l10n.mapArtistLabel}: $artistName · ${l10n.mapDropMakerLabel}: $dropMakerName",
-            description: art?.description ?? "",
+            subtitle: art?.subtitle.trim().isNotEmpty == true
+                ? art!.subtitle
+                : "${l10n.mapArtistLabel}: $artistName · ${l10n.mapDropMakerLabel}: $dropMakerName",
+            description: _buildDropDescription(
+              artDescription: art?.description ?? "",
+              dropMakerComment: drop.dropMakerComment,
+              socialChannels: drop.socialChannels,
+              l10n: l10n,
+            ),
             galleryUrls: [...?art?.photoUrls, ...drop.locationPhotoUrls],
             claimedHunterNames: claimedHunterNames,
             latitude: drop.latitude,
@@ -529,6 +593,32 @@ class _MyDropsPageState extends State<MyDropsPage> {
             ),
     );
   }
+}
+
+String _buildDropDescription({
+  required String artDescription,
+  required String? dropMakerComment,
+  required List<String> socialChannels,
+  required AppLocalizations l10n,
+}) {
+  final segments = <String>[];
+  final trimmedDescription = artDescription.trim();
+  if (trimmedDescription.isNotEmpty) {
+    segments.add(trimmedDescription);
+  }
+
+  final trimmedComment = dropMakerComment?.trim();
+  if (trimmedComment != null && trimmedComment.isNotEmpty) {
+    segments.add("${l10n.dropMakerCommentLabel}: $trimmedComment");
+  }
+
+  if (socialChannels.isNotEmpty) {
+    segments.add(
+      "${l10n.dropSocialChannelsLabel}: ${socialChannels.join(", ")}",
+    );
+  }
+
+  return segments.join("\n\n");
 }
 
 class _MyDropViewModel {

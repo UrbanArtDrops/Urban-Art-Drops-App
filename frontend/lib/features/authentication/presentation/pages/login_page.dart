@@ -34,12 +34,20 @@ class _LoginPageState extends State<LoginPage> {
       TextEditingController();
   final TextEditingController _mfaCodeController = TextEditingController();
 
+  BootstrapStatusModel? _bootstrapStatus;
+  bool _isCheckingBootstrap = true;
   bool _isSaving = false;
   String _selectedProvider = _providers.first;
   String? _mfaChallengeToken;
   bool _mfaSetupRequired = false;
   String? _mfaManualEntryKey;
   String? _mfaProvisioningUri;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBootstrapStatus();
+  }
 
   @override
   void dispose() {
@@ -49,6 +57,26 @@ class _LoginPageState extends State<LoginPage> {
     _providerSubjectController.dispose();
     _mfaCodeController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadBootstrapStatus() async {
+    try {
+      final status = await _apiClient.getBootstrapStatus();
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _bootstrapStatus = status;
+        _isCheckingBootstrap = false;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() => _isCheckingBootstrap = false);
+    }
   }
 
   Future<void> _loginLocal() async {
@@ -217,6 +245,32 @@ class _LoginPageState extends State<LoginPage> {
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
+          if (!_isCheckingBootstrap &&
+              _bootstrapStatus?.bootstrapRequired == true) ...[
+            Card.outlined(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.bootstrapAdminTitle,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(l10n.bootstrapAdminLoginHint),
+                    const SizedBox(height: 12),
+                    FilledButton.icon(
+                      onPressed: () => context.go("/auth/bootstrap-admin"),
+                      icon: const Icon(Icons.admin_panel_settings_outlined),
+                      label: Text(l10n.bootstrapAdminAction),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
           if (_mfaChallengeToken != null) ...[
             Card.outlined(
               child: Padding(

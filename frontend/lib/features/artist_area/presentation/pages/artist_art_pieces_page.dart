@@ -209,6 +209,7 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
           ? await _apiClient.createArtPiece(
               artistId: draft.artistId,
               title: draft.title.trim(),
+              subtitle: draft.subtitle.trim(),
               description: draft.description.trim(),
               assetKind: draft.assetKind,
               photoUrls: draft.photoSources,
@@ -219,6 +220,7 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
               id: existing.id,
               artistId: draft.artistId,
               title: draft.title.trim(),
+              subtitle: draft.subtitle.trim(),
               description: draft.description.trim(),
               assetKind: draft.assetKind,
               photoUrls: draft.photoSources,
@@ -683,6 +685,16 @@ class _ArtPieceListCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 8),
+                    if (artPiece.subtitle.trim().isNotEmpty) ...[
+                      Text(
+                        artPiece.subtitle,
+                        style: theme.textTheme.bodyMedium,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                    const SizedBox(height: 4),
                     Text(
                       artPiece.description,
                       maxLines: 3,

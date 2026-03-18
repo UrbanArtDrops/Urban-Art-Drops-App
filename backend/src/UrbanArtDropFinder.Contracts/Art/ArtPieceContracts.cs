@@ -5,6 +5,7 @@ namespace UrbanArtDropFinder.Contracts.Art;
 public sealed record CreateArtPieceRequest(
     Guid ArtistId,
     string Title,
+    string? Subtitle,
     string Description,
     ArtPieceAssetKind AssetKind,
     IReadOnlyCollection<string> PhotoUrls,
@@ -14,6 +15,7 @@ public sealed record CreateArtPieceRequest(
 public sealed record UpdateArtPieceRequest(
     Guid ArtistId,
     string Title,
+    string? Subtitle,
     string Description,
     ArtPieceAssetKind AssetKind,
     IReadOnlyCollection<string> PhotoUrls,

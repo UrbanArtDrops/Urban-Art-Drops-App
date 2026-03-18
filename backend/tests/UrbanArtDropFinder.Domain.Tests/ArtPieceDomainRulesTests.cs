@@ -11,6 +11,7 @@ public sealed class ArtPieceDomainRulesTests
         var artPiece = ArtPiece.Create(
             Guid.NewGuid(),
             "Crystal Owl",
+            "First subtitle",
             "This description is definitely long enough.",
             ArtPieceAssetKind.Image);
 
@@ -19,11 +20,13 @@ public sealed class ArtPieceDomainRulesTests
         artPiece.UpdateDetails(
             updatedArtistId,
             "Steel Fox",
+            "Updated subtitle",
             "This updated description is also long enough.",
             ArtPieceAssetKind.Model3d);
 
         Assert.Equal(updatedArtistId, artPiece.ArtistId);
         Assert.Equal("Steel Fox", artPiece.Title);
+        Assert.Equal("Updated subtitle", artPiece.Subtitle);
         Assert.Equal("This updated description is also long enough.", artPiece.Description);
         Assert.Equal(ArtPieceAssetKind.Model3d, artPiece.AssetKind);
     }
@@ -34,6 +37,7 @@ public sealed class ArtPieceDomainRulesTests
         var artPiece = ArtPiece.Create(
             Guid.NewGuid(),
             "Crystal Owl",
+            "First subtitle",
             "This description is definitely long enough.",
             ArtPieceAssetKind.Image);
 
@@ -41,8 +45,21 @@ public sealed class ArtPieceDomainRulesTests
             artPiece.UpdateDetails(
                 Guid.Empty,
                 "Steel Fox",
+                "Updated subtitle",
                 "This updated description is also long enough.",
                 ArtPieceAssetKind.Model3d));
+    }
+
+    [Fact]
+    public void Create_WhenSubtitleIsTooLong_ThrowsValidationException()
+    {
+        Assert.Throws<DomainValidationException>(() =>
+            ArtPiece.Create(
+                Guid.NewGuid(),
+                "Crystal Owl",
+                new string('x', 201),
+                "This description is definitely long enough.",
+                ArtPieceAssetKind.Image));
     }
 
     [Fact]
@@ -51,6 +68,7 @@ public sealed class ArtPieceDomainRulesTests
         var artPiece = ArtPiece.Create(
             Guid.NewGuid(),
             "Crystal Owl",
+            "First subtitle",
             "This description is definitely long enough.",
             ArtPieceAssetKind.Model3d);
         artPiece.AddPhoto([1, 2, 3], "image/png");
@@ -64,6 +82,7 @@ public sealed class ArtPieceDomainRulesTests
         var artPiece = ArtPiece.Create(
             Guid.NewGuid(),
             "Crystal Owl",
+            "First subtitle",
             "This description is definitely long enough.",
             ArtPieceAssetKind.Model3d);
         artPiece.AddPhoto([1, 2, 3], "image/png");
@@ -82,6 +101,7 @@ public sealed class ArtPieceDomainRulesTests
         var artPiece = ArtPiece.Create(
             Guid.NewGuid(),
             "Crystal Owl",
+            "First subtitle",
             "This description is definitely long enough.",
             ArtPieceAssetKind.Image);
 

@@ -94,6 +94,61 @@ app.UseAuthorization();
 
 await SeedConfigurationAsync(app.Services);
 
+var bootstrapGroup = app.MapGroup("/api/bootstrap");
+bootstrapGroup.MapGet("/status", async (UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+{
+    var adminExists = await dbContext.UserAccounts.AnyAsync(user => user.Role == UserRole.Admin, cancellationToken);
+    return Results.Ok(new BootstrapStatusResponse(
+        BootstrapRequired: !adminExists,
+        AdminUserExists: adminExists,
+        ModeratorBootstrapAvailable: adminExists));
+});
+
+bootstrapGroup.MapPost("/admin", async (
+    BootstrapAdminRequest request,
+    IPasswordHasher passwordHasher,
+    UrbanArtDbContext dbContext,
+    CancellationToken cancellationToken) =>
+{
+    if (await dbContext.UserAccounts.AnyAsync(user => user.Role == UserRole.Admin, cancellationToken))
+    {
+        return Results.Conflict(new { error = "Admin bootstrap is no longer available." });
+    }
+
+    if (await dbContext.UserAccounts.AnyAsync(
+            user => user.Email == request.Email.Trim().ToLowerInvariant(),
+            cancellationToken))
+    {
+        return Results.BadRequest(new { error = "Email already exists." });
+    }
+
+    if (await dbContext.UserAccounts.AnyAsync(
+            user => user.UserName == request.UserName.Trim(),
+            cancellationToken))
+    {
+        return Results.BadRequest(new { error = "User name already exists." });
+    }
+
+    var passwordValidation = PasswordPolicy.Validate(request.Password);
+    if (!passwordValidation.IsValid)
+    {
+        return Results.BadRequest(new { error = passwordValidation.Error ?? "Invalid password." });
+    }
+
+    var passwordHash = passwordHasher.Hash(request.Password);
+    var user = UserAccount.CreateLocal(
+        request.Email,
+        request.UserName,
+        UserRole.Admin,
+        passwordHash,
+        approved: true);
+    user.MarkEmailVerified();
+
+    await dbContext.UserAccounts.AddAsync(user, cancellationToken);
+    await dbContext.SaveChangesAsync(cancellationToken);
+    return Results.Created($"/api/admin/users/{user.Id}", ToManagedUserResponse(user, includeEmail: true));
+});
+
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok", utcNow = DateTimeOffset.UtcNow }))
     .WithName("Health");
 app.MapGrpcService<HealthGrpcService>();
@@ -284,7 +339,12 @@ artGroup.MapPost("/", async (
 
     try
     {
-        var artPiece = ArtPiece.Create(request.ArtistId, request.Title, request.Description, request.AssetKind);
+        var artPiece = ArtPiece.Create(
+            request.ArtistId,
+            request.Title,
+            request.Subtitle,
+            request.Description,
+            request.AssetKind);
         var photoPayloads = await ResolvePhotoSourcesAsync(request.PhotoUrls, dbContext, httpClientFactory, cancellationToken);
         foreach (var photo in photoPayloads)
         {
@@ -339,7 +399,12 @@ artGroup.MapPut("/{id:guid}", async (
 
     try
     {
-        artPiece.UpdateDetails(request.ArtistId, request.Title, request.Description, request.AssetKind);
+        artPiece.UpdateDetails(
+            request.ArtistId,
+            request.Title,
+            request.Subtitle,
+            request.Description,
+            request.AssetKind);
         var photoPayloads = await ResolvePhotoSourcesAsync(request.PhotoUrls, dbContext, httpClientFactory, cancellationToken);
         var existingPhotos = await dbContext.ArtPiecePhotos
             .AsNoTracking()
@@ -523,6 +588,7 @@ dropsGroup.MapGet("/", async (HttpContext httpContext, UrbanArtDbContext dbConte
     var drops = await dbContext.Drops
         .Include(x => x.Items)
         .Include(x => x.LocationPhotos)
+        .Include(x => x.SocialChannels)
         .AsNoTracking()
         .ToListAsync(cancellationToken);
     var configuration = await GetConfigurationAsync(dbContext, cancellationToken);
@@ -538,6 +604,7 @@ dropsGroup.MapGet("/{id:guid}", async (Guid id, HttpContext httpContext, UrbanAr
     var drop = await dbContext.Drops
         .Include(x => x.Items)
         .Include(x => x.LocationPhotos)
+        .Include(x => x.SocialChannels)
         .AsNoTracking()
         .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
@@ -570,7 +637,13 @@ dropsGroup.MapPost("/", async (
 
     try
     {
-        var drop = Drop.Create(request.ArtPieceId, request.DropMakerId, request.IsStationary, request.PortableItemCount);
+        var drop = Drop.Create(
+            request.ArtPieceId,
+            request.DropMakerId,
+            request.IsStationary,
+            request.PortableItemCount,
+            request.DropMakerComment,
+            request.SocialChannels);
 
         if (request.Latitude.HasValue && request.Longitude.HasValue)
         {
@@ -632,10 +705,12 @@ dropsGroup.MapPut("/{id:guid}", async (
 
     try
     {
-        var currentItems = await dbContext.DropItems
-            .Where(item => item.DropId == id)
-            .ToListAsync(cancellationToken);
-        drop.UpdateTransportSettings(request.IsStationary, request.PortableItemCount);
+        drop.UpdateDetails(
+            request.IsStationary,
+            request.PortableItemCount,
+            request.DropMakerComment,
+            [],
+            request.ItemCount);
 
         if (request.Latitude.HasValue && request.Longitude.HasValue)
         {
@@ -652,12 +727,11 @@ dropsGroup.MapPut("/{id:guid}", async (
             httpClientFactory,
             cancellationToken);
         var existingLocationPhotos = await dbContext.DropLocationPhotos
-            .AsNoTracking()
             .Where(photo => photo.DropId == id)
             .ToListAsync(cancellationToken);
-        foreach (var existingLocationPhoto in existingLocationPhotos)
+        if (existingLocationPhotos.Count > 0)
         {
-            dbContext.Entry(existingLocationPhoto).State = EntityState.Deleted;
+            dbContext.DropLocationPhotos.RemoveRange(existingLocationPhotos);
         }
 
         foreach (var locationPhotoPayload in locationPhotoPayloads)
@@ -672,6 +746,32 @@ dropsGroup.MapPut("/{id:guid}", async (
                 cancellationToken);
         }
 
+        var normalizedSocialChannels = request.SocialChannels
+            .Select(DropSocialChannelSelection.NormalizeChannel)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var existingSocialChannels = await dbContext.DropSocialChannelSelections
+            .Where(selection => selection.DropId == id)
+            .ToListAsync(cancellationToken);
+        if (existingSocialChannels.Count > 0)
+        {
+            dbContext.DropSocialChannelSelections.RemoveRange(existingSocialChannels);
+        }
+
+        foreach (var channel in normalizedSocialChannels)
+        {
+            await dbContext.DropSocialChannelSelections.AddAsync(
+                new DropSocialChannelSelection
+                {
+                    DropId = drop.Id,
+                    Channel = channel
+                },
+                cancellationToken);
+        }
+
+        var currentItems = await dbContext.DropItems
+            .Where(item => item.DropId == id)
+            .ToListAsync(cancellationToken);
         var claimedItems = currentItems.Where(item => item.IsClaimed).ToList();
         if (request.ItemCount < 1)
         {
@@ -711,6 +811,7 @@ dropsGroup.MapPut("/{id:guid}", async (
         var reloadedDrop = await dbContext.Drops
             .Include(x => x.Items)
             .Include(x => x.LocationPhotos)
+            .Include(x => x.SocialChannels)
             .AsNoTracking()
             .FirstAsync(x => x.Id == id, cancellationToken);
         return Results.Ok(ToDropResponse(reloadedDrop, httpContext.Request, configuration));
@@ -1615,6 +1716,23 @@ adminGroup.MapPatch("/users/{userId:guid}/profile", async (
         return Results.NotFound();
     }
 
+    var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+    if (await dbContext.UserAccounts.AnyAsync(
+            account => account.Id != userId && account.Email == normalizedEmail,
+            cancellationToken))
+    {
+        return Results.BadRequest(new { error = "Email already exists." });
+    }
+
+    var normalizedUserName = request.UserName.Trim();
+    if (await dbContext.UserAccounts.AnyAsync(
+            account => account.Id != userId && account.UserName == normalizedUserName,
+            cancellationToken))
+    {
+        return Results.BadRequest(new { error = "User name already exists." });
+    }
+
+    user.ChangeEmail(request.Email);
     user.ChangeUserName(request.UserName);
     await dbContext.SaveChangesAsync(cancellationToken);
     return Results.Ok();
@@ -1913,6 +2031,7 @@ static ArtPieceResponseDto ToArtPieceResponse(ArtPiece artPiece, HttpRequest req
         artPiece.Id,
         artPiece.ArtistId,
         artPiece.Title,
+        artPiece.Subtitle,
         artPiece.Description,
         artPiece.AssetKind,
         artPiece.IsPublished,
@@ -1956,6 +2075,10 @@ static DropResponseDto ToDropResponse(Drop drop, HttpRequest request, AppConfigu
     var locationPhotos = drop.LocationPhotos
         .Select(photo => new PhotoReferenceDto(photo.Id, $"{apiBaseUri}/api/media/drop-location-photos/{photo.Id}"))
         .ToList();
+    var socialChannels = drop.SocialChannels
+        .Select(channel => channel.Channel)
+        .OrderBy(channel => channel, StringComparer.OrdinalIgnoreCase)
+        .ToList();
     var items = drop.Items
         .Select(item => new DropItemResponseDto(
             item.Id,
@@ -1973,6 +2096,8 @@ static DropResponseDto ToDropResponse(Drop drop, HttpRequest request, AppConfigu
         drop.DropMakerId,
         drop.IsStationary,
         drop.PortableItemCount,
+        drop.DropMakerComment,
+        socialChannels,
         drop.Latitude,
         drop.Longitude,
         drop.IsPublished,
@@ -2375,6 +2500,7 @@ internal sealed record ArtPieceResponseDto(
     Guid Id,
     Guid ArtistId,
     string Title,
+    string Subtitle,
     string Description,
     ArtPieceAssetKind AssetKind,
     bool IsPublished,
@@ -2399,6 +2525,8 @@ internal sealed record DropResponseDto(
     Guid DropMakerId,
     bool IsStationary,
     int? PortableItemCount,
+    string? DropMakerComment,
+    IReadOnlyCollection<string> SocialChannels,
     double? Latitude,
     double? Longitude,
     bool IsPublished,
@@ -2443,7 +2571,7 @@ internal sealed record CreateManagedUserRequest(
     string? Provider,
     string? ProviderSubject);
 
-internal sealed record UpdateManagedUserProfileRequest(string UserName);
+internal sealed record UpdateManagedUserProfileRequest(string UserName, string Email);
 
 internal static class AuthPolicies
 {

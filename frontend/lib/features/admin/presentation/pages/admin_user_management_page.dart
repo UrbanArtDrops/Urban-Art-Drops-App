@@ -131,16 +131,28 @@ class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
     });
   }
 
-  Future<void> _editUserName(ManagedUser user) async {
+  Future<void> _editUserProfile(ManagedUser user) async {
     final l10n = AppLocalizations.of(context)!;
-    final controller = TextEditingController(text: user.userName);
+    final userNameController = TextEditingController(text: user.userName);
+    final emailController = TextEditingController(text: user.email);
     final shouldSave = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.userEditUsernameTitle),
-        content: TextField(
-          controller: controller,
-          decoration: InputDecoration(labelText: l10n.usernameLabel),
+        title: Text(l10n.userEditProfileTitle),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: userNameController,
+              decoration: InputDecoration(labelText: l10n.usernameLabel),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: InputDecoration(labelText: l10n.emailLabel),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -160,7 +172,11 @@ class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
     }
 
     await _withSaving(() async {
-      await _apiClient.updateUserName(user.id, controller.text.trim());
+      await _apiClient.updateUserProfile(
+        userId: user.id,
+        userName: userNameController.text.trim(),
+        email: emailController.text.trim(),
+      );
       await _loadUsers();
     });
   }
@@ -341,7 +357,7 @@ class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
                                           _changeRole(user);
                                           break;
                                         case "username":
-                                          _editUserName(user);
+                                          _editUserProfile(user);
                                           break;
                                       }
                                     },
@@ -368,9 +384,7 @@ class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
                                       ),
                                       PopupMenuItem(
                                         value: "username",
-                                        child: Text(
-                                          l10n.userEditUsernameAction,
-                                        ),
+                                        child: Text(l10n.userEditProfileAction),
                                       ),
                                     ],
                                   ),

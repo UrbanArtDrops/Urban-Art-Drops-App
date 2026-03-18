@@ -120,6 +120,32 @@ class AppApiClient {
     return AuthResultModel.fromJson(_decodeObjectResponse(response));
   }
 
+  Future<BootstrapStatusModel> getBootstrapStatus() async {
+    final data = await _getObject(
+      "/api/bootstrap/status",
+      includeAuthorization: false,
+    );
+    return BootstrapStatusModel.fromJson(data);
+  }
+
+  Future<ManagedUser> bootstrapAdmin({
+    required String email,
+    required String userName,
+    required String password,
+  }) async {
+    final response = await _httpClient.post(
+      _uri("/api/bootstrap/admin"),
+      headers: _jsonHeaders(includeAuthorization: false),
+      body: jsonEncode({
+        "email": email,
+        "userName": userName,
+        "password": password,
+      }),
+    );
+    _ensureSuccess(response, "Failed to bootstrap admin.");
+    return ManagedUser.fromJson(_decodeObjectResponse(response));
+  }
+
   Future<void> verifyEmail(String userId) async {
     final response = await _httpClient.post(
       _uri("/api/auth/verify-email/$userId"),
@@ -193,11 +219,15 @@ class AppApiClient {
     _ensureSuccess(response, "Failed to update user role.");
   }
 
-  Future<void> updateUserName(String userId, String userName) async {
+  Future<void> updateUserProfile({
+    required String userId,
+    required String userName,
+    required String email,
+  }) async {
     final response = await _httpClient.patch(
       _uri("/api/admin/users/$userId/profile"),
       headers: _jsonHeaders(),
-      body: jsonEncode({"userName": userName}),
+      body: jsonEncode({"userName": userName, "email": email}),
     );
     _ensureSuccess(response, "Failed to update user profile.");
   }
@@ -210,6 +240,7 @@ class AppApiClient {
   Future<ArtPieceModel> createArtPiece({
     required String artistId,
     required String title,
+    required String subtitle,
     required String description,
     required int assetKind,
     required List<String> photoUrls,
@@ -222,6 +253,7 @@ class AppApiClient {
       body: jsonEncode({
         "artistId": artistId,
         "title": title,
+        "subtitle": subtitle,
         "description": description,
         "assetKind": assetKind,
         "photoUrls": photoUrls,
@@ -237,6 +269,7 @@ class AppApiClient {
     required String id,
     required String artistId,
     required String title,
+    required String subtitle,
     required String description,
     required int assetKind,
     required List<String> photoUrls,
@@ -249,6 +282,7 @@ class AppApiClient {
       body: jsonEncode({
         "artistId": artistId,
         "title": title,
+        "subtitle": subtitle,
         "description": description,
         "assetKind": assetKind,
         "photoUrls": photoUrls,
@@ -303,6 +337,8 @@ class AppApiClient {
         "dropMakerId": input.dropMakerId,
         "isStationary": input.isStationary,
         "portableItemCount": input.portableItemCount,
+        "dropMakerComment": input.dropMakerComment,
+        "socialChannels": input.socialChannels,
         "latitude": input.latitude,
         "longitude": input.longitude,
         "locationPhotoUrls": input.locationPhotoUrls,
@@ -322,6 +358,8 @@ class AppApiClient {
         "dropMakerId": input.dropMakerId,
         "isStationary": input.isStationary,
         "portableItemCount": input.portableItemCount,
+        "dropMakerComment": input.dropMakerComment,
+        "socialChannels": input.socialChannels,
         "latitude": input.latitude,
         "longitude": input.longitude,
         "locationPhotoUrls": input.locationPhotoUrls,
@@ -501,8 +539,14 @@ class AppApiClient {
     _ensureSuccess(response, "Failed to claim drop item.");
   }
 
-  Future<List<Map<String, dynamic>>> _getList(String path) async {
-    final response = await _httpClient.get(_uri(path), headers: _headers());
+  Future<List<Map<String, dynamic>>> _getList(
+    String path, {
+    bool includeAuthorization = true,
+  }) async {
+    final response = await _httpClient.get(
+      _uri(path),
+      headers: _headers(includeAuthorization: includeAuthorization),
+    );
     _ensureSuccess(response, "Failed to load data.");
     final payload = jsonDecode(response.body);
     if (payload is! List<dynamic>) {
@@ -512,8 +556,14 @@ class AppApiClient {
     return payload.whereType<Map<String, dynamic>>().toList(growable: false);
   }
 
-  Future<Map<String, dynamic>> _getObject(String path) async {
-    final response = await _httpClient.get(_uri(path), headers: _headers());
+  Future<Map<String, dynamic>> _getObject(
+    String path, {
+    bool includeAuthorization = true,
+  }) async {
+    final response = await _httpClient.get(
+      _uri(path),
+      headers: _headers(includeAuthorization: includeAuthorization),
+    );
     _ensureSuccess(response, "Failed to load data.");
     return _decodeObjectResponse(response);
   }

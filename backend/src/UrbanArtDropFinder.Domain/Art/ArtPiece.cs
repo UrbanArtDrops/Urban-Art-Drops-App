@@ -4,9 +4,12 @@ namespace UrbanArtDropFinder.Domain.Art;
 
 public sealed class ArtPiece
 {
+    private const int MaxSubtitleLength = 200;
+
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid ArtistId { get; private set; }
     public string Title { get; private set; }
+    public string Subtitle { get; private set; }
     public string Description { get; private set; }
     public ArtPieceAssetKind AssetKind { get; private set; }
     public bool IsPublished { get; private set; }
@@ -19,10 +22,11 @@ public sealed class ArtPiece
     private ArtPiece()
     {
         Title = string.Empty;
+        Subtitle = string.Empty;
         Description = string.Empty;
     }
 
-    public static ArtPiece Create(Guid artistId, string title, string description, ArtPieceAssetKind assetKind)
+    public static ArtPiece Create(Guid artistId, string title, string? subtitle, string description, ArtPieceAssetKind assetKind)
     {
         if (artistId == Guid.Empty)
         {
@@ -40,10 +44,13 @@ public sealed class ArtPiece
             throw new DomainValidationException("Description length must be between 20 and 3000 characters.");
         }
 
+        var normalizedSubtitle = NormalizeSubtitle(subtitle);
+
         return new ArtPiece
         {
             ArtistId = artistId,
             Title = title.Trim(),
+            Subtitle = normalizedSubtitle,
             Description = normalizedDescription,
             AssetKind = assetKind,
             IsPublished = false
@@ -119,7 +126,7 @@ public sealed class ArtPiece
         AssetFile = null;
     }
 
-    public void UpdateDetails(Guid artistId, string title, string description, ArtPieceAssetKind assetKind)
+    public void UpdateDetails(Guid artistId, string title, string? subtitle, string description, ArtPieceAssetKind assetKind)
     {
         if (artistId == Guid.Empty)
         {
@@ -137,8 +144,11 @@ public sealed class ArtPiece
             throw new DomainValidationException("Description length must be between 20 and 3000 characters.");
         }
 
+        var normalizedSubtitle = NormalizeSubtitle(subtitle);
+
         ArtistId = artistId;
         Title = title.Trim();
+        Subtitle = normalizedSubtitle;
         Description = normalizedDescription;
         AssetKind = assetKind;
 
@@ -190,5 +200,16 @@ public sealed class ArtPiece
         IsReported = false;
         ReportReason = null;
         ReportedAtUtc = null;
+    }
+
+    private static string NormalizeSubtitle(string? subtitle)
+    {
+        var normalizedSubtitle = subtitle?.Trim() ?? string.Empty;
+        if (normalizedSubtitle.Length > MaxSubtitleLength)
+        {
+            throw new DomainValidationException($"Subtitle must not exceed {MaxSubtitleLength} characters.");
+        }
+
+        return normalizedSubtitle;
     }
 }

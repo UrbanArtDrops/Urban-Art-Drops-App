@@ -479,5 +479,19 @@
   "globalArtPieceModerationTitle": "Global art piece moderation",
   "globalArtPieceModerationSubtitle": "Edit, delete, publish and depublish",
   "globalDropModerationTitle": "Global drop moderation",
-  "globalDropModerationSubtitle": "Edit, delete, publish and depublish"
+  "globalDropModerationSubtitle": "Edit, delete, publish and depublish",
+  "userEditProfileTitle": "Edit user profile",
+  "userEditProfileAction": "Edit profile",
+  "artPieceSubtitleLabel": "Subtitle",
+  "artPieceSubtitleTooLongError": "Subtitle must not exceed 200 characters.",
+  "dropMakerCommentLabel": "Drop-maker comment",
+  "dropMakerCommentHint": "Optional note for production, placement, or context.",
+  "dropSocialChannelsLabel": "Social channels",
+  "bootstrapAdminTitle": "Bootstrap admin",
+  "bootstrapAdminLoginHint": "No admin account exists yet. Create the first administrator before continuing.",
+  "bootstrapAdminAction": "Create first admin",
+  "bootstrapAdminDescription": "Create the initial administrator for this installation. The account is approved immediately and can configure the system afterwards.",
+  "bootstrapAdminSuccess": "Initial administrator created. Please sign in to continue.",
+  "bootstrapAdminUnavailable": "Admin bootstrap is no longer available because an administrator already exists.",
+  "bootstrapAdminLoadFailed": "Bootstrap status could not be loaded."
 }

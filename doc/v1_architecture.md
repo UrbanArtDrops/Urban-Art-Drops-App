@@ -20,6 +20,7 @@
 
 ## Core Domain Rules
 - Art piece requires title, description and at least one photo before publish
+- Art pieces support a dedicated optional subtitle field that is stored separately from the title and exposed across artist, discovery and drop-maker flows
 - Drop requires location, location photo and at least one item before publish
 - Each drop item has unique QR token
 - One claim per hunter per drop
@@ -33,6 +34,7 @@
 - Persisted draft drops can be paused after QR generation and resumed later from the My Drops list by reopening the wizard with the stored drop identifier
 - Re-entering the quantity step of the drop-maker wizard preserves existing claimed and reusable QR items instead of recreating the entire item set on every update
 - The drop-maker wizard finishes the flow by updating location coordinates, uploading local location photos as data URLs and optionally publishing the completed drop
+- Drops persist an optional drop-maker comment plus an explicit selection of target social channels so publication intent remains part of the domain model instead of UI-only state
 - Drop detail now loads persisted comments from the API, allows eligible signed-in roles to post comments, and exposes report actions for comments and linked art pieces
 - Reported comments and art pieces are persisted with reason and timestamp metadata so the moderation queue can be resolved without losing audit context
 - Artists can access reported drop comments that belong to drops created from their own art pieces, drop-makers can access reported drop comments for their own drops, and moderator/admin users continue to manage the global queue and art-piece moderation actions
@@ -51,6 +53,8 @@
 - Moderator and admin users resolve reports in a dedicated moderation queue with comment hide, report dismissal, and art-piece depublish actions
 - Runtime startup applies EF Core migrations against the configured SQL database and only bootstraps application configuration defaults
 - Debug and sample content seeding is disabled; a fresh database starts without demo users, art pieces, drops, comments, or reports
+- When no admin exists yet, the platform exposes a one-time bootstrap flow that creates the first approved and verified local admin account; later admin and moderator assignments stay inside admin user management
+- Admin user management can edit both user name and email address, in addition to approval, blocking and role changes
 - JWT signing keys must be supplied outside source control for stable environments; local development can fall back to an ephemeral in-memory signing key for the running process
 - Admin configuration is persisted in SQL and currently drives SMTP host, public app base URL, map radii and exact-position rendering behavior
 - Backup target: daily with 14-day retention

@@ -10,7 +10,13 @@ public sealed class DropDomainRulesTests
     [Fact]
     public void Publish_WhenDropHasNoLocationOrPhotos_ThrowsValidationException()
     {
-        var drop = Drop.Create(Guid.NewGuid(), Guid.NewGuid(), true, null);
+        var drop = Drop.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            true,
+            null,
+            "Placed by the alley entrance.",
+            ["Instagram", "TikTok"]);
         drop.AddItem(Guid.NewGuid().ToString("N"));
 
         Assert.Throws<DomainValidationException>(() => drop.Publish());
@@ -19,7 +25,7 @@ public sealed class DropDomainRulesTests
     [Fact]
     public void ValidateClaim_WhenAnonymousNicknameMatchesRegisteredUser_ThrowsValidationException()
     {
-        var drop = Drop.Create(Guid.NewGuid(), Guid.NewGuid(), true, null);
+        var drop = Drop.Create(Guid.NewGuid(), Guid.NewGuid(), true, null, null, []);
         drop.SetLocation(50, 8);
         drop.AddLocationPhoto(SamplePhotoBytes, "image/jpeg");
         drop.AddItem(Guid.NewGuid().ToString("N"));
@@ -37,7 +43,7 @@ public sealed class DropDomainRulesTests
     public void ValidateClaim_WhenSameHunterAlreadyClaimedAnItem_ThrowsValidationException()
     {
         var hunterId = Guid.NewGuid();
-        var drop = Drop.Create(Guid.NewGuid(), Guid.NewGuid(), true, null);
+        var drop = Drop.Create(Guid.NewGuid(), Guid.NewGuid(), true, null, null, []);
         drop.SetLocation(50, 8);
         drop.AddLocationPhoto(SamplePhotoBytes, "image/jpeg");
         drop.AddItem(Guid.NewGuid().ToString("N"));
@@ -53,7 +59,7 @@ public sealed class DropDomainRulesTests
     [Fact]
     public void ReconcileItemCount_WhenIncreasingAndThenReducing_PreservesExistingItems()
     {
-        var drop = Drop.Create(Guid.NewGuid(), Guid.NewGuid(), true, null);
+        var drop = Drop.Create(Guid.NewGuid(), Guid.NewGuid(), true, null, null, []);
         drop.AddItem("token-a");
         drop.AddItem("token-b");
 
@@ -76,12 +82,36 @@ public sealed class DropDomainRulesTests
     public void ReconcileItemCount_WhenRemovingClaimedItemsWouldBeRequired_ThrowsValidationException()
     {
         var hunterId = Guid.NewGuid();
-        var drop = Drop.Create(Guid.NewGuid(), Guid.NewGuid(), true, null);
+        var drop = Drop.Create(Guid.NewGuid(), Guid.NewGuid(), true, null, null, []);
         drop.AddItem("token-a");
         drop.AddItem("token-b");
         drop.Items.First().MarkClaimed(hunterId, null, DateTimeOffset.UtcNow);
 
         Assert.Throws<DomainValidationException>(() => drop.ReconcileItemCount(0, NextToken));
+    }
+
+    [Fact]
+    public void Create_WhenCommentAndSocialChannelsProvided_NormalizesAndKeepsDistinctChannels()
+    {
+        var drop = Drop.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            false,
+            2,
+            "  Hidden under the bronze plaque.  ",
+            ["Instagram", "instagram", " TikTok "]);
+
+        Assert.Equal("Hidden under the bronze plaque.", drop.DropMakerComment);
+        Assert.Equal(["Instagram", "TikTok"], drop.SocialChannels.Select(channel => channel.Channel));
+    }
+
+    [Fact]
+    public void UpdateDetails_WhenPortableCountExceedsItemCount_ThrowsValidationException()
+    {
+        var drop = Drop.Create(Guid.NewGuid(), Guid.NewGuid(), false, 2, null, []);
+
+        Assert.Throws<DomainValidationException>(() =>
+            drop.UpdateDetails(false, 3, null, [], itemCount: 2));
     }
 
     private static string NextToken() => Guid.NewGuid().ToString("N");

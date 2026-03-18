@@ -104,6 +104,49 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
     }
 
     [Fact]
+    public async Task BootstrapAdmin_WhenNoAdminExists_CreatesFirstAdminAndDisablesFurtherBootstrap()
+    {
+        var statusResponse = await _client.GetAsync("/api/bootstrap/status");
+        await EnsureSuccessWithBodyAsync(statusResponse);
+        var statusBefore = await statusResponse.Content.ReadFromJsonAsync<BootstrapStatusDto>();
+        Assert.NotNull(statusBefore);
+        Assert.True(statusBefore!.BootstrapRequired);
+
+        var uniqueId = Guid.NewGuid().ToString("N");
+        var bootstrapResponse = await _client.PostAsJsonAsync(
+            "/api/bootstrap/admin",
+            new
+            {
+                email = $"bootstrap.admin.{uniqueId}@example.com",
+                userName = $"bootstrap-admin-{uniqueId}",
+                password = "Aaaaaaaaaaaaaaa!"
+            });
+        await EnsureSuccessWithBodyAsync(bootstrapResponse);
+
+        var created = await bootstrapResponse.Content.ReadFromJsonAsync<ManagedUserDto>();
+        Assert.NotNull(created);
+        Assert.Equal(UserRole.Admin, created!.Role);
+        Assert.True(created.IsApproved);
+        Assert.True(created.IsEmailVerified);
+
+        var statusAfterResponse = await _client.GetAsync("/api/bootstrap/status");
+        await EnsureSuccessWithBodyAsync(statusAfterResponse);
+        var statusAfter = await statusAfterResponse.Content.ReadFromJsonAsync<BootstrapStatusDto>();
+        Assert.NotNull(statusAfter);
+        Assert.False(statusAfter!.BootstrapRequired);
+
+        var secondBootstrapResponse = await _client.PostAsJsonAsync(
+            "/api/bootstrap/admin",
+            new
+            {
+                email = $"second.admin.{uniqueId}@example.com",
+                userName = $"second-admin-{uniqueId}",
+                password = "Aaaaaaaaaaaaaaa!"
+            });
+        Assert.Equal(HttpStatusCode.Conflict, secondBootstrapResponse.StatusCode);
+    }
+
+    [Fact]
     public async Task AdminEndpoints_RequireAuthenticatedAdminToken()
     {
         var anonymousResponse = await _client.GetAsync("/api/admin/users");
@@ -157,6 +200,50 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
         Assert.False(loginResult!.RequiresMfa);
         Assert.False(string.IsNullOrWhiteSpace(loginResult.AccessToken));
         Assert.Equal("Bearer", loginResult.TokenType);
+    }
+
+    [Fact]
+    public async Task AdminUserProfilePatch_UpdatesEmailAndUserName()
+    {
+        var admin = await _factory.CreateAuthenticatedUserAsync(
+            UserRole.Admin,
+            $"admin.profile.{Guid.NewGuid():N}");
+        var managedUser = await _factory.CreateAuthenticatedUserAsync(
+            UserRole.Hunter,
+            $"hunter.profile.{Guid.NewGuid():N}");
+        var updatedEmail = $"updated.{Guid.NewGuid():N}@example.com";
+
+        var patchResponse = await _client.PatchAuthorizedAsJsonAsync(
+            $"/api/admin/users/{managedUser.Id}/profile",
+            new
+            {
+                userName = "updated-hunter-profile",
+                email = updatedEmail
+            },
+            admin.AccessToken);
+        await EnsureSuccessWithBodyAsync(patchResponse);
+
+        var oldLoginResponse = await _client.PostAsJsonAsync(
+            "/api/auth/login-local",
+            new
+            {
+                email = managedUser.Email,
+                password = "Aaaaaaaaaaaaaaa!"
+            });
+        Assert.Equal(HttpStatusCode.BadRequest, oldLoginResponse.StatusCode);
+
+        var newLoginResponse = await _client.PostAsJsonAsync(
+            "/api/auth/login-local",
+            new
+            {
+                email = updatedEmail,
+                password = "Aaaaaaaaaaaaaaa!"
+            });
+        await EnsureSuccessWithBodyAsync(newLoginResponse);
+        var loginPayload = await newLoginResponse.Content.ReadFromJsonAsync<AuthResultDto>();
+        Assert.NotNull(loginPayload);
+        Assert.Equal("updated-hunter-profile", loginPayload!.UserName);
+        Assert.Equal(updatedEmail, loginPayload.Email);
     }
 
     [Fact]
@@ -233,6 +320,18 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
         bool MfaSetupRequired,
         string? MfaChallengeToken,
         DateTimeOffset? MfaChallengeExpiresAtUtc);
+
+    private sealed record BootstrapStatusDto(bool BootstrapRequired, bool AdminUserExists, bool ModeratorBootstrapAvailable);
+
+    private sealed record ManagedUserDto(
+        Guid Id,
+        string Email,
+        string UserName,
+        UserRole Role,
+        bool IsApproved,
+        bool IsSuspended,
+        bool IsEmailVerified,
+        bool IsProviderAccount);
 
     private static async Task EnsureSuccessWithBodyAsync(HttpResponseMessage response)
     {

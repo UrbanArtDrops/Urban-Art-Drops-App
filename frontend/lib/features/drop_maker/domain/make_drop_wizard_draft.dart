@@ -16,6 +16,8 @@ class MakeDropWizardDraft {
     required this.dropMakerId,
     required this.isStationary,
     required this.portableItemCount,
+    required this.dropMakerComment,
+    required this.socialChannels,
     required this.itemCount,
     required this.downloadConfirmed,
     required this.locationLabel,
@@ -37,6 +39,8 @@ class MakeDropWizardDraft {
       dropMakerId: dropMakerId,
       isStationary: true,
       portableItemCount: null,
+      dropMakerComment: "",
+      socialChannels: const [],
       itemCount: 1,
       downloadConfirmed: false,
       locationLabel: "",
@@ -56,6 +60,8 @@ class MakeDropWizardDraft {
       dropMakerId: drop.dropMakerId,
       isStationary: drop.isStationary,
       portableItemCount: drop.portableItemCount,
+      dropMakerComment: drop.dropMakerComment ?? "",
+      socialChannels: drop.socialChannels,
       itemCount: drop.itemCount,
       downloadConfirmed: true,
       locationLabel: _buildLocationLabel(drop),
@@ -73,6 +79,8 @@ class MakeDropWizardDraft {
   final String dropMakerId;
   final bool isStationary;
   final int? portableItemCount;
+  final String dropMakerComment;
+  final List<String> socialChannels;
   final int itemCount;
   final bool downloadConfirmed;
   final String locationLabel;
@@ -100,6 +108,8 @@ class MakeDropWizardDraft {
     String? dropMakerId,
     bool? isStationary,
     int? portableItemCount,
+    String? dropMakerComment,
+    List<String>? socialChannels,
     bool clearPortableItemCount = false,
     int? itemCount,
     bool? downloadConfirmed,
@@ -121,6 +131,8 @@ class MakeDropWizardDraft {
       portableItemCount: clearPortableItemCount
           ? null
           : portableItemCount ?? this.portableItemCount,
+      dropMakerComment: dropMakerComment ?? this.dropMakerComment,
+      socialChannels: socialChannels ?? this.socialChannels,
       itemCount: itemCount ?? this.itemCount,
       downloadConfirmed: downloadConfirmed ?? this.downloadConfirmed,
       locationLabel: locationLabel ?? this.locationLabel,
@@ -134,7 +146,12 @@ class MakeDropWizardDraft {
   }
 
   MakeDropWizardDraft withPersistedDrop(DropModel drop) {
-    return copyWith(dropId: drop.id, items: drop.items);
+    return copyWith(
+      dropId: drop.id,
+      dropMakerComment: drop.dropMakerComment ?? "",
+      socialChannels: drop.socialChannels,
+      items: drop.items,
+    );
   }
 
   List<MakeDropWizardDraftValidationError> validateCreationStep() {
@@ -176,6 +193,10 @@ class MakeDropWizardDraft {
       dropMakerId: dropMakerId,
       isStationary: isStationary,
       portableItemCount: isStationary ? null : portableItemCount,
+      dropMakerComment: dropMakerComment.trim().isEmpty
+          ? null
+          : dropMakerComment.trim(),
+      socialChannels: socialChannels,
       latitude: latitude,
       longitude: longitude,
       locationPhotoUrls: locationPhotoSources,

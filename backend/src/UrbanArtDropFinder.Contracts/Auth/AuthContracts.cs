@@ -12,6 +12,13 @@ public sealed record LoginProviderRequest(string Provider, string ProviderSubjec
 
 public sealed record CompleteMfaChallengeRequest(string ChallengeToken, string Code);
 
+public sealed record BootstrapAdminRequest(string Email, string UserName, string Password);
+
+public sealed record BootstrapStatusResponse(
+    bool BootstrapRequired,
+    bool AdminUserExists,
+    bool ModeratorBootstrapAvailable);
+
 public sealed record AuthResult(
     bool Success,
     string Message,

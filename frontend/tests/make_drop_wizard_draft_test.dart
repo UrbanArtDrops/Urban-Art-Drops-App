@@ -70,6 +70,8 @@ void main() {
       dropMakerId: "maker-1",
       isStationary: true,
       portableItemCount: null,
+      dropMakerComment: "Hide near the east entrance.",
+      socialChannels: ["Instagram"],
       latitude: null,
       longitude: null,
       isPublished: false,
@@ -104,6 +106,8 @@ void main() {
     ).withPersistedDrop(drop);
 
     expect(draft.hasPersistedDrop, isTrue);
+    expect(draft.dropMakerComment, "Hide near the east entrance.");
+    expect(draft.socialChannels, ["Instagram"]);
     expect(draft.qrTokens, ["token-1", "token-2"]);
   });
 
@@ -114,6 +118,8 @@ void main() {
       dropMakerId: "maker-9",
       isStationary: false,
       portableItemCount: 2,
+      dropMakerComment: "Place after sunset.",
+      socialChannels: ["Facebook", "TikTok"],
       latitude: null,
       longitude: null,
       isPublished: false,
@@ -140,6 +146,8 @@ void main() {
     expect(draft.dropMakerId, "maker-9");
     expect(draft.isStationary, isFalse);
     expect(draft.portableItemCount, 2);
+    expect(draft.dropMakerComment, "Place after sunset.");
+    expect(draft.socialChannels, ["Facebook", "TikTok"]);
     expect(draft.itemCount, 3);
     expect(draft.qrTokens, ["token-1"]);
     expect(draft.resumeStepIndex, 4);
@@ -152,6 +160,8 @@ void main() {
       dropMakerId: "maker-9",
       isStationary: true,
       portableItemCount: null,
+      dropMakerComment: null,
+      socialChannels: [],
       latitude: 50.1,
       longitude: 8.6,
       isPublished: false,

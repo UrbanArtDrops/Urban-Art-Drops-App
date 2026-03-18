@@ -8,6 +8,7 @@ import "../../features/admin/presentation/pages/admin_content_page.dart";
 import "../../features/admin/presentation/pages/admin_user_management_page.dart";
 import "../../features/artist_area/presentation/pages/artist_art_pieces_page.dart";
 import "../../features/authentication/presentation/bloc/auth_session_cubit.dart";
+import "../../features/authentication/presentation/pages/bootstrap_admin_page.dart";
 import "../../features/authentication/presentation/pages/login_page.dart";
 import "../../features/authentication/presentation/pages/profile_page.dart";
 import "../../features/authentication/presentation/pages/register_page.dart";
@@ -85,6 +86,10 @@ GoRouter createAppRouter(AuthSessionCubit authSessionCubit) {
         builder: (context, state) => const LoginPage(),
       ),
       GoRoute(
+        path: "/auth/bootstrap-admin",
+        builder: (context, state) => const BootstrapAdminPage(),
+      ),
+      GoRoute(
         path: "/auth/profile",
         builder: (context, state) => const ProfilePage(),
       ),
@@ -132,7 +137,9 @@ GoRouter createAppRouter(AuthSessionCubit authSessionCubit) {
 }
 
 bool _isAuthRoute(String path) =>
-    path == "/auth/login" || path == "/auth/register";
+    path == "/auth/login" ||
+    path == "/auth/register" ||
+    path == "/auth/bootstrap-admin";
 
 _RouteAccess _resolveRouteAccess(String path) {
   if (path == "/auth/profile") {

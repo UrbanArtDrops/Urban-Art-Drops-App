@@ -1993,6 +1993,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit, delete, publish and depublish'**
   String get globalDropModerationSubtitle;
+
+  /// No description provided for @userEditProfileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit user profile'**
+  String get userEditProfileTitle;
+
+  /// No description provided for @userEditProfileAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit profile'**
+  String get userEditProfileAction;
+
+  /// No description provided for @artPieceSubtitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Subtitle'**
+  String get artPieceSubtitleLabel;
+
+  /// No description provided for @artPieceSubtitleTooLongError.
+  ///
+  /// In en, this message translates to:
+  /// **'Subtitle must not exceed 200 characters.'**
+  String get artPieceSubtitleTooLongError;
+
+  /// No description provided for @dropMakerCommentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop-maker comment'**
+  String get dropMakerCommentLabel;
+
+  /// No description provided for @dropMakerCommentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional note for production, placement, or context.'**
+  String get dropMakerCommentHint;
+
+  /// No description provided for @dropSocialChannelsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Social channels'**
+  String get dropSocialChannelsLabel;
+
+  /// No description provided for @bootstrapAdminTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bootstrap admin'**
+  String get bootstrapAdminTitle;
+
+  /// No description provided for @bootstrapAdminLoginHint.
+  ///
+  /// In en, this message translates to:
+  /// **'No admin account exists yet. Create the first administrator before continuing.'**
+  String get bootstrapAdminLoginHint;
+
+  /// No description provided for @bootstrapAdminAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Create first admin'**
+  String get bootstrapAdminAction;
+
+  /// No description provided for @bootstrapAdminDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Create the initial administrator for this installation. The account is approved immediately and can configure the system afterwards.'**
+  String get bootstrapAdminDescription;
+
+  /// No description provided for @bootstrapAdminSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Initial administrator created. Please sign in to continue.'**
+  String get bootstrapAdminSuccess;
+
+  /// No description provided for @bootstrapAdminUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin bootstrap is no longer available because an administrator already exists.'**
+  String get bootstrapAdminUnavailable;
+
+  /// No description provided for @bootstrapAdminLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Bootstrap status could not be loaded.'**
+  String get bootstrapAdminLoadFailed;
 }
 
 class _AppLocalizationsDelegate

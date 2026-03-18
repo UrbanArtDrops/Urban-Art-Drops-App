@@ -31,6 +31,7 @@ public sealed class ArtPieceEndpointsTests : IClassFixture<TestWebApplicationFac
         {
             artistId = Guid.NewGuid(),
             title = $"Crystal Owl {uniqueId}",
+            subtitle = "Moonlit alley edition",
             description = "This artwork description is long enough for validation.",
             assetKind = ArtPieceAssetKind.Model3d,
             photoUrls = new[] { SamplePngDataUrl },
@@ -45,6 +46,7 @@ public sealed class ArtPieceEndpointsTests : IClassFixture<TestWebApplicationFac
         Assert.NotNull(createdArtPiece);
         Assert.Equal(createRequest.artistId, createdArtPiece!.ArtistId);
         Assert.Equal(createRequest.title, createdArtPiece.Title);
+        Assert.Equal(createRequest.subtitle, createdArtPiece.Subtitle);
         Assert.Equal(ArtPieceAssetKind.Model3d, createdArtPiece.AssetKind);
         Assert.Single(createdArtPiece.Photos);
         Assert.NotNull(createdArtPiece.AssetFile);
@@ -71,6 +73,7 @@ public sealed class ArtPieceEndpointsTests : IClassFixture<TestWebApplicationFac
         {
             artistId = updatedArtistId,
             title = $"Steel Fox {uniqueId}",
+            subtitle = "Rain edition",
             description = "This updated artwork description is also long enough.",
             assetKind = ArtPieceAssetKind.Model3d,
             photoUrls = new[] { SamplePngDataUrl },
@@ -88,6 +91,7 @@ public sealed class ArtPieceEndpointsTests : IClassFixture<TestWebApplicationFac
         Assert.NotNull(updatedArtPiece);
         Assert.Equal(updatedArtistId, updatedArtPiece!.ArtistId);
         Assert.Equal(updateRequest.title, updatedArtPiece.Title);
+        Assert.Equal(updateRequest.subtitle, updatedArtPiece.Subtitle);
         Assert.Equal(ArtPieceAssetKind.Model3d, updatedArtPiece.AssetKind);
         Assert.False(updatedArtPiece.IsPublished);
         Assert.NotNull(updatedArtPiece.AssetFile);
@@ -114,6 +118,7 @@ public sealed class ArtPieceEndpointsTests : IClassFixture<TestWebApplicationFac
         Guid Id,
         Guid ArtistId,
         string Title,
+        string Subtitle,
         string Description,
         ArtPieceAssetKind AssetKind,
         bool IsPublished,

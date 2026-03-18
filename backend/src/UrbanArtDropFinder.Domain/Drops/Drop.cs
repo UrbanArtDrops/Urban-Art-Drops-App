@@ -4,22 +4,32 @@ namespace UrbanArtDropFinder.Domain.Drops;
 
 public sealed class Drop
 {
+    private const int MaxDropMakerCommentLength = 1000;
+
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid ArtPieceId { get; private set; }
     public Guid DropMakerId { get; private set; }
     public bool IsStationary { get; private set; }
     public int? PortableItemCount { get; private set; }
+    public string? DropMakerComment { get; private set; }
     public double? Latitude { get; private set; }
     public double? Longitude { get; private set; }
     public bool IsPublished { get; private set; }
     public ICollection<DropItem> Items { get; set; } = new List<DropItem>();
     public ICollection<DropLocationPhoto> LocationPhotos { get; set; } = new List<DropLocationPhoto>();
+    public ICollection<DropSocialChannelSelection> SocialChannels { get; set; } = new List<DropSocialChannelSelection>();
 
     private Drop()
     {
     }
 
-    public static Drop Create(Guid artPieceId, Guid dropMakerId, bool isStationary, int? portableItemCount)
+    public static Drop Create(
+        Guid artPieceId,
+        Guid dropMakerId,
+        bool isStationary,
+        int? portableItemCount,
+        string? dropMakerComment,
+        IEnumerable<string>? socialChannels)
     {
         if (artPieceId == Guid.Empty)
         {
@@ -36,25 +46,41 @@ public sealed class Drop
             throw new DomainValidationException("Portable drops require a positive item count.");
         }
 
-        return new Drop
+        var drop = new Drop
         {
             ArtPieceId = artPieceId,
             DropMakerId = dropMakerId,
             IsStationary = isStationary,
             PortableItemCount = isStationary ? null : portableItemCount,
+            DropMakerComment = NormalizeDropMakerComment(dropMakerComment),
             IsPublished = false
         };
+
+        drop.ReplaceSocialChannels(socialChannels);
+        return drop;
     }
 
-    public void UpdateTransportSettings(bool isStationary, int? portableItemCount)
+    public void UpdateDetails(
+        bool isStationary,
+        int? portableItemCount,
+        string? dropMakerComment,
+        IEnumerable<string>? socialChannels,
+        int itemCount)
     {
         if (!isStationary && (!portableItemCount.HasValue || portableItemCount.Value < 1))
         {
             throw new DomainValidationException("Portable drops require a positive item count.");
         }
 
+        if (!isStationary && portableItemCount > itemCount)
+        {
+            throw new DomainValidationException("Portable item count must not exceed the number of generated drop items.");
+        }
+
         IsStationary = isStationary;
         PortableItemCount = isStationary ? null : portableItemCount;
+        DropMakerComment = NormalizeDropMakerComment(dropMakerComment);
+        ReplaceSocialChannels(socialChannels);
     }
 
     public void SetLocation(double latitude, double longitude)
@@ -118,6 +144,26 @@ public sealed class Drop
         foreach (var token in qrTokens)
         {
             AddItem(token);
+        }
+    }
+
+    public void ReplaceSocialChannels(IEnumerable<string>? socialChannels)
+    {
+        SocialChannels.Clear();
+        var distinctChannels = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var rawChannel in socialChannels ?? [])
+        {
+            var normalizedChannel = DropSocialChannelSelection.NormalizeChannel(rawChannel);
+            if (!distinctChannels.Add(normalizedChannel))
+            {
+                continue;
+            }
+
+            SocialChannels.Add(new DropSocialChannelSelection
+            {
+                DropId = Id,
+                Channel = normalizedChannel
+            });
         }
     }
 
@@ -186,5 +232,21 @@ public sealed class Drop
                 item.MarkClaimed(userId, anonymousNickname, nowUtc);
             }
         }
+    }
+
+    private static string? NormalizeDropMakerComment(string? dropMakerComment)
+    {
+        var normalizedComment = dropMakerComment?.Trim();
+        if (string.IsNullOrWhiteSpace(normalizedComment))
+        {
+            return null;
+        }
+
+        if (normalizedComment.Length > MaxDropMakerCommentLength)
+        {
+            throw new DomainValidationException($"Drop maker comment must not exceed {MaxDropMakerCommentLength} characters.");
+        }
+
+        return normalizedComment;
     }
 }

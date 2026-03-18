@@ -1090,4 +1090,53 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get globalDropModerationSubtitle =>
       'Bearbeiten, löschen, veröffentlichen, depublizieren';
+
+  @override
+  String get userEditProfileTitle => 'Benutzerprofil bearbeiten';
+
+  @override
+  String get userEditProfileAction => 'Profil bearbeiten';
+
+  @override
+  String get artPieceSubtitleLabel => 'Untertitel';
+
+  @override
+  String get artPieceSubtitleTooLongError =>
+      'Der Untertitel darf maximal 200 Zeichen lang sein.';
+
+  @override
+  String get dropMakerCommentLabel => 'Kommentar des Drop-Makers';
+
+  @override
+  String get dropMakerCommentHint =>
+      'Optionale Notiz für Produktion, Platzierung oder Kontext.';
+
+  @override
+  String get dropSocialChannelsLabel => 'Social-Media-Kanäle';
+
+  @override
+  String get bootstrapAdminTitle => 'Admin-Bootstrap';
+
+  @override
+  String get bootstrapAdminLoginHint =>
+      'Es existiert noch kein Admin-Konto. Erstelle zuerst den initialen Administrator.';
+
+  @override
+  String get bootstrapAdminAction => 'Ersten Admin erstellen';
+
+  @override
+  String get bootstrapAdminDescription =>
+      'Erstelle den initialen Administrator für diese Installation. Das Konto wird sofort freigegeben und kann anschließend das System konfigurieren.';
+
+  @override
+  String get bootstrapAdminSuccess =>
+      'Der initiale Administrator wurde erstellt. Bitte melde dich jetzt an.';
+
+  @override
+  String get bootstrapAdminUnavailable =>
+      'Der Admin-Bootstrap ist nicht mehr verfügbar, weil bereits ein Administrator existiert.';
+
+  @override
+  String get bootstrapAdminLoadFailed =>
+      'Der Bootstrap-Status konnte nicht geladen werden.';
 }

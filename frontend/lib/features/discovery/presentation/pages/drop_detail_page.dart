@@ -234,6 +234,7 @@ class _DropDetailPageState extends State<DropDetailPage> {
           id: artPiece.id,
           artistId: artPiece.artistId,
           title: artPiece.title,
+          subtitle: artPiece.subtitle,
           description: artPiece.description,
           assetKind: artPiece.assetKind,
           isPublished: artPiece.isPublished,
@@ -353,8 +354,9 @@ class _DropDetailContent extends StatelessWidget {
         : (usersById[artPiece!.artistId]?.userName ?? artPiece!.artistId);
     final dropMakerName =
         usersById[drop.dropMakerId]?.userName ?? drop.dropMakerId;
-    final subtitle =
-        "${l10n.mapArtistLabel}: $artistName · ${l10n.mapDropMakerLabel}: $dropMakerName";
+    final subtitle = artPiece?.subtitle.trim().isNotEmpty == true
+        ? artPiece!.subtitle
+        : "${l10n.mapArtistLabel}: $artistName · ${l10n.mapDropMakerLabel}: $dropMakerName";
     final claimedHunters = _extractClaimedHunters(drop, usersById);
     final photos = _buildGalleryUrls(artPiece, drop);
 
@@ -367,6 +369,26 @@ class _DropDetailContent extends StatelessWidget {
         const SizedBox(height: 6),
         _withUnifiedWidth(
           Text(subtitle, style: Theme.of(context).textTheme.titleMedium),
+        ),
+        const SizedBox(height: 12),
+        _withUnifiedWidth(
+          _SectionCard(
+            title: l10n.artPieceMetadataSection,
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                Chip(
+                  avatar: const Icon(Icons.person_outline),
+                  label: Text("${l10n.mapArtistLabel}: $artistName"),
+                ),
+                Chip(
+                  avatar: const Icon(Icons.inventory_2_outlined),
+                  label: Text("${l10n.mapDropMakerLabel}: $dropMakerName"),
+                ),
+              ],
+            ),
+          ),
         ),
         const SizedBox(height: 12),
         _withUnifiedWidth(_DropDetailGallery(imageUrls: photos)),
@@ -412,6 +434,30 @@ class _DropDetailContent extends StatelessWidget {
             ),
           ),
         ),
+        if ((drop.dropMakerComment ?? "").trim().isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _withUnifiedWidth(
+            _SectionCard(
+              title: l10n.dropMakerCommentLabel,
+              child: Text(drop.dropMakerComment!.trim()),
+            ),
+          ),
+        ],
+        if (drop.socialChannels.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _withUnifiedWidth(
+            _SectionCard(
+              title: l10n.dropSocialChannelsLabel,
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: drop.socialChannels
+                    .map((channel) => Chip(label: Text(channel)))
+                    .toList(growable: false),
+              ),
+            ),
+          ),
+        ],
         const SizedBox(height: 12),
         _withUnifiedWidth(
           _SectionCard(

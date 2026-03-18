@@ -443,9 +443,15 @@ class _DropListPageState extends State<DropListPage> {
           return _DropListViewModel(
             id: drop.id,
             title: art?.title ?? l10n.dropFallbackTitle(drop.id),
-            subtitle:
-                "${l10n.mapArtistLabel}: $artistName · ${l10n.mapDropMakerLabel}: $dropMakerName",
-            description: art?.description ?? "",
+            subtitle: art?.subtitle.trim().isNotEmpty == true
+                ? art!.subtitle
+                : "${l10n.mapArtistLabel}: $artistName · ${l10n.mapDropMakerLabel}: $dropMakerName",
+            description: _buildDropListDescription(
+              artDescription: art?.description ?? "",
+              dropMakerComment: drop.dropMakerComment,
+              socialChannels: drop.socialChannels,
+              l10n: l10n,
+            ),
             artPhotoUrls: art?.photoUrls ?? const [],
             locationPhotoUrls: drop.locationPhotoUrls,
             claimedHunterNames: claimedHunterNames,
@@ -759,4 +765,30 @@ class _LocationSuggestion {
   final String label;
   final double latitude;
   final double longitude;
+}
+
+String _buildDropListDescription({
+  required String artDescription,
+  required String? dropMakerComment,
+  required List<String> socialChannels,
+  required AppLocalizations l10n,
+}) {
+  final sections = <String>[];
+  final trimmedDescription = artDescription.trim();
+  if (trimmedDescription.isNotEmpty) {
+    sections.add(trimmedDescription);
+  }
+
+  final trimmedComment = dropMakerComment?.trim();
+  if (trimmedComment != null && trimmedComment.isNotEmpty) {
+    sections.add("${l10n.dropMakerCommentLabel}: $trimmedComment");
+  }
+
+  if (socialChannels.isNotEmpty) {
+    sections.add(
+      "${l10n.dropSocialChannelsLabel}: ${socialChannels.join(", ")}",
+    );
+  }
+
+  return sections.join("\n\n");
 }

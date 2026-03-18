@@ -71,6 +71,10 @@ class ArtPieceDetailView extends StatelessWidget {
               ),
             ],
           ),
+          if (artPiece.subtitle.trim().isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(artPiece.subtitle, style: theme.textTheme.titleMedium),
+          ],
           const SizedBox(height: 20),
           _ArtPiecePhotoGallery(photoUrls: artPiece.photoUrls),
           if (artPiece.assetFile != null) ...[
@@ -178,6 +182,12 @@ class ArtPieceDetailView extends StatelessWidget {
                   _MetadataRow(
                     label: l10n.artPieceArtistLabel,
                     value: artistName,
+                  ),
+                  _MetadataRow(
+                    label: l10n.artPieceSubtitleLabel,
+                    value: artPiece.subtitle.trim().isEmpty
+                        ? "-"
+                        : artPiece.subtitle,
                   ),
                   _MetadataRow(
                     label: l10n.artPieceAssetTypeLabel,

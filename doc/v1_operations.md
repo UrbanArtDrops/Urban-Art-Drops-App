@@ -35,12 +35,14 @@
 - Hunters are approved immediately after registration, while Artist and Drop-Maker accounts remain pending until admin approval
 - Local login consumes the stored backend role and identity payload instead of accepting a client-side role selection
 - Provider login consumes the stored provider link and returns the same JWT session payload as local login
-- Admin accounts are only created or assigned through the user-management flow
+- If no admin exists yet, `/api/bootstrap/status` exposes the bootstrap state and `/api/bootstrap/admin` can create the first approved and verified local admin account
+- After the first admin exists, admin and moderator accounts are created or assigned only through the user-management flow
 - Local login returns a JWT bearer token with expiry metadata and the Flutter client attaches that token automatically to protected API calls
 - Admin and Moderator logins require a TOTP-based MFA challenge; the login call returns a setup or verification challenge and the access token is only issued after `/api/auth/mfa/complete`
 - Startup route guards redirect unauthenticated users away from protected artist, drop-maker, moderation and admin screens to `/auth/login`
 - Admin endpoints require an authenticated admin token; moderation endpoints require a moderator/admin token or the scoped artist/drop-maker ownership rules enforced by the API
 - For local development without an explicit signing key, the API can run with an ephemeral process-local JWT key; use user-secrets or environment variables when sessions must survive API restarts
+- Admin user management supports editing both user name and email address after account creation
 
 ## Backup
 - Daily backup job
@@ -68,6 +70,7 @@
 
 ## Artist Workspace
 - Artists manage artworks end-to-end in the web client: create, inspect, edit, publish, depublish and delete
+- Artwork metadata includes an optional subtitle that is editable in the artist workspace and reused in discovery and drop creation screens
 - Artwork photos are selected locally in the client and stored as binary media in the backend database
 - Model-based artworks additionally upload a binary 3D asset that remains replaceable in edit mode and downloadable from the detail view
 
@@ -77,6 +80,7 @@
 - QR review now shows the public claim URL for each generated item instead of only the raw token
 - After the QR step, the wizard can be paused and later resumed from My Drops by reopening the stored draft drop
 - Returning to the quantity step updates the draft by preserving claimed items and keeping existing reusable QR tokens whenever possible
+- Draft and persisted drops store an optional drop-maker comment plus a selected list of social channels
 - Final placement writes coordinates and location photos through `PUT /api/drops/{id}` and can publish the drop immediately afterwards
 
 ## Claim Flow

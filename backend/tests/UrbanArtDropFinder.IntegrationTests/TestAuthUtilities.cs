@@ -130,6 +130,19 @@ internal static class TestAuthUtilities
         return client.SendAuthorizedAsync(request, accessToken);
     }
 
+    public static Task<HttpResponseMessage> PatchAuthorizedAsJsonAsync<T>(
+        this HttpClient client,
+        string path,
+        T payload,
+        string accessToken)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Patch, path)
+        {
+            Content = JsonContent.Create(payload)
+        };
+        return client.SendAuthorizedAsync(request, accessToken);
+    }
+
     private static Task<HttpResponseMessage> SendAuthorizedAsync(
         this HttpClient client,
         HttpRequestMessage request,

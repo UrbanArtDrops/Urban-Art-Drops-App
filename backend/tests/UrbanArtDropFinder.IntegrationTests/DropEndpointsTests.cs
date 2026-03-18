@@ -34,6 +34,8 @@ public sealed class DropEndpointsTests : IClassFixture<TestWebApplicationFactory
             dropMakerId = Guid.NewGuid(),
             isStationary = true,
             portableItemCount = (int?)null,
+            dropMakerComment = "Placed during the midnight run.",
+            socialChannels = new[] { "Instagram", "TikTok" },
             latitude = 50.1109,
             longitude = 8.6821,
             locationPhotoUrls = new[] { SamplePngDataUrl },
@@ -45,6 +47,8 @@ public sealed class DropEndpointsTests : IClassFixture<TestWebApplicationFactory
         var createdDrop = await createResponse.Content.ReadFromJsonAsync<DropResponseDto>();
         Assert.NotNull(createdDrop);
         Assert.Equal(2, createdDrop!.Items.Count);
+        Assert.Equal(createRequest.dropMakerComment, createdDrop.DropMakerComment);
+        Assert.Equal(createRequest.socialChannels, createdDrop.SocialChannels);
         var originalTokens = createdDrop.Items.Select(item => item.QrToken).ToHashSet(StringComparer.Ordinal);
 
         var expandedResponse = await _client.PutAuthorizedAsJsonAsync(
@@ -55,6 +59,8 @@ public sealed class DropEndpointsTests : IClassFixture<TestWebApplicationFactory
                 createRequest.dropMakerId,
                 createRequest.isStationary,
                 createRequest.portableItemCount,
+                createRequest.dropMakerComment,
+                createRequest.socialChannels,
                 createRequest.latitude,
                 createRequest.longitude,
                 createRequest.locationPhotoUrls,
@@ -75,6 +81,8 @@ public sealed class DropEndpointsTests : IClassFixture<TestWebApplicationFactory
                 createRequest.dropMakerId,
                 createRequest.isStationary,
                 createRequest.portableItemCount,
+                createRequest.dropMakerComment,
+                createRequest.socialChannels,
                 createRequest.latitude,
                 createRequest.longitude,
                 createRequest.locationPhotoUrls,
@@ -125,6 +133,8 @@ public sealed class DropEndpointsTests : IClassFixture<TestWebApplicationFactory
                 createdDrop.DropMakerId,
                 createdDrop.IsStationary,
                 createdDrop.PortableItemCount,
+                createdDrop.DropMakerComment,
+                createdDrop.SocialChannels,
                 createdDrop.Latitude,
                 createdDrop.Longitude,
                 locationPhotoUrls = new[] { SamplePngDataUrl },
@@ -152,6 +162,7 @@ public sealed class DropEndpointsTests : IClassFixture<TestWebApplicationFactory
             var artPiece = ArtPiece.Create(
                 Guid.NewGuid(),
                 artPieceTitle,
+                "Subline for the QR claim test.",
                 "A descriptive mural concept with enough text to satisfy validation.",
                 ArtPieceAssetKind.Image);
             artPiece.AddPhoto([0x01], "image/png");
@@ -168,6 +179,8 @@ public sealed class DropEndpointsTests : IClassFixture<TestWebApplicationFactory
                 dropMakerId = Guid.NewGuid(),
                 isStationary = true,
                 portableItemCount = (int?)null,
+                dropMakerComment = "Placed at the museum gate.",
+                socialChannels = new[] { "Instagram" },
                 latitude = 50.1109,
                 longitude = 8.6821,
                 locationPhotoUrls = new[] { SamplePngDataUrl },
@@ -216,6 +229,8 @@ public sealed class DropEndpointsTests : IClassFixture<TestWebApplicationFactory
         Guid DropMakerId,
         bool IsStationary,
         int? PortableItemCount,
+        string? DropMakerComment,
+        IReadOnlyCollection<string> SocialChannels,
         double? Latitude,
         double? Longitude,
         bool IsPublished,

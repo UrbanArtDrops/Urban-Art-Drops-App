@@ -15,7 +15,7 @@ public sealed class DropClaimApplicationServiceTests
         var store = new InMemoryStore();
         var service = new DropClaimApplicationService(store, new FixedClock());
 
-        var drop = Drop.Create(Guid.NewGuid(), Guid.NewGuid(), true, null);
+        var drop = Drop.Create(Guid.NewGuid(), Guid.NewGuid(), true, null, null, []);
         drop.SetLocation(50, 8);
         drop.AddLocationPhoto(SamplePhotoBytes, "image/jpeg");
         drop.AddItem(Guid.NewGuid().ToString("N"));
