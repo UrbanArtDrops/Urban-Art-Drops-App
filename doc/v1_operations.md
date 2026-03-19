@@ -34,6 +34,7 @@
 - Artwork detail screens and the drop-maker wizard use the asset media URL to trigger real client-side downloads for 3D production files
 
 ## Authentication
+- Step-by-step provider setup is documented in `doc/auth_provider_setup.md`
 - Local registration persists the selected account type directly on the user account record
 - Provider registration persists provider, provider subject and role directly on the linked account record
 - Hunters are approved immediately after registration, while Artist and Drop-Maker accounts remain pending until admin approval
