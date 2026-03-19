@@ -76,6 +76,45 @@ class AppApiClient {
     return AuthResultModel.fromJson(_decodeObjectResponse(response));
   }
 
+  Future<ExternalProviderAuthStartModel> beginProviderLogin({
+    required String provider,
+    required String callbackUrl,
+  }) async {
+    final response = await _httpClient.post(
+      _uri("/api/auth/provider-login/begin"),
+      headers: _jsonHeaders(includeAuthorization: false),
+      body: jsonEncode({"provider": provider, "callbackUrl": callbackUrl}),
+    );
+    _ensureSuccess(response, "Failed to start provider login.");
+    return ExternalProviderAuthStartModel.fromJson(
+      _decodeObjectResponse(response),
+    );
+  }
+
+  Future<ExternalProviderAuthStartModel> beginProviderRegistration({
+    required String provider,
+    required String callbackUrl,
+    required String email,
+    required String userName,
+    required int role,
+  }) async {
+    final response = await _httpClient.post(
+      _uri("/api/auth/provider-register/begin"),
+      headers: _jsonHeaders(includeAuthorization: false),
+      body: jsonEncode({
+        "provider": provider,
+        "callbackUrl": callbackUrl,
+        "email": email,
+        "userName": userName,
+        "role": role,
+      }),
+    );
+    _ensureSuccess(response, "Failed to start provider registration.");
+    return ExternalProviderAuthStartModel.fromJson(
+      _decodeObjectResponse(response),
+    );
+  }
+
   Future<AuthResultModel> loginLocal({
     required String email,
     required String password,
@@ -104,6 +143,18 @@ class AppApiClient {
       }),
     );
     _ensureSuccess(response, "Failed to login with provider.");
+    return AuthResultModel.fromJson(_decodeObjectResponse(response));
+  }
+
+  Future<AuthResultModel> completeProviderAuthentication({
+    required String providerSessionId,
+  }) async {
+    final response = await _httpClient.post(
+      _uri("/api/auth/provider/complete"),
+      headers: _jsonHeaders(includeAuthorization: false),
+      body: jsonEncode({"providerSessionId": providerSessionId}),
+    );
+    _ensureSuccess(response, "Failed to complete provider authentication.");
     return AuthResultModel.fromJson(_decodeObjectResponse(response));
   }
 

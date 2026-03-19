@@ -19,6 +19,121 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
     }
 
     [Fact]
+    public async Task BeginAndCompleteExternalProviderLogin_ReturnsBearerToken()
+    {
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<UrbanArtDbContext>();
+            var user = UserAccount.CreateProvider(
+                "provider.hunter.login@example.com",
+                $"provider-hunter-{Guid.NewGuid():N}",
+                UserRole.Hunter,
+                "google",
+                approved: true);
+            dbContext.UserAccounts.Add(user);
+            dbContext.UserProviderLinks.Add(new UserProviderLink
+            {
+                UserAccountId = user.Id,
+                Provider = "google",
+                ProviderSubject = "provider-subject-hunter-login"
+            });
+            await dbContext.SaveChangesAsync();
+        }
+
+        var beginResponse = await _client.PostAsJsonAsync(
+            "/api/auth/provider-login/begin",
+            new
+            {
+                provider = "google",
+                callbackUrl = "urbanartdrops-auth://oauth/callback"
+            });
+        await EnsureSuccessWithBodyAsync(beginResponse);
+
+        var beginPayload = await beginResponse.Content.ReadFromJsonAsync<BeginExternalProviderAuthDto>();
+        Assert.NotNull(beginPayload);
+        var authorizationUri = new Uri(beginPayload!.AuthorizationUrl);
+        var state = ParseQueryParameter(authorizationUri, "state");
+        Assert.False(string.IsNullOrWhiteSpace(state));
+
+        using var redirectClient = _factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var callbackResponse = await redirectClient.GetAsync(
+            $"/api/auth/provider/callback?state={Uri.EscapeDataString(state!)}&code=hunter-login");
+        Assert.Equal(HttpStatusCode.Redirect, callbackResponse.StatusCode);
+        Assert.NotNull(callbackResponse.Headers.Location);
+        var providerSessionId = ParseQueryParameter(callbackResponse.Headers.Location!, "provider_session");
+        Assert.False(string.IsNullOrWhiteSpace(providerSessionId));
+
+        var completeResponse = await _client.PostAsJsonAsync(
+            "/api/auth/provider/complete",
+            new { providerSessionId });
+        await EnsureSuccessWithBodyAsync(completeResponse);
+
+        var completePayload = await completeResponse.Content.ReadFromJsonAsync<AuthResultDto>();
+        Assert.NotNull(completePayload);
+        Assert.True(completePayload!.Success);
+        Assert.False(completePayload.RequiresMfa);
+        Assert.False(string.IsNullOrWhiteSpace(completePayload.AccessToken));
+        Assert.Equal("Bearer", completePayload.TokenType);
+    }
+
+    [Fact]
+    public async Task BeginAndCompleteExternalProviderRegistration_CreatesProviderAccount()
+    {
+        var uniqueId = Guid.NewGuid().ToString("N");
+        var requestedEmail = $"provider.registration.{uniqueId}@example.com";
+        var requestedUserName = $"provider-registration-{uniqueId}";
+
+        var beginResponse = await _client.PostAsJsonAsync(
+            "/api/auth/provider-register/begin",
+            new
+            {
+                provider = "google",
+                callbackUrl = "urbanartdrops-auth://oauth/callback",
+                email = requestedEmail,
+                userName = requestedUserName,
+                role = UserRole.Hunter
+            });
+        await EnsureSuccessWithBodyAsync(beginResponse);
+
+        var beginPayload = await beginResponse.Content.ReadFromJsonAsync<BeginExternalProviderAuthDto>();
+        Assert.NotNull(beginPayload);
+        var authorizationUri = new Uri(beginPayload!.AuthorizationUrl);
+        var state = ParseQueryParameter(authorizationUri, "state");
+        Assert.False(string.IsNullOrWhiteSpace(state));
+
+        using var redirectClient = _factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        var callbackResponse = await redirectClient.GetAsync(
+            $"/api/auth/provider/callback?state={Uri.EscapeDataString(state!)}&code=hunter-register");
+        Assert.Equal(HttpStatusCode.Redirect, callbackResponse.StatusCode);
+        Assert.NotNull(callbackResponse.Headers.Location);
+        var providerSessionId = ParseQueryParameter(callbackResponse.Headers.Location!, "provider_session");
+        Assert.False(string.IsNullOrWhiteSpace(providerSessionId));
+
+        var completeResponse = await _client.PostAsJsonAsync(
+            "/api/auth/provider/complete",
+            new { providerSessionId });
+        await EnsureSuccessWithBodyAsync(completeResponse);
+
+        var completePayload = await completeResponse.Content.ReadFromJsonAsync<AuthResultDto>();
+        Assert.NotNull(completePayload);
+        Assert.True(completePayload!.Success);
+        Assert.Equal(UserRole.Hunter, completePayload.Role);
+
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<UrbanArtDbContext>();
+        var createdUser = dbContext.UserAccounts.Single(user =>
+            string.Equals(user.UserName, requestedUserName, StringComparison.OrdinalIgnoreCase));
+        Assert.True(createdUser.IsProviderAccount);
+        Assert.Equal("google", createdUser.Provider);
+    }
+
+    [Fact]
     public async Task RegisterLocal_ForHunter_PersistsHunterRoleAndAllowsVerifiedLogin()
     {
         var uniqueId = Guid.NewGuid().ToString("N");
@@ -321,6 +436,8 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
         string? MfaChallengeToken,
         DateTimeOffset? MfaChallengeExpiresAtUtc);
 
+    private sealed record BeginExternalProviderAuthDto(string AuthorizationUrl, DateTimeOffset ExpiresAtUtc);
+
     private sealed record BootstrapStatusDto(bool BootstrapRequired, bool AdminUserExists, bool ModeratorBootstrapAvailable);
 
     private sealed record ManagedUserDto(
@@ -342,5 +459,28 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
 
         var body = await response.Content.ReadAsStringAsync();
         throw new Xunit.Sdk.XunitException($"Unexpected status {(int)response.StatusCode}: {body}");
+    }
+
+    private static string? ParseQueryParameter(Uri uri, string name)
+    {
+        var query = uri.Query.TrimStart('?');
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return null;
+        }
+
+        foreach (var segment in query.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var parts = segment.Split('=', 2);
+            var key = Uri.UnescapeDataString(parts[0]);
+            if (!string.Equals(key, name, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            return parts.Length == 2 ? Uri.UnescapeDataString(parts[1]) : string.Empty;
+        }
+
+        return null;
     }
 }

@@ -6,13 +6,15 @@ import "package:urban_art_drops_app/l10n/app_localizations.dart";
 
 import "../../../../shared/models/app_models.dart";
 import "../../../../shared/services/app_api_client.dart";
+import "../../../../shared/services/external_provider_auth_launcher.dart";
 import "../../../../shared/widgets/page_shell.dart";
 import "../bloc/auth_session_cubit.dart";
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key, this.apiClient});
+  const LoginPage({super.key, this.apiClient, this.providerAuthLauncher});
 
   final AppApiClient? apiClient;
+  final ExternalProviderAuthLauncher? providerAuthLauncher;
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -29,10 +31,6 @@ class _LoginPageState extends State<LoginPage> {
 
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _providerEmailController =
-      TextEditingController();
-  final TextEditingController _providerSubjectController =
-      TextEditingController();
   final TextEditingController _mfaCodeController = TextEditingController();
 
   BootstrapStatusModel? _bootstrapStatus;
@@ -54,8 +52,6 @@ class _LoginPageState extends State<LoginPage> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _providerEmailController.dispose();
-    _providerSubjectController.dispose();
     _mfaCodeController.dispose();
     super.dispose();
   }
@@ -96,22 +92,37 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _loginProvider() async {
-    final l10n = AppLocalizations.of(context)!;
-    final email = _providerEmailController.text.trim();
-    final providerSubject = _providerSubjectController.text.trim();
-    if (email.isEmpty || providerSubject.isEmpty) {
-      _showSnackBar(l10n.authFillCredentialsHint);
-      return;
-    }
-
-    await _runAuthAction(
-      () => _apiClient.loginProvider(
+    await _runAuthAction(() async {
+      final l10n = AppLocalizations.of(context)!;
+      final callbackUri = _providerAuthLauncher.buildCallbackUri();
+      final beginResult = await _apiClient.beginProviderLogin(
         provider: _selectedProvider,
-        providerSubject: providerSubject,
-        email: email,
-      ),
-      fallbackEmail: email,
-    );
+        callbackUrl: callbackUri.toString(),
+      );
+      final completionUri = await _providerAuthLauncher.authenticate(
+        authorizationUrl: beginResult.authorizationUrl,
+        callbackUri: callbackUri,
+      );
+      final providerSessionId = _readProviderCallbackParameter(
+        completionUri,
+        "provider_session",
+      );
+      if (providerSessionId == null || providerSessionId.isEmpty) {
+        final providerError = _readProviderCallbackParameter(
+          completionUri,
+          "provider_error",
+        );
+        throw ApiException(
+          providerError?.isNotEmpty == true
+              ? providerError!
+              : l10n.authProviderMissingCompletionSession,
+        );
+      }
+
+      return _apiClient.completeProviderAuthentication(
+        providerSessionId: providerSessionId,
+      );
+    }, fallbackEmail: "");
   }
 
   Future<void> _completeMfa() async {
@@ -133,9 +144,7 @@ class _LoginPageState extends State<LoginPage> {
         challengeToken: challengeToken,
         code: code,
       ),
-      fallbackEmail: _providerEmailController.text.trim().isNotEmpty
-          ? _providerEmailController.text.trim()
-          : _emailController.text.trim(),
+      fallbackEmail: _emailController.text.trim(),
       resetMfaState: false,
     );
   }
@@ -165,6 +174,13 @@ class _LoginPageState extends State<LoginPage> {
       }
 
       _showSnackBar(error.message);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      final l10n = AppLocalizations.of(context)!;
+      _showSnackBar(l10n.authProviderFlowCancelledOrFailed);
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);
@@ -415,24 +431,6 @@ class _LoginPageState extends State<LoginPage> {
                           .toList(growable: false),
                     ),
                     const SizedBox(height: 12),
-                    TextField(
-                      controller: _providerEmailController,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: InputDecoration(labelText: l10n.emailLabel),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _providerSubjectController,
-                      decoration: InputDecoration(
-                        labelText: l10n.authProviderSubjectLabel,
-                      ),
-                      onSubmitted: (_) {
-                        if (!_isSaving) {
-                          _loginProvider();
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 12),
                     OutlinedButton(
                       onPressed: _isSaving ? null : _loginProvider,
                       child: Text(l10n.providerLoginTitle),
@@ -449,6 +447,35 @@ class _LoginPageState extends State<LoginPage> {
 
   AppApiClient get _apiClient {
     return widget.apiClient ?? AppApiClient();
+  }
+
+  ExternalProviderAuthLauncher get _providerAuthLauncher {
+    return widget.providerAuthLauncher ?? const ExternalProviderAuthLauncher();
+  }
+
+  String? _readProviderCallbackParameter(Uri uri, String parameterName) {
+    final queryValue = uri.queryParameters[parameterName]?.trim();
+    if (queryValue != null && queryValue.isNotEmpty) {
+      return queryValue;
+    }
+
+    final fragment = uri.fragment.trim();
+    if (fragment.isEmpty) {
+      return null;
+    }
+
+    final normalizedFragment = fragment.startsWith("?")
+        ? fragment.substring(1)
+        : fragment;
+    if (normalizedFragment.isEmpty) {
+      return null;
+    }
+
+    final fragmentParameters = Uri.splitQueryString(normalizedFragment);
+    final fragmentValue = fragmentParameters[parameterName]?.trim();
+    return fragmentValue == null || fragmentValue.isEmpty
+        ? null
+        : fragmentValue;
   }
 
   String _providerLabel(String provider) {

@@ -10,6 +10,19 @@ public sealed record LoginLocalRequest(string Email, string Password);
 
 public sealed record LoginProviderRequest(string Provider, string ProviderSubject, string Email);
 
+public sealed record BeginExternalProviderLoginRequest(string Provider, string CallbackUrl);
+
+public sealed record BeginExternalProviderRegistrationRequest(
+    string Provider,
+    string CallbackUrl,
+    string Email,
+    string UserName,
+    UserRole Role);
+
+public sealed record BeginExternalProviderAuthResponse(string AuthorizationUrl, DateTimeOffset ExpiresAtUtc);
+
+public sealed record CompleteExternalProviderAuthRequest(string ProviderSessionId);
+
 public sealed record CompleteMfaChallengeRequest(string ChallengeToken, string Code);
 
 public sealed record BootstrapAdminRequest(string Email, string UserName, string Password);

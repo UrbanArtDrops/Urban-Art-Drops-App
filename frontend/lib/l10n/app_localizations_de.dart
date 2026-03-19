@@ -692,11 +692,11 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get authProviderLoginHint =>
-      'Provider-Konten verwenden Provider, Provider-Subject und E-Mail aus der externen Identitaet.';
+      'Die Provider-Anmeldung oeffnet ein sicheres Browserfenster und kehrt nach der externen Identitaetspruefung in die App zurueck.';
 
   @override
   String get authProviderRegistrationHint =>
-      'Lege ein verknuepftes Provider-Konto ueber Provider, Provider-Subject, E-Mail und Zielrolle an.';
+      'Lege ein verknuepftes Provider-Konto mit Provider, Zielrolle und gewuenschtem Benutzernamen an. Die externe Identitaet wird in einem sicheren Browserfenster aufgeloest.';
 
   @override
   String get authProviderLabel => 'Provider';
@@ -706,6 +706,14 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get authSelectProviderHint => 'Provider auswaehlen';
+
+  @override
+  String get authProviderFlowCancelledOrFailed =>
+      'Die Provider-Anmeldung wurde abgebrochen oder ist fehlgeschlagen.';
+
+  @override
+  String get authProviderMissingCompletionSession =>
+      'Der Provider-Callback hat keine Abschluss-Session zurueckgegeben.';
 
   @override
   String get authMfaTitle => 'Zweiter Faktor';

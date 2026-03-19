@@ -9,6 +9,7 @@
 ## Security
 - Local auth with min length 16 and special character
 - Provider login and provider registration (Google, Facebook, Instagram, TikTok, Microsoft)
+- Provider auth uses a backend-coordinated OAuth 2.0 / OIDC browser flow instead of Firebase: the Flutter client asks the API for an authorization URL, opens the system browser, and completes the login only after the backend callback has exchanged the authorization code and resolved the external identity
 - App-based MFA for Admin and Moderator is enforced by the authentication boundary before an access token is issued
 - Exponential login backoff: 15s, 30s, 60s, 120s
 - Local self-registration stores the requested account role in the database at creation time; Hunters are auto-approved while Artist and Drop-Maker accounts remain pending until an admin approves them
@@ -17,6 +18,7 @@
 - Moderation and admin actions no longer trust caller-supplied user headers; the backend resolves the acting user from validated JWT claims
 - The Flutter client persists the authenticated session locally and restores it on startup so route guards and API calls continue to use the server-issued access token across app reloads
 - Provider login follows the same JWT session path as local login; privileged provider accounts also pass through the same MFA challenge and completion flow
+- External provider sessions are short-lived server-side pending/completed login states held in memory; the browser callback only returns an opaque completion session back to the app, never raw provider tokens
 - Signed-in users manage their own profile under `My profile`, including email address, display name, profile image, and app-based MFA lifecycle actions
 - Profile images are stored as binary blobs in SQL and served through dedicated media endpoints instead of file-system paths
 - The profile area also surfaces persisted in-app notifications so ownership-impacting system events can be reviewed without relying on external mail delivery
@@ -57,6 +59,8 @@
 - Moderator and admin users resolve reports in a dedicated moderation queue with comment hide, report dismissal, and art-piece depublish actions
 - Runtime startup applies EF Core migrations against the configured SQL database and only bootstraps application configuration defaults
 - Debug and sample content seeding is disabled; a fresh database starts without demo users, art pieces, drops, comments, or reports
+- External providers are configured centrally under `Authentication:ExternalProviders`; built-in provider defaults are supplied for Google, Facebook, Instagram, TikTok, and Microsoft and can be overridden per environment with client ids, secrets, scopes, endpoints, redirect URIs, PKCE, and JSON field mappings
+- Flutter Web completes browser auth through `web/auth.html`, while native/desktop clients use the custom callback scheme `urbanartdrops-auth://oauth/callback`
 - When no admin exists yet, the platform exposes a one-time bootstrap flow that creates the first approved and verified local admin account; later admin and moderator assignments stay inside admin user management
 - Admin user management can edit both user name and email address, in addition to approval, blocking and role changes
 - Self-service profile changes update the persisted account record directly; the Flutter session mirrors changed email, display name, and profile image URL locally after save

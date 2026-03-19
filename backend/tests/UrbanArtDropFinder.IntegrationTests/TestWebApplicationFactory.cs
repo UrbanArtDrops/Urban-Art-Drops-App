@@ -23,6 +23,18 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
                     ["Authentication:Jwt:Issuer"] = "UrbanArtDrops.Tests",
                     ["Authentication:Jwt:Audience"] = "UrbanArtDrops.Tests.Client",
                     ["Authentication:Jwt:SigningKey"] = "UrbanArtDrops_IntegrationTests_Only_Signing_Key_1234567890",
+                    ["Authentication:ExternalProviders:Providers:google:Enabled"] = "true",
+                    ["Authentication:ExternalProviders:Providers:google:ClientId"] = "tests-google-client-id",
+                    ["Authentication:ExternalProviders:Providers:google:ClientSecret"] = "tests-google-client-secret",
+                    ["Authentication:ExternalProviders:Providers:google:AuthorizationEndpoint"] = "https://provider.test/oauth/authorize",
+                    ["Authentication:ExternalProviders:Providers:google:TokenEndpoint"] = "https://provider.test/oauth/token",
+                    ["Authentication:ExternalProviders:Providers:google:UserInfoEndpoint"] = "https://provider.test/oauth/userinfo",
+                    ["Authentication:ExternalProviders:Providers:microsoft:Enabled"] = "true",
+                    ["Authentication:ExternalProviders:Providers:microsoft:ClientId"] = "tests-microsoft-client-id",
+                    ["Authentication:ExternalProviders:Providers:microsoft:ClientSecret"] = "tests-microsoft-client-secret",
+                    ["Authentication:ExternalProviders:Providers:microsoft:AuthorizationEndpoint"] = "https://provider.test/oauth/authorize",
+                    ["Authentication:ExternalProviders:Providers:microsoft:TokenEndpoint"] = "https://provider.test/oauth/token",
+                    ["Authentication:ExternalProviders:Providers:microsoft:UserInfoEndpoint"] = "https://provider.test/oauth/userinfo",
                     ["ConnectionStrings:SqlServer"] =
                         "Server=(localdb)\\MSSQLLocalDB;Database=UrbanArtDropFinder.Tests.Placeholder;Trusted_Connection=True;TrustServerCertificate=True"
                 });
@@ -46,6 +58,8 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
 
             services.AddDbContext<UrbanArtDbContext>(options =>
                 options.UseInMemoryDatabase(databaseName));
+            services.AddHttpClient("external-auth")
+                .ConfigurePrimaryHttpMessageHandler(() => new FakeExternalProviderHttpMessageHandler());
         });
     }
 }

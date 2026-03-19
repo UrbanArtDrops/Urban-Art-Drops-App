@@ -3,10 +3,14 @@ import "package:go_router/go_router.dart";
 import "package:urban_art_drops_app/l10n/app_localizations.dart";
 
 import "../../../../shared/services/app_api_client.dart";
+import "../../../../shared/services/external_provider_auth_launcher.dart";
 import "../../../../shared/widgets/page_shell.dart";
 
 class RegisterPage extends StatefulWidget {
-  const RegisterPage({super.key});
+  const RegisterPage({super.key, this.apiClient, this.providerAuthLauncher});
+
+  final AppApiClient? apiClient;
+  final ExternalProviderAuthLauncher? providerAuthLauncher;
 
   @override
   State<RegisterPage> createState() => _RegisterPageState();
@@ -21,15 +25,12 @@ class _RegisterPageState extends State<RegisterPage> {
     "microsoft",
   ];
 
-  final AppApiClient _apiClient = AppApiClient();
   final TextEditingController _userNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _providerUserNameController =
       TextEditingController();
   final TextEditingController _providerEmailController =
-      TextEditingController();
-  final TextEditingController _providerSubjectController =
       TextEditingController();
   int _selectedRole = 0;
   int _selectedProviderRole = 0;
@@ -43,7 +44,6 @@ class _RegisterPageState extends State<RegisterPage> {
     _passwordController.dispose();
     _providerUserNameController.dispose();
     _providerEmailController.dispose();
-    _providerSubjectController.dispose();
     super.dispose();
   }
 
@@ -102,8 +102,7 @@ class _RegisterPageState extends State<RegisterPage> {
     final l10n = AppLocalizations.of(context)!;
     final userName = _providerUserNameController.text.trim();
     final email = _providerEmailController.text.trim();
-    final providerSubject = _providerSubjectController.text.trim();
-    if (userName.isEmpty || email.isEmpty || providerSubject.isEmpty) {
+    if (userName.isEmpty || email.isEmpty) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.authFillRegistrationHint)));
@@ -112,12 +111,36 @@ class _RegisterPageState extends State<RegisterPage> {
 
     setState(() => _isSaving = true);
     try {
-      final result = await _apiClient.registerProvider(
+      final callbackUri = _providerAuthLauncher.buildCallbackUri();
+      final beginResult = await _apiClient.beginProviderRegistration(
         provider: _selectedProvider,
-        providerSubject: providerSubject,
+        callbackUrl: callbackUri.toString(),
         email: email,
         userName: userName,
         role: _selectedProviderRole,
+      );
+      final completionUri = await _providerAuthLauncher.authenticate(
+        authorizationUrl: beginResult.authorizationUrl,
+        callbackUri: callbackUri,
+      );
+      final providerSessionId = _readProviderCallbackParameter(
+        completionUri,
+        "provider_session",
+      );
+      if (providerSessionId == null || providerSessionId.isEmpty) {
+        final providerError = _readProviderCallbackParameter(
+          completionUri,
+          "provider_error",
+        );
+        throw ApiException(
+          providerError?.isNotEmpty == true
+              ? providerError!
+              : l10n.authProviderMissingCompletionSession,
+        );
+      }
+
+      final result = await _apiClient.completeProviderAuthentication(
+        providerSessionId: providerSessionId,
       );
 
       if (!mounted) {
@@ -143,6 +166,15 @@ class _RegisterPageState extends State<RegisterPage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(error.message)));
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      final l10n = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.authProviderFlowCancelledOrFailed)),
+      );
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);
@@ -278,13 +310,6 @@ class _RegisterPageState extends State<RegisterPage> {
                     decoration: InputDecoration(labelText: l10n.emailLabel),
                   ),
                   const SizedBox(height: 8),
-                  TextField(
-                    controller: _providerSubjectController,
-                    decoration: InputDecoration(
-                      labelText: l10n.authProviderSubjectLabel,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
                   DropdownButtonFormField<int>(
                     initialValue: _selectedProviderRole,
                     items: [
@@ -335,5 +360,38 @@ class _RegisterPageState extends State<RegisterPage> {
       default:
         return provider;
     }
+  }
+
+  AppApiClient get _apiClient {
+    return widget.apiClient ?? AppApiClient();
+  }
+
+  ExternalProviderAuthLauncher get _providerAuthLauncher {
+    return widget.providerAuthLauncher ?? const ExternalProviderAuthLauncher();
+  }
+
+  String? _readProviderCallbackParameter(Uri uri, String parameterName) {
+    final queryValue = uri.queryParameters[parameterName]?.trim();
+    if (queryValue != null && queryValue.isNotEmpty) {
+      return queryValue;
+    }
+
+    final fragment = uri.fragment.trim();
+    if (fragment.isEmpty) {
+      return null;
+    }
+
+    final normalizedFragment = fragment.startsWith("?")
+        ? fragment.substring(1)
+        : fragment;
+    if (normalizedFragment.isEmpty) {
+      return null;
+    }
+
+    final fragmentParameters = Uri.splitQueryString(normalizedFragment);
+    final fragmentValue = fragmentParameters[parameterName]?.trim();
+    return fragmentValue == null || fragmentValue.isEmpty
+        ? null
+        : fragmentValue;
   }
 }

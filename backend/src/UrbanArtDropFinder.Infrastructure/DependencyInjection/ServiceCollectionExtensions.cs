@@ -21,6 +21,10 @@ public static class ServiceCollectionExtensions
     {
         services
             .AddSingleton<IOptions<JwtAuthenticationOptions>>(_ => Options.Create(jwtOptions));
+        services.Configure<ExternalProviderAuthenticationOptions>(
+            configuration.GetSection(ExternalProviderAuthenticationOptions.SectionName));
+        services.AddMemoryCache();
+        services.AddHttpClient("external-auth");
 
         var persistenceProvider = configuration["Persistence:Provider"];
         if (string.Equals(persistenceProvider, "InMemory", StringComparison.OrdinalIgnoreCase))
@@ -70,6 +74,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IAccessTokenIssuer, JwtAccessTokenIssuer>();
         services.AddSingleton<IClock, SystemClock>();
         services.AddScoped<AuthApplicationService>();
+        services.AddScoped<ExternalProviderAuthFlowService>();
         services.AddScoped<DropClaimApplicationService>();
     }
 }

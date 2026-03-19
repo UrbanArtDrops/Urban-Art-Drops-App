@@ -1325,13 +1325,13 @@ abstract class AppLocalizations {
   /// No description provided for @authProviderLoginHint.
   ///
   /// In en, this message translates to:
-  /// **'Provider accounts use the provider, provider subject, and email from the external identity.'**
+  /// **'Provider sign-in opens a secure browser window and returns to the app after the external identity has been verified.'**
   String get authProviderLoginHint;
 
   /// No description provided for @authProviderRegistrationHint.
   ///
   /// In en, this message translates to:
-  /// **'Create a linked provider account with the external provider, provider subject, email, and target role.'**
+  /// **'Create a linked provider account with the external provider, the target role, and your desired username. The external identity is resolved in a secure browser window.'**
   String get authProviderRegistrationHint;
 
   /// No description provided for @authProviderLabel.
@@ -1351,6 +1351,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select a provider'**
   String get authSelectProviderHint;
+
+  /// No description provided for @authProviderFlowCancelledOrFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider authentication was cancelled or failed.'**
+  String get authProviderFlowCancelledOrFailed;
+
+  /// No description provided for @authProviderMissingCompletionSession.
+  ///
+  /// In en, this message translates to:
+  /// **'The provider callback did not return a completion session.'**
+  String get authProviderMissingCompletionSession;
 
   /// No description provided for @authMfaTitle.
   ///

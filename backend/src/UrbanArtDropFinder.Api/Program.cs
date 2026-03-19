@@ -204,6 +204,14 @@ mediaGroup.MapGet("/user-profile-images/{photoId:guid}", async (
 });
 
 var authGroup = app.MapGroup("/api/auth");
+var supportedExternalProviders = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+{
+    "google",
+    "facebook",
+    "instagram",
+    "tiktok",
+    "microsoft"
+};
 authGroup.MapPost("/register-local", async (
     RegisterLocalRequest request,
     AuthApplicationService authService,
@@ -213,21 +221,83 @@ authGroup.MapPost("/register-local", async (
     return result.Success ? Results.Ok(result) : Results.BadRequest(result);
 });
 
+authGroup.MapPost("/provider-login/begin", (
+    BeginExternalProviderLoginRequest request,
+    HttpContext httpContext,
+    ExternalProviderAuthFlowService externalProviderAuthFlowService) =>
+{
+    if (!supportedExternalProviders.Contains(request.Provider))
+    {
+        return Results.BadRequest(new AuthResult(false, "Unsupported provider for v1."));
+    }
+
+    try
+    {
+        var result = externalProviderAuthFlowService.BeginLogin(request, httpContext.Request);
+        return Results.Ok(result);
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.BadRequest(new AuthResult(false, ex.Message));
+    }
+});
+
+authGroup.MapPost("/provider-register/begin", (
+    BeginExternalProviderRegistrationRequest request,
+    HttpContext httpContext,
+    ExternalProviderAuthFlowService externalProviderAuthFlowService) =>
+{
+    if (!supportedExternalProviders.Contains(request.Provider))
+    {
+        return Results.BadRequest(new AuthResult(false, "Unsupported provider for v1."));
+    }
+
+    try
+    {
+        var result = externalProviderAuthFlowService.BeginRegistration(request, httpContext.Request);
+        return Results.Ok(result);
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.BadRequest(new AuthResult(false, ex.Message));
+    }
+});
+
+authGroup.MapGet("/provider/callback", async (
+    HttpContext httpContext,
+    ExternalProviderAuthFlowService externalProviderAuthFlowService,
+    CancellationToken cancellationToken) =>
+{
+    var callbackResult = await externalProviderAuthFlowService.HandleCallbackAsync(
+        httpContext.Request,
+        cancellationToken);
+    if (!callbackResult.IsSuccess)
+    {
+        return Results.BadRequest(new { error = callbackResult.ErrorMessage });
+    }
+
+    return Results.Redirect(callbackResult.RedirectUrl!);
+});
+
+authGroup.MapPost("/provider/complete", (
+    CompleteExternalProviderAuthRequest request,
+    ExternalProviderAuthFlowService externalProviderAuthFlowService) =>
+{
+    var result = externalProviderAuthFlowService.ConsumeCompletedAuthResult(request.ProviderSessionId);
+    if (result is null)
+    {
+        return Results.BadRequest(new AuthResult(false, "The external provider session is invalid or has expired."));
+    }
+
+    return result.Success ? Results.Ok(result) : Results.BadRequest(result);
+});
+
 authGroup.MapPost("/register-provider", async (
     RegisterProviderRequest request,
     AuthApplicationService authService,
     CancellationToken cancellationToken) =>
 {
-    var allowedProviders = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-    {
-        "google",
-        "facebook",
-        "instagram",
-        "tiktok",
-        "microsoft"
-    };
-
-    if (!allowedProviders.Contains(request.Provider))
+    if (!supportedExternalProviders.Contains(request.Provider))
     {
         return Results.BadRequest(new AuthResult(false, "Unsupported provider for v1."));
     }
@@ -250,16 +320,7 @@ authGroup.MapPost("/login-provider", async (
     AuthApplicationService authService,
     CancellationToken cancellationToken) =>
 {
-    var allowedProviders = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-    {
-        "google",
-        "facebook",
-        "instagram",
-        "tiktok",
-        "microsoft"
-    };
-
-    if (!allowedProviders.Contains(request.Provider))
+    if (!supportedExternalProviders.Contains(request.Provider))
     {
         return Results.BadRequest(new AuthResult(false, "Unsupported provider for v1."));
     }

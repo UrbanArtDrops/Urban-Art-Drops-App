@@ -684,11 +684,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get authProviderLoginHint =>
-      'Provider accounts use the provider, provider subject, and email from the external identity.';
+      'Provider sign-in opens a secure browser window and returns to the app after the external identity has been verified.';
 
   @override
   String get authProviderRegistrationHint =>
-      'Create a linked provider account with the external provider, provider subject, email, and target role.';
+      'Create a linked provider account with the external provider, the target role, and your desired username. The external identity is resolved in a secure browser window.';
 
   @override
   String get authProviderLabel => 'Provider';
@@ -698,6 +698,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get authSelectProviderHint => 'Select a provider';
+
+  @override
+  String get authProviderFlowCancelledOrFailed =>
+      'Provider authentication was cancelled or failed.';
+
+  @override
+  String get authProviderMissingCompletionSession =>
+      'The provider callback did not return a completion session.';
 
   @override
   String get authMfaTitle => 'Second factor';

@@ -84,6 +84,16 @@ public sealed class AuthApplicationService
             return new AuthResult(false, "User name already exists.");
         }
 
+        if (string.IsNullOrWhiteSpace(request.Email))
+        {
+            return new AuthResult(false, "Email is required.");
+        }
+
+        if (await _userAccountStore.EmailExistsAsync(request.Email, cancellationToken))
+        {
+            return new AuthResult(false, "Email already exists.");
+        }
+
         var approved = request.Role == UserRole.Hunter;
         var user = UserAccount.CreateProvider(request.Email, request.UserName, request.Role, request.Provider, approved);
 

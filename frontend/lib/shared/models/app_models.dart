@@ -130,6 +130,34 @@ class AuthResultModel {
   final String? mfaProvisioningUri;
 }
 
+class ExternalProviderAuthStartModel {
+  const ExternalProviderAuthStartModel({
+    required this.authorizationUrl,
+    required this.expiresAtUtc,
+  });
+
+  factory ExternalProviderAuthStartModel.fromJson(Map<String, dynamic> json) {
+    final expiresAtRaw = _readNullableString(
+      json,
+      "expiresAtUtc",
+      "ExpiresAtUtc",
+    );
+    return ExternalProviderAuthStartModel(
+      authorizationUrl: _readString(
+        json,
+        "authorizationUrl",
+        "AuthorizationUrl",
+      ),
+      expiresAtUtc: expiresAtRaw == null
+          ? null
+          : DateTime.tryParse(expiresAtRaw),
+    );
+  }
+
+  final String authorizationUrl;
+  final DateTime? expiresAtUtc;
+}
+
 class CurrentUserProfileModel {
   const CurrentUserProfileModel({
     required this.userId,
