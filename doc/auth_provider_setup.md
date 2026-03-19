@@ -19,7 +19,7 @@ Define the URLs for the environment you want to configure.
 Example for local development:
 
 - Backend base URL: `http://localhost:5143`
-- Flutter Web origin: `http://localhost:8080`
+- Flutter Web origin: `http://localhost:8080` or another local Flutter Web origin
 - Backend provider callback: `http://localhost:5143/api/auth/provider/callback`
 - Flutter Web callback page: `http://localhost:8080/auth.html`
 - Android/native callback scheme: `urbanartdrops-auth://oauth/callback`
@@ -36,6 +36,8 @@ Important:
 
 - The provider redirects to the backend callback, not directly to `auth.html`.
 - `auth.html` is only the final Flutter Web callback page after the backend has completed token exchange.
+- `5143` is the API port in the current VS Code launch configuration, not the Flutter Web port.
+- `8080` is only an example Flutter Web origin. The app uses the actual current web origin at runtime.
 
 ## Step 2: Decide which providers to enable
 
@@ -105,12 +107,13 @@ Use `dotnet user-secrets` or environment variables.
 Example with `dotnet user-secrets` for Google:
 
 ```powershell
-cd C:\src\Urban-Art-Drops-App\backend\src\UrbanArtDropFinder.Api
-dotnet user-secrets set "Authentication:ExternalProviders:AllowedCallbackOrigins:0" "http://localhost:8080"
-dotnet user-secrets set "Authentication:ExternalProviders:Providers:google:Enabled" "true"
-dotnet user-secrets set "Authentication:ExternalProviders:Providers:google:ClientId" "<google-client-id>"
-dotnet user-secrets set "Authentication:ExternalProviders:Providers:google:ClientSecret" "<google-client-secret>"
+dotnet user-secrets set --project .\backend\src\UrbanArtDropFinder.Api\UrbanArtDropFinder.Api.csproj "Authentication:ExternalProviders:AllowedCallbackOrigins:0" "http://localhost:8080"
+dotnet user-secrets set --project .\backend\src\UrbanArtDropFinder.Api\UrbanArtDropFinder.Api.csproj "Authentication:ExternalProviders:Providers:google:Enabled" "true"
+dotnet user-secrets set --project .\backend\src\UrbanArtDropFinder.Api\UrbanArtDropFinder.Api.csproj "Authentication:ExternalProviders:Providers:google:ClientId" "<google-client-id>"
+dotnet user-secrets set --project .\backend\src\UrbanArtDropFinder.Api\UrbanArtDropFinder.Api.csproj "Authentication:ExternalProviders:Providers:google:ClientSecret" "<google-client-secret>"
 ```
+
+The API project now contains a `UserSecretsId`, so these commands work directly against `UrbanArtDropFinder.Api.csproj`.
 
 Example with environment variables:
 

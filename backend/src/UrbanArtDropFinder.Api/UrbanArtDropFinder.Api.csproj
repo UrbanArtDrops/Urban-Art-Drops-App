@@ -4,6 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>UrbanArtDropFinder.Api-622c0fa5-0bdf-4cf7-873f-bf56d800d0df</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
