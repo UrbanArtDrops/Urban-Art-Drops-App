@@ -50,6 +50,21 @@ public sealed class AdminConfigurationEndpointsTests : IClassFixture<TestWebAppl
         Assert.Equal(7, payload.MiniMapRadiusKm);
         Assert.Equal(4, payload.UnclaimedDropRadiusKm);
         Assert.False(payload.ShowExactPositionWhenFullyClaimed);
+        Assert.NotEmpty(payload.AuthProviders);
+        Assert.Contains(
+            payload.AuthProviders,
+            provider => provider.Provider == "google"
+                && provider.Enabled
+                && provider.VisibleOnLogin
+                && provider.HasClientId
+                && provider.HasClientSecret);
+        Assert.Contains(
+            payload.AuthProviders,
+            provider => provider.Provider == "facebook"
+                && !provider.Enabled
+                && !provider.VisibleOnLogin
+                && !provider.HasClientId
+                && !provider.HasClientSecret);
     }
 
     [Fact]
@@ -72,7 +87,17 @@ public sealed class AdminConfigurationEndpointsTests : IClassFixture<TestWebAppl
         int MainMapRadiusKm,
         int MiniMapRadiusKm,
         int UnclaimedDropRadiusKm,
-        bool ShowExactPositionWhenFullyClaimed);
+        bool ShowExactPositionWhenFullyClaimed,
+        IReadOnlyCollection<AuthProviderStatusDto> AuthProviders);
+
+    private sealed record AuthProviderStatusDto(
+        string Provider,
+        string DisplayName,
+        bool Enabled,
+        bool VisibleOnLogin,
+        bool HasClientId,
+        bool HasClientSecret,
+        bool UsesPkce);
 
     private static async Task EnsureSuccessWithBodyAsync(HttpResponseMessage response)
     {

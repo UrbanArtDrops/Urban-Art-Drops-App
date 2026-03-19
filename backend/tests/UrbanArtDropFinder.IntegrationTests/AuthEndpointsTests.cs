@@ -19,6 +19,20 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
     }
 
     [Fact]
+    public async Task GetConfiguredExternalProviders_ReturnsOnlyProvidersVisibleOnLogin()
+    {
+        var response = await _client.GetAsync("/api/auth/providers");
+        await EnsureSuccessWithBodyAsync(response);
+
+        var payload = await response.Content.ReadFromJsonAsync<List<AvailableExternalProviderDto>>();
+        Assert.NotNull(payload);
+        Assert.Equal(2, payload!.Count);
+        Assert.Contains(payload, provider => provider.Provider == "google" && provider.DisplayName == "Google");
+        Assert.Contains(payload, provider => provider.Provider == "microsoft" && provider.DisplayName == "Microsoft");
+        Assert.DoesNotContain(payload, provider => provider.Provider == "facebook");
+    }
+
+    [Fact]
     public async Task BeginAndCompleteExternalProviderLogin_ReturnsBearerToken()
     {
         using (var scope = _factory.Services.CreateScope())
@@ -449,6 +463,8 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
         bool IsSuspended,
         bool IsEmailVerified,
         bool IsProviderAccount);
+
+    private sealed record AvailableExternalProviderDto(string Provider, string DisplayName);
 
     private static async Task EnsureSuccessWithBodyAsync(HttpResponseMessage response)
     {

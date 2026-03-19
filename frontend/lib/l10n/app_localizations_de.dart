@@ -716,6 +716,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Der Provider-Callback hat keine Abschluss-Session zurueckgegeben.';
 
   @override
+  String get authNoConfiguredProviders =>
+      'Aktuell ist kein Auth-Provider konfiguriert.';
+
+  @override
   String get authMfaTitle => 'Zweiter Faktor';
 
   @override
@@ -786,6 +790,43 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get configSaveSuccess => 'Konfiguration gespeichert.';
+
+  @override
+  String get authProviderStatusSectionTitle => 'Authentifizierungs-Provider';
+
+  @override
+  String get authProviderStatusEmpty =>
+      'Es ist kein Provider-Status verfuegbar.';
+
+  @override
+  String get authProviderStatusEnabled => 'Aktiv';
+
+  @override
+  String get authProviderStatusDisabled => 'Deaktiviert';
+
+  @override
+  String get authProviderStatusVisibleOnLogin => 'Im Login sichtbar';
+
+  @override
+  String get authProviderStatusHiddenOnLogin => 'Im Login verborgen';
+
+  @override
+  String get authProviderStatusClientIdPresent => 'Client-ID gesetzt';
+
+  @override
+  String get authProviderStatusClientIdMissing => 'Client-ID fehlt';
+
+  @override
+  String get authProviderStatusClientSecretPresent => 'Client-Secret gesetzt';
+
+  @override
+  String get authProviderStatusClientSecretMissing => 'Client-Secret fehlt';
+
+  @override
+  String get authProviderStatusPkceEnabled => 'PKCE aktiv';
+
+  @override
+  String get authProviderStatusPkceDisabled => 'PKCE inaktiv';
 
   @override
   String get usernameLabel => 'Benutzername';

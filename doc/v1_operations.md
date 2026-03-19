@@ -40,6 +40,7 @@
 - Hunters are approved immediately after registration, while Artist and Drop-Maker accounts remain pending until admin approval
 - Local login consumes the stored backend role and identity payload instead of accepting a client-side role selection
 - Provider login consumes the stored provider link and returns the same JWT session payload as local login
+- `GET /api/auth/providers` returns only the providers that are currently login-ready according to backend configuration, and the public auth screens render exactly that list
 - Provider login and registration start with `POST /api/auth/provider-login/begin` or `POST /api/auth/provider-register/begin`, redirect through the configured provider, and finish through the backend callback `/api/auth/provider/callback` plus the one-time completion endpoint `POST /api/auth/provider/complete`
 - The Flutter client follows the same browser-driven pattern as common Firebase federated-auth examples, but keeps the full token exchange on the backend and only receives the final application session
 - Each enabled provider can override endpoints, scopes, redirect URIs, PKCE behavior, token field names, and user-info JSON paths through `Authentication:ExternalProviders`
@@ -56,6 +57,7 @@
 - Local IDE launch profiles must set `ASPNETCORE_ENVIRONMENT=Development` or `DOTNET_ENVIRONMENT=Development` so the development-only JWT fallback is available during debugging
 - Local IDE launch profiles must use the API project directory as the working directory so `appsettings.json` and `appsettings.Development.json` are loaded and the SQL connection string is available at startup
 - Flutter Web must serve `frontend/web/auth.html` so the browser callback can hand the `provider_session` back into the app; Android declares the custom scheme `urbanartdrops-auth://oauth/callback` for native callback handling
+- `GET /api/admin/configuration` now returns the persisted app configuration together with the current provider-status snapshot used by the admin settings screen
 - Admin user management supports editing both user name and email address after account creation
 - Profile images are served from `/api/media/user-profile-images/{id}` and remain inside the SQL-backed persistence model
 - In-app profile notifications are available through `GET /api/profile/notifications` and can be acknowledged through `POST /api/profile/notifications/{notificationId}/mark-read`

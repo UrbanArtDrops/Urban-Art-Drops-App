@@ -1364,6 +1364,12 @@ abstract class AppLocalizations {
   /// **'The provider callback did not return a completion session.'**
   String get authProviderMissingCompletionSession;
 
+  /// No description provided for @authNoConfiguredProviders.
+  ///
+  /// In en, this message translates to:
+  /// **'No authentication providers are currently configured.'**
+  String get authNoConfiguredProviders;
+
   /// No description provided for @authMfaTitle.
   ///
   /// In en, this message translates to:
@@ -1489,6 +1495,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Configuration saved.'**
   String get configSaveSuccess;
+
+  /// No description provided for @authProviderStatusSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication providers'**
+  String get authProviderStatusSectionTitle;
+
+  /// No description provided for @authProviderStatusEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No provider status is available.'**
+  String get authProviderStatusEmpty;
+
+  /// No description provided for @authProviderStatusEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled'**
+  String get authProviderStatusEnabled;
+
+  /// No description provided for @authProviderStatusDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get authProviderStatusDisabled;
+
+  /// No description provided for @authProviderStatusVisibleOnLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Visible on login'**
+  String get authProviderStatusVisibleOnLogin;
+
+  /// No description provided for @authProviderStatusHiddenOnLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden on login'**
+  String get authProviderStatusHiddenOnLogin;
+
+  /// No description provided for @authProviderStatusClientIdPresent.
+  ///
+  /// In en, this message translates to:
+  /// **'Client ID set'**
+  String get authProviderStatusClientIdPresent;
+
+  /// No description provided for @authProviderStatusClientIdMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Client ID missing'**
+  String get authProviderStatusClientIdMissing;
+
+  /// No description provided for @authProviderStatusClientSecretPresent.
+  ///
+  /// In en, this message translates to:
+  /// **'Client secret set'**
+  String get authProviderStatusClientSecretPresent;
+
+  /// No description provided for @authProviderStatusClientSecretMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Client secret missing'**
+  String get authProviderStatusClientSecretMissing;
+
+  /// No description provided for @authProviderStatusPkceEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'PKCE enabled'**
+  String get authProviderStatusPkceEnabled;
+
+  /// No description provided for @authProviderStatusPkceDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'PKCE disabled'**
+  String get authProviderStatusPkceDisabled;
 
   /// No description provided for @usernameLabel.
   ///

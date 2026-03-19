@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 import "package:go_router/go_router.dart";
 import "package:urban_art_drops_app/l10n/app_localizations.dart";
 
+import "../../../../shared/models/app_models.dart";
 import "../../../../shared/services/app_api_client.dart";
 import "../../../../shared/services/external_provider_auth_launcher.dart";
 import "../../../../shared/widgets/page_shell.dart";
@@ -17,14 +18,6 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  static const List<String> _providers = <String>[
-    "google",
-    "facebook",
-    "instagram",
-    "tiktok",
-    "microsoft",
-  ];
-
   final TextEditingController _userNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -34,8 +27,16 @@ class _RegisterPageState extends State<RegisterPage> {
       TextEditingController();
   int _selectedRole = 0;
   int _selectedProviderRole = 0;
-  String _selectedProvider = _providers.first;
+  bool _isLoadingProviders = true;
+  List<AuthProviderOptionModel> _availableProviders = const [];
+  String? _selectedProvider;
   bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAvailableProviders();
+  }
 
   @override
   void dispose() {
@@ -45,6 +46,36 @@ class _RegisterPageState extends State<RegisterPage> {
     _providerUserNameController.dispose();
     _providerEmailController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadAvailableProviders() async {
+    try {
+      final providers = await _apiClient.getAvailableAuthProviders();
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _availableProviders = providers;
+        _selectedProvider =
+            providers.any((provider) => provider.provider == _selectedProvider)
+            ? _selectedProvider
+            : providers.isEmpty
+            ? null
+            : providers.first.provider;
+        _isLoadingProviders = false;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _availableProviders = const [];
+        _selectedProvider = null;
+        _isLoadingProviders = false;
+      });
+    }
   }
 
   Future<void> _register() async {
@@ -102,10 +133,17 @@ class _RegisterPageState extends State<RegisterPage> {
     final l10n = AppLocalizations.of(context)!;
     final userName = _providerUserNameController.text.trim();
     final email = _providerEmailController.text.trim();
+    final selectedProvider = _selectedProvider;
     if (userName.isEmpty || email.isEmpty) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.authFillRegistrationHint)));
+      return;
+    }
+    if (selectedProvider == null || selectedProvider.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.authNoConfiguredProviders)));
       return;
     }
 
@@ -113,7 +151,7 @@ class _RegisterPageState extends State<RegisterPage> {
     try {
       final callbackUri = _providerAuthLauncher.buildCallbackUri();
       final beginResult = await _apiClient.beginProviderRegistration(
-        provider: _selectedProvider,
+        provider: selectedProvider,
         callbackUrl: callbackUri.toString(),
         email: email,
         userName: userName,
@@ -263,103 +301,97 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             ),
           ),
-          const SizedBox(height: 12),
-          Card.outlined(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.providerRegisterTitle,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(l10n.authProviderRegistrationHint),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _providers
-                        .map(
-                          (provider) => ChoiceChip(
-                            label: Text(_providerLabel(provider)),
-                            selected: _selectedProvider == provider,
-                            onSelected: _isSaving
-                                ? null
-                                : (selected) {
-                                    if (selected) {
-                                      setState(
-                                        () => _selectedProvider = provider,
-                                      );
-                                    }
-                                  },
-                          ),
-                        )
-                        .toList(growable: false),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _providerUserNameController,
-                    decoration: InputDecoration(labelText: l10n.usernameLabel),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _providerEmailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: InputDecoration(labelText: l10n.emailLabel),
-                  ),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<int>(
-                    initialValue: _selectedProviderRole,
-                    items: [
-                      DropdownMenuItem(value: 0, child: Text(l10n.roleHunter)),
-                      DropdownMenuItem(value: 1, child: Text(l10n.roleArtist)),
-                      DropdownMenuItem(
-                        value: 2,
-                        child: Text(l10n.roleDropMaker),
+          if (!_isLoadingProviders && _availableProviders.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Card.outlined(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.providerRegisterTitle,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(l10n.authProviderRegistrationHint),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _availableProviders
+                          .map(
+                            (provider) => ChoiceChip(
+                              label: Text(provider.displayName),
+                              selected: _selectedProvider == provider.provider,
+                              onSelected: _isSaving
+                                  ? null
+                                  : (selected) {
+                                      if (selected) {
+                                        setState(
+                                          () => _selectedProvider =
+                                              provider.provider,
+                                        );
+                                      }
+                                    },
+                            ),
+                          )
+                          .toList(growable: false),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _providerUserNameController,
+                      decoration: InputDecoration(
+                        labelText: l10n.usernameLabel,
                       ),
-                    ],
-                    onChanged: _isSaving
-                        ? null
-                        : (value) {
-                            if (value != null) {
-                              setState(() => _selectedProviderRole = value);
-                            }
-                          },
-                    decoration: InputDecoration(labelText: l10n.roleLabel),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(_roleHint(l10n, _selectedProviderRole)),
-                  const SizedBox(height: 12),
-                  OutlinedButton(
-                    onPressed: _isSaving ? null : _registerProvider,
-                    child: Text(l10n.providerRegisterTitle),
-                  ),
-                ],
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _providerEmailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: InputDecoration(labelText: l10n.emailLabel),
+                    ),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<int>(
+                      initialValue: _selectedProviderRole,
+                      items: [
+                        DropdownMenuItem(
+                          value: 0,
+                          child: Text(l10n.roleHunter),
+                        ),
+                        DropdownMenuItem(
+                          value: 1,
+                          child: Text(l10n.roleArtist),
+                        ),
+                        DropdownMenuItem(
+                          value: 2,
+                          child: Text(l10n.roleDropMaker),
+                        ),
+                      ],
+                      onChanged: _isSaving
+                          ? null
+                          : (value) {
+                              if (value != null) {
+                                setState(() => _selectedProviderRole = value);
+                              }
+                            },
+                      decoration: InputDecoration(labelText: l10n.roleLabel),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(_roleHint(l10n, _selectedProviderRole)),
+                    const SizedBox(height: 12),
+                    OutlinedButton(
+                      onPressed: _isSaving ? null : _registerProvider,
+                      child: Text(l10n.providerRegisterTitle),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );
-  }
-
-  String _providerLabel(String provider) {
-    switch (provider) {
-      case "google":
-        return "Google";
-      case "facebook":
-        return "Facebook";
-      case "instagram":
-        return "Instagram";
-      case "tiktok":
-        return "TikTok";
-      case "microsoft":
-        return "Microsoft";
-      default:
-        return provider;
-    }
   }
 
   AppApiClient get _apiClient {

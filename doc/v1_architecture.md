@@ -19,6 +19,7 @@
 - The Flutter client persists the authenticated session locally and restores it on startup so route guards and API calls continue to use the server-issued access token across app reloads
 - Provider login follows the same JWT session path as local login; privileged provider accounts also pass through the same MFA challenge and completion flow
 - External provider sessions are short-lived server-side pending/completed login states held in memory; the browser callback only returns an opaque completion session back to the app, never raw provider tokens
+- The login and provider-registration screens render only those providers that the backend currently exposes as login-ready, so the public UI reflects actual runtime configuration instead of a static provider list
 - Signed-in users manage their own profile under `My profile`, including email address, display name, profile image, and app-based MFA lifecycle actions
 - Profile images are stored as binary blobs in SQL and served through dedicated media endpoints instead of file-system paths
 - The profile area also surfaces persisted in-app notifications so ownership-impacting system events can be reviewed without relying on external mail delivery
@@ -67,5 +68,6 @@
 - When an admin edits, publishes, depublishes, or deletes an art piece or drop, the impacted artist or drop-maker receives a persisted in-app notification linked to that entity
 - JWT signing keys must be supplied outside source control for stable environments; local development can fall back to an ephemeral in-memory signing key for the running process
 - Admin configuration is persisted in SQL and currently drives SMTP host, public app base URL, map radii and exact-position rendering behavior
+- The admin configuration screen also shows the current external-provider status snapshot from backend configuration, including login visibility, client-id presence, client-secret presence, and PKCE usage
 - Backup target: daily with 14-day retention
 - Log retention target: 30 days

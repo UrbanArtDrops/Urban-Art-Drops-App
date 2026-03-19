@@ -708,6 +708,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'The provider callback did not return a completion session.';
 
   @override
+  String get authNoConfiguredProviders =>
+      'No authentication providers are currently configured.';
+
+  @override
   String get authMfaTitle => 'Second factor';
 
   @override
@@ -778,6 +782,42 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get configSaveSuccess => 'Configuration saved.';
+
+  @override
+  String get authProviderStatusSectionTitle => 'Authentication providers';
+
+  @override
+  String get authProviderStatusEmpty => 'No provider status is available.';
+
+  @override
+  String get authProviderStatusEnabled => 'Enabled';
+
+  @override
+  String get authProviderStatusDisabled => 'Disabled';
+
+  @override
+  String get authProviderStatusVisibleOnLogin => 'Visible on login';
+
+  @override
+  String get authProviderStatusHiddenOnLogin => 'Hidden on login';
+
+  @override
+  String get authProviderStatusClientIdPresent => 'Client ID set';
+
+  @override
+  String get authProviderStatusClientIdMissing => 'Client ID missing';
+
+  @override
+  String get authProviderStatusClientSecretPresent => 'Client secret set';
+
+  @override
+  String get authProviderStatusClientSecretMissing => 'Client secret missing';
+
+  @override
+  String get authProviderStatusPkceEnabled => 'PKCE enabled';
+
+  @override
+  String get authProviderStatusPkceDisabled => 'PKCE disabled';
 
   @override
   String get usernameLabel => 'Username';

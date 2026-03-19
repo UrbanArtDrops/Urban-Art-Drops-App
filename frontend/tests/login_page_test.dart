@@ -28,6 +28,16 @@ void main() {
         );
       }
 
+      if (request.url.path == "/api/auth/providers") {
+        return http.Response(
+          jsonEncode([
+            {"provider": "google", "displayName": "Google"},
+          ]),
+          200,
+          headers: {"content-type": "application/json"},
+        );
+      }
+
       if (request.url.path == "/api/auth/login-local") {
         return http.Response(
           jsonEncode({
@@ -92,6 +102,58 @@ void main() {
     expect(find.text(l10n.providerLoginTitle), findsNothing);
   });
 
+  testWidgets("shows only configured providers returned by the API", (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final mockHttpClient = MockClient((request) async {
+      if (request.url.path == "/api/bootstrap/status") {
+        return http.Response(
+          jsonEncode({
+            "bootstrapRequired": false,
+            "adminUserExists": true,
+            "moderatorBootstrapAvailable": true,
+          }),
+          200,
+          headers: {"content-type": "application/json"},
+        );
+      }
+
+      if (request.url.path == "/api/auth/providers") {
+        return http.Response(
+          jsonEncode([
+            {"provider": "google", "displayName": "Google"},
+            {"provider": "microsoft", "displayName": "Microsoft"},
+          ]),
+          200,
+          headers: {"content-type": "application/json"},
+        );
+      }
+
+      return http.Response("Not Found", 404);
+    });
+
+    await tester.pumpWidget(
+      _LoginHarness(
+        apiClient: AppApiClient(
+          httpClient: mockHttpClient,
+          baseUrl: "http://localhost",
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(ChoiceChip, "Google"), findsOneWidget);
+    expect(find.widgetWithText(ChoiceChip, "Microsoft"), findsOneWidget);
+    expect(find.widgetWithText(ChoiceChip, "Facebook"), findsNothing);
+    expect(
+      find.widgetWithText(OutlinedButton, "Provider login"),
+      findsOneWidget,
+    );
+  });
+
   testWidgets("completes provider login through the external browser flow", (
     tester,
   ) async {
@@ -106,6 +168,16 @@ void main() {
             "adminUserExists": true,
             "moderatorBootstrapAvailable": true,
           }),
+          200,
+          headers: {"content-type": "application/json"},
+        );
+      }
+
+      if (request.url.path == "/api/auth/providers") {
+        return http.Response(
+          jsonEncode([
+            {"provider": "google", "displayName": "Google"},
+          ]),
           200,
           headers: {"content-type": "application/json"},
         );

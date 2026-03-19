@@ -23,6 +23,8 @@ public sealed record BeginExternalProviderAuthResponse(string AuthorizationUrl, 
 
 public sealed record CompleteExternalProviderAuthRequest(string ProviderSessionId);
 
+public sealed record AvailableExternalAuthProviderResponse(string Provider, string DisplayName);
+
 public sealed record CompleteMfaChallengeRequest(string ChallengeToken, string Code);
 
 public sealed record BootstrapAdminRequest(string Email, string UserName, string Password);

@@ -115,6 +115,14 @@ class AppApiClient {
     );
   }
 
+  Future<List<AuthProviderOptionModel>> getAvailableAuthProviders() async {
+    final data = await _getList(
+      "/api/auth/providers",
+      includeAuthorization: false,
+    );
+    return data.map(AuthProviderOptionModel.fromJson).toList(growable: false);
+  }
+
   Future<AuthResultModel> loginLocal({
     required String email,
     required String password,

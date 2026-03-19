@@ -221,6 +221,13 @@ authGroup.MapPost("/register-local", async (
     return result.Success ? Results.Ok(result) : Results.BadRequest(result);
 });
 
+authGroup.MapGet("/providers", (ExternalProviderStatusService providerStatusService) =>
+    Results.Ok(
+        providerStatusService.GetProviderStatuses()
+            .Where(status => status.VisibleOnLogin)
+            .Select(status => new AvailableExternalAuthProviderResponse(status.Provider, status.DisplayName))
+            .ToList()));
+
 authGroup.MapPost("/provider-login/begin", (
     BeginExternalProviderLoginRequest request,
     HttpContext httpContext,
@@ -1857,13 +1864,20 @@ discoveryGroup.MapGet("/leaderboard", async (UrbanArtDbContext dbContext, Cancel
 });
 
 var adminGroup = app.MapGroup("/api/admin");
-adminGroup.MapGet("/configuration", async (UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
-    Results.Ok(await GetConfigurationAsync(dbContext, cancellationToken)))
+adminGroup.MapGet("/configuration", async (
+    UrbanArtDbContext dbContext,
+    ExternalProviderStatusService providerStatusService,
+    CancellationToken cancellationToken) =>
+    Results.Ok(
+        ToAppConfigurationResponse(
+            await GetConfigurationAsync(dbContext, cancellationToken),
+            providerStatusService.GetProviderStatuses())))
     .RequireAuthorization(AuthPolicies.AdminOnly);
 
 adminGroup.MapPut("/configuration", async (
     UpdateAppConfigurationRequest request,
     UrbanArtDbContext dbContext,
+    ExternalProviderStatusService providerStatusService,
     CancellationToken cancellationToken) =>
 {
     var config = await GetConfigurationAsync(dbContext, cancellationToken);
@@ -1875,7 +1889,7 @@ adminGroup.MapPut("/configuration", async (
     config.ShowExactPositionWhenFullyClaimed = request.ShowExactPositionWhenFullyClaimed;
 
     await dbContext.SaveChangesAsync(cancellationToken);
-    return Results.Ok(config);
+    return Results.Ok(ToAppConfigurationResponse(config, providerStatusService.GetProviderStatuses()));
 }).RequireAuthorization(AuthPolicies.AdminOnly);
 
 adminGroup.MapGet("/users", async (UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
@@ -2077,6 +2091,31 @@ static async Task<AppConfiguration> GetConfigurationAsync(UrbanArtDbContext dbCo
     await dbContext.SaveChangesAsync(cancellationToken);
     return config;
 }
+
+static AppConfigurationResponse ToAppConfigurationResponse(
+    AppConfiguration configuration,
+    IReadOnlyCollection<ExternalProviderStatusSnapshot> providerStatuses) =>
+    new(
+        configuration.SmtpHost,
+        configuration.PublicAppBaseUrl,
+        configuration.MainMapRadiusKm,
+        configuration.MiniMapRadiusKm,
+        configuration.UnclaimedDropRadiusKm,
+        configuration.ShowExactPositionWhenFullyClaimed,
+        providerStatuses
+            .Select(ToExternalProviderConfigurationStatusResponse)
+            .ToList());
+
+static ExternalProviderConfigurationStatusResponse ToExternalProviderConfigurationStatusResponse(
+    ExternalProviderStatusSnapshot providerStatus) =>
+    new(
+        providerStatus.Provider,
+        providerStatus.DisplayName,
+        providerStatus.Enabled,
+        providerStatus.VisibleOnLogin,
+        providerStatus.HasClientId,
+        providerStatus.HasClientSecret,
+        providerStatus.UsesPkce);
 
 static string? NormalizeOptionalBaseUrl(string? value)
 {

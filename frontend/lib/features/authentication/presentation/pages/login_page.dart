@@ -21,22 +21,16 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  static const List<String> _providers = <String>[
-    "google",
-    "facebook",
-    "instagram",
-    "tiktok",
-    "microsoft",
-  ];
-
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _mfaCodeController = TextEditingController();
 
   BootstrapStatusModel? _bootstrapStatus;
   bool _isCheckingBootstrap = true;
+  bool _isLoadingProviders = true;
   bool _isSaving = false;
-  String _selectedProvider = _providers.first;
+  List<AuthProviderOptionModel> _availableProviders = const [];
+  String? _selectedProvider;
   String? _mfaChallengeToken;
   bool _mfaSetupRequired = false;
   String? _mfaManualEntryKey;
@@ -46,6 +40,7 @@ class _LoginPageState extends State<LoginPage> {
   void initState() {
     super.initState();
     _loadBootstrapStatus();
+    _loadAvailableProviders();
   }
 
   @override
@@ -76,6 +71,36 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  Future<void> _loadAvailableProviders() async {
+    try {
+      final providers = await _apiClient.getAvailableAuthProviders();
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _availableProviders = providers;
+        _selectedProvider =
+            providers.any((provider) => provider.provider == _selectedProvider)
+            ? _selectedProvider
+            : providers.isEmpty
+            ? null
+            : providers.first.provider;
+        _isLoadingProviders = false;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _availableProviders = const [];
+        _selectedProvider = null;
+        _isLoadingProviders = false;
+      });
+    }
+  }
+
   Future<void> _loginLocal() async {
     final l10n = AppLocalizations.of(context)!;
     final email = _emailController.text.trim();
@@ -94,9 +119,14 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _loginProvider() async {
     await _runAuthAction(() async {
       final l10n = AppLocalizations.of(context)!;
+      final selectedProvider = _selectedProvider;
+      if (selectedProvider == null || selectedProvider.isEmpty) {
+        throw ApiException(l10n.authNoConfiguredProviders);
+      }
+
       final callbackUri = _providerAuthLauncher.buildCallbackUri();
       final beginResult = await _apiClient.beginProviderLogin(
-        provider: _selectedProvider,
+        provider: selectedProvider,
         callbackUrl: callbackUri.toString(),
       );
       final completionUri = await _providerAuthLauncher.authenticate(
@@ -395,50 +425,54 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
-            Card.outlined(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.providerLoginTitle,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(l10n.authProviderLoginHint),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: _providers
-                          .map(
-                            (provider) => ChoiceChip(
-                              label: Text(_providerLabel(provider)),
-                              selected: _selectedProvider == provider,
-                              onSelected: _isSaving
-                                  ? null
-                                  : (selected) {
-                                      if (selected) {
-                                        setState(
-                                          () => _selectedProvider = provider,
-                                        );
-                                      }
-                                    },
-                            ),
-                          )
-                          .toList(growable: false),
-                    ),
-                    const SizedBox(height: 12),
-                    OutlinedButton(
-                      onPressed: _isSaving ? null : _loginProvider,
-                      child: Text(l10n.providerLoginTitle),
-                    ),
-                  ],
+            if (!_isLoadingProviders && _availableProviders.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Card.outlined(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.providerLoginTitle,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(l10n.authProviderLoginHint),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _availableProviders
+                            .map(
+                              (provider) => ChoiceChip(
+                                label: Text(provider.displayName),
+                                selected:
+                                    _selectedProvider == provider.provider,
+                                onSelected: _isSaving
+                                    ? null
+                                    : (selected) {
+                                        if (selected) {
+                                          setState(
+                                            () => _selectedProvider =
+                                                provider.provider,
+                                          );
+                                        }
+                                      },
+                              ),
+                            )
+                            .toList(growable: false),
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton(
+                        onPressed: _isSaving ? null : _loginProvider,
+                        child: Text(l10n.providerLoginTitle),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
         ],
       ),
@@ -476,22 +510,5 @@ class _LoginPageState extends State<LoginPage> {
     return fragmentValue == null || fragmentValue.isEmpty
         ? null
         : fragmentValue;
-  }
-
-  String _providerLabel(String provider) {
-    switch (provider) {
-      case "google":
-        return "Google";
-      case "facebook":
-        return "Facebook";
-      case "instagram":
-        return "Instagram";
-      case "tiktok":
-        return "TikTok";
-      case "microsoft":
-        return "Microsoft";
-      default:
-        return provider;
-    }
   }
 }

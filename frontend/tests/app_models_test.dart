@@ -42,6 +42,7 @@ void main() {
       "id": "art-1",
       "artistId": "artist-1",
       "title": "Crystal Owl",
+      "subtitle": "Night shift",
       "description": "Ein ausfuehrlicher Beschreibungstext fuer das Kunstwerk.",
       "assetKind": 1,
       "isPublished": false,
@@ -57,5 +58,42 @@ void main() {
     expect(artPiece.isReported, isTrue);
     expect(artPiece.reportReason, "Bitte moderieren");
     expect(artPiece.reportedAtUtc, isNotNull);
+  });
+
+  test("parses auth provider status entries on app configuration", () {
+    final configuration = AppConfigurationModel.fromJson({
+      "smtpHost": "smtp.example.test",
+      "publicAppBaseUrl": "https://app.example.test",
+      "mainMapRadiusKm": 30,
+      "miniMapRadiusKm": 5,
+      "unclaimedDropRadiusKm": 3,
+      "showExactPositionWhenFullyClaimed": true,
+      "authProviders": [
+        {
+          "provider": "google",
+          "displayName": "Google",
+          "enabled": true,
+          "visibleOnLogin": true,
+          "hasClientId": true,
+          "hasClientSecret": true,
+          "usesPkce": true,
+        },
+        {
+          "provider": "facebook",
+          "displayName": "Facebook",
+          "enabled": false,
+          "visibleOnLogin": false,
+          "hasClientId": false,
+          "hasClientSecret": false,
+          "usesPkce": false,
+        },
+      ],
+    });
+
+    expect(configuration.authProviders, hasLength(2));
+    expect(configuration.authProviders.first.provider, "google");
+    expect(configuration.authProviders.first.visibleOnLogin, isTrue);
+    expect(configuration.authProviders.last.provider, "facebook");
+    expect(configuration.authProviders.last.enabled, isFalse);
   });
 }

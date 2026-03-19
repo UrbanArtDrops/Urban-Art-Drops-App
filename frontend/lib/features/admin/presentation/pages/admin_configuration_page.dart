@@ -6,14 +6,15 @@ import "../../../../shared/services/app_api_client.dart";
 import "../../../../shared/widgets/page_shell.dart";
 
 class AdminConfigurationPage extends StatefulWidget {
-  const AdminConfigurationPage({super.key});
+  const AdminConfigurationPage({super.key, this.apiClient});
+
+  final AppApiClient? apiClient;
 
   @override
   State<AdminConfigurationPage> createState() => _AdminConfigurationPageState();
 }
 
 class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
-  final AppApiClient _apiClient = AppApiClient();
   final TextEditingController _smtpHostController = TextEditingController();
   final TextEditingController _publicAppBaseUrlController =
       TextEditingController();
@@ -24,6 +25,7 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
   final TextEditingController _unclaimedRadiusController =
       TextEditingController();
 
+  AppConfigurationModel _configuration = AppConfigurationModel.defaults;
   bool _showExactPositionWhenFullyClaimed = true;
   bool _isLoading = true;
   bool _isSaving = false;
@@ -76,6 +78,7 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
   }
 
   void _applyConfiguration(AppConfigurationModel configuration) {
+    _configuration = configuration;
     _smtpHostController.text = configuration.smtpHost;
     _publicAppBaseUrlController.text = configuration.publicAppBaseUrl;
     _mainMapRadiusController.text = configuration.mainMapRadiusKm.toString();
@@ -210,6 +213,79 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
                         },
                   title: Text(l10n.showExactPositionSetting),
                 ),
+                const SizedBox(height: 12),
+                Text(
+                  l10n.authProviderStatusSectionTitle,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                if (_configuration.authProviders.isEmpty)
+                  Text(l10n.authProviderStatusEmpty)
+                else
+                  ..._configuration.authProviders.map(
+                    (provider) => Card.outlined(
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        title: Text(provider.displayName),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                _StatusChip(
+                                  label: provider.enabled
+                                      ? l10n.authProviderStatusEnabled
+                                      : l10n.authProviderStatusDisabled,
+                                  color: provider.enabled
+                                      ? Colors.green
+                                      : Colors.grey,
+                                ),
+                                _StatusChip(
+                                  label: provider.visibleOnLogin
+                                      ? l10n.authProviderStatusVisibleOnLogin
+                                      : l10n.authProviderStatusHiddenOnLogin,
+                                  color: provider.visibleOnLogin
+                                      ? Colors.blue
+                                      : Colors.orange,
+                                ),
+                                _StatusChip(
+                                  label: provider.hasClientId
+                                      ? l10n.authProviderStatusClientIdPresent
+                                      : l10n.authProviderStatusClientIdMissing,
+                                  color: provider.hasClientId
+                                      ? Colors.green
+                                      : Colors.red,
+                                ),
+                                _StatusChip(
+                                  label: provider.hasClientSecret
+                                      ? l10n.authProviderStatusClientSecretPresent
+                                      : l10n.authProviderStatusClientSecretMissing,
+                                  color: provider.hasClientSecret
+                                      ? Colors.green
+                                      : Colors.red,
+                                ),
+                                _StatusChip(
+                                  label: provider.usesPkce
+                                      ? l10n.authProviderStatusPkceEnabled
+                                      : l10n.authProviderStatusPkceDisabled,
+                                  color: provider.usesPkce
+                                      ? Colors.teal
+                                      : Colors.blueGrey,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 12),
                 FilledButton(
                   onPressed: _isSaving ? null : _saveConfiguration,
                   child: _isSaving
@@ -222,6 +298,24 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
                 ),
               ],
             ),
+    );
+  }
+
+  AppApiClient get _apiClient => widget.apiClient ?? AppApiClient();
+}
+
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Chip(
+      label: Text(label),
+      side: BorderSide(color: color.withValues(alpha: 0.4)),
+      backgroundColor: color.withValues(alpha: 0.12),
     );
   }
 }

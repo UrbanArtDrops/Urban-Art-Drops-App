@@ -23,6 +23,16 @@ void main() {
       var beginCalled = false;
       var completeCalled = false;
       final mockHttpClient = MockClient((request) async {
+        if (request.url.path == "/api/auth/providers") {
+          return http.Response(
+            jsonEncode([
+              {"provider": "google", "displayName": "Google"},
+            ]),
+            200,
+            headers: {"content-type": "application/json"},
+          );
+        }
+
         if (request.url.path == "/api/auth/provider-register/begin") {
           beginCalled = true;
           return http.Response(

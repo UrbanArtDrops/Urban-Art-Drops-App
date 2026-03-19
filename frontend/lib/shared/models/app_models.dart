@@ -158,6 +158,57 @@ class ExternalProviderAuthStartModel {
   final DateTime? expiresAtUtc;
 }
 
+class AuthProviderOptionModel {
+  const AuthProviderOptionModel({
+    required this.provider,
+    required this.displayName,
+  });
+
+  factory AuthProviderOptionModel.fromJson(Map<String, dynamic> json) {
+    return AuthProviderOptionModel(
+      provider: _readString(json, "provider", "Provider"),
+      displayName: _readString(json, "displayName", "DisplayName"),
+    );
+  }
+
+  final String provider;
+  final String displayName;
+}
+
+class AuthProviderConfigurationStatusModel {
+  const AuthProviderConfigurationStatusModel({
+    required this.provider,
+    required this.displayName,
+    required this.enabled,
+    required this.visibleOnLogin,
+    required this.hasClientId,
+    required this.hasClientSecret,
+    required this.usesPkce,
+  });
+
+  factory AuthProviderConfigurationStatusModel.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    return AuthProviderConfigurationStatusModel(
+      provider: _readString(json, "provider", "Provider"),
+      displayName: _readString(json, "displayName", "DisplayName"),
+      enabled: _readBool(json, "enabled", "Enabled"),
+      visibleOnLogin: _readBool(json, "visibleOnLogin", "VisibleOnLogin"),
+      hasClientId: _readBool(json, "hasClientId", "HasClientId"),
+      hasClientSecret: _readBool(json, "hasClientSecret", "HasClientSecret"),
+      usesPkce: _readBool(json, "usesPkce", "UsesPkce"),
+    );
+  }
+
+  final String provider;
+  final String displayName;
+  final bool enabled;
+  final bool visibleOnLogin;
+  final bool hasClientId;
+  final bool hasClientSecret;
+  final bool usesPkce;
+}
+
 class CurrentUserProfileModel {
   const CurrentUserProfileModel({
     required this.userId,
@@ -752,9 +803,11 @@ class AppConfigurationModel {
     required this.miniMapRadiusKm,
     required this.unclaimedDropRadiusKm,
     required this.showExactPositionWhenFullyClaimed,
+    required this.authProviders,
   });
 
   factory AppConfigurationModel.fromJson(Map<String, dynamic> json) {
+    final providerEntries = _readList(json, "authProviders", "AuthProviders");
     return AppConfigurationModel(
       smtpHost: _readString(json, "smtpHost", "SmtpHost"),
       publicAppBaseUrl: _readString(
@@ -774,6 +827,10 @@ class AppConfigurationModel {
         "showExactPositionWhenFullyClaimed",
         "ShowExactPositionWhenFullyClaimed",
       ),
+      authProviders: providerEntries
+          .whereType<Map<String, dynamic>>()
+          .map(AuthProviderConfigurationStatusModel.fromJson)
+          .toList(growable: false),
     );
   }
 
@@ -784,6 +841,7 @@ class AppConfigurationModel {
     miniMapRadiusKm: 5,
     unclaimedDropRadiusKm: 3,
     showExactPositionWhenFullyClaimed: true,
+    authProviders: [],
   );
 
   final String smtpHost;
@@ -792,6 +850,7 @@ class AppConfigurationModel {
   final int miniMapRadiusKm;
   final int unclaimedDropRadiusKm;
   final bool showExactPositionWhenFullyClaimed;
+  final List<AuthProviderConfigurationStatusModel> authProviders;
 }
 
 class ClaimPreviewModel {
