@@ -7,6 +7,7 @@ import "package:urban_art_drops_app/features/discovery/presentation/pages/leader
 import "package:urban_art_drops_app/l10n/app_localizations.dart";
 import "package:urban_art_drops_app/shared/models/app_models.dart";
 import "package:urban_art_drops_app/shared/services/app_api_client.dart";
+import "package:urban_art_drops_app/shared/widgets/user_avatar.dart";
 
 void main() {
   testWidgets(
@@ -38,10 +39,13 @@ void main() {
       await tester.pumpAndSettle();
 
       final ownEntryKey = const ValueKey("leaderboard-entry-user:user-15");
+      final ownAvatarKey = const ValueKey("leaderboard-avatar-user:user-15");
       final ownDropTitle = "Ranked Drop 15";
 
       expect(find.byKey(ownEntryKey), findsOneWidget);
+      expect(find.byKey(ownAvatarKey), findsOneWidget);
       expect(find.text(ownDropTitle), findsOneWidget);
+      expect(find.byType(UserAvatar), findsWidgets);
 
       final ownEntryCard = tester.widget<Card>(find.byKey(ownEntryKey));
       final theme = ThemeData(useMaterial3: true);
@@ -200,7 +204,7 @@ List<ManagedUser> _buildUsers(int count) {
       isSuspended: false,
       isEmailVerified: true,
       isProviderAccount: false,
-      profileImageUrl: null,
+      profileImageUrl: "https://example.com/hunter-$rank.png",
     );
   }, growable: false);
 }

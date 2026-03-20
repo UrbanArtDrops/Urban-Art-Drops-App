@@ -7,6 +7,7 @@ import "../../../authentication/presentation/bloc/auth_session_cubit.dart";
 import "../../../../shared/models/app_models.dart";
 import "../../../../shared/services/app_api_client.dart";
 import "../../../../shared/widgets/page_shell.dart";
+import "../../../../shared/widgets/user_avatar.dart";
 
 class LeaderboardPage extends StatefulWidget {
   const LeaderboardPage({super.key, AppApiClient? apiClient})
@@ -94,6 +95,10 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
             () => _HunterAggregate(
               hunterKey: hunterKey,
               displayName: hunterDisplayName,
+              profileImageUrl: _resolveHunterProfileImageUrl(
+                item: item,
+                usersById: usersById,
+              ),
             ),
           );
           aggregate.totalClaims += 1;
@@ -117,6 +122,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                 (aggregate) => _LeaderboardViewModel(
                   hunterKey: aggregate.hunterKey,
                   hunterName: aggregate.displayName,
+                  hunterProfileImageUrl: aggregate.profileImageUrl,
                   claims: aggregate.totalClaims,
                   isCurrentUser: aggregate.hunterKey == currentHunterKey,
                   claimedDrops:
@@ -261,13 +267,28 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                           horizontal: 12,
                           vertical: 2,
                         ),
-                        title: Text(
-                          l10n.rankEntry("$rank", entry.hunterName),
-                          style: entry.isCurrentUser
-                              ? theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                )
-                              : null,
+                        title: Row(
+                          children: [
+                            UserAvatar(
+                              key: ValueKey(
+                                "leaderboard-avatar-${entry.hunterKey}",
+                              ),
+                              displayName: entry.hunterName,
+                              imageUrl: entry.hunterProfileImageUrl,
+                              radius: 18,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                l10n.rankEntry("$rank", entry.hunterName),
+                                style: entry.isCurrentUser
+                                    ? theme.textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                      )
+                                    : null,
+                              ),
+                            ),
+                          ],
                         ),
                         subtitle: Text(
                           l10n.leaderboardClaimCount("${entry.claims}"),
@@ -340,10 +361,23 @@ String _resolveHunterDisplayName({
   return l10n.leaderboardAnonymousFallback;
 }
 
+String? _resolveHunterProfileImageUrl({
+  required DropItemModel item,
+  required Map<String, ManagedUser> usersById,
+}) {
+  final claimedByUserId = item.claimedByUserId;
+  if (claimedByUserId == null || claimedByUserId.isEmpty) {
+    return null;
+  }
+
+  return usersById[claimedByUserId]?.profileImageUrl;
+}
+
 class _LeaderboardViewModel {
   const _LeaderboardViewModel({
     required this.hunterKey,
     required this.hunterName,
+    required this.hunterProfileImageUrl,
     required this.claims,
     required this.isCurrentUser,
     required this.claimedDrops,
@@ -351,6 +385,7 @@ class _LeaderboardViewModel {
 
   final String hunterKey;
   final String hunterName;
+  final String? hunterProfileImageUrl;
   final int claims;
   final bool isCurrentUser;
   final List<_ClaimedDropSummary> claimedDrops;
@@ -380,10 +415,15 @@ class _ClaimedDropSummary {
 }
 
 class _HunterAggregate {
-  _HunterAggregate({required this.hunterKey, required this.displayName});
+  _HunterAggregate({
+    required this.hunterKey,
+    required this.displayName,
+    required this.profileImageUrl,
+  });
 
   final String hunterKey;
   final String displayName;
+  final String? profileImageUrl;
   int totalClaims = 0;
   final Map<String, _ClaimedDropSummary> claimedDrops = {};
 }

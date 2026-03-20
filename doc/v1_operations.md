@@ -122,6 +122,7 @@
 - The leaderboard derives hunter ranks from claimed drop items and expands the signed-in hunter entry automatically when it exists
 - Signed-in users are highlighted visually, scrolled into the vertical center of the page on load, and see their claimed drops opened by default
 - Rank medals are rendered as gold for place 1, silver for places 2 through 20, and bronze for places 21 through 50
+- Registered hunters are rendered with their stored profile image avatar in the leaderboard when one is available
 
 ## Claim Flow
 - `GET /api/claims/by-token/{qrToken}` returns a claim preview for app and browser fallback
