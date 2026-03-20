@@ -80,6 +80,12 @@ class PageShell extends StatelessWidget {
                               title: Text(entry.title),
                               onTap: () {
                                 Navigator.of(context).pop();
+                                if (entry.isSignOut) {
+                                  context.read<AuthSessionCubit>().signOut();
+                                  context.go("/");
+                                  return;
+                                }
+
                                 if (entry.path.isNotEmpty) {
                                   context.go(entry.path);
                                 }
@@ -166,28 +172,41 @@ List<_NavigationEntry> _buildNavigationEntries(
     if (isAdmin)
       _NavigationEntry("/admin/users", l10n.menuUsers, Icons.groups_outlined),
     const _NavigationEntry.divider(),
-    _NavigationEntry("/auth/login", l10n.navLogin, Icons.login_outlined),
-    _NavigationEntry(
-      "/auth/register",
-      l10n.navRegister,
-      Icons.person_add_outlined,
-    ),
+    if (isAuthenticated)
+      _NavigationEntry.signOut(l10n.logoutButton, Icons.logout_outlined),
+    if (!isAuthenticated)
+      _NavigationEntry("/auth/login", l10n.navLogin, Icons.login_outlined),
+    if (!isAuthenticated)
+      _NavigationEntry(
+        "/auth/register",
+        l10n.navRegister,
+        Icons.person_add_outlined,
+      ),
   ];
 
   return entries;
 }
 
 class _NavigationEntry {
-  const _NavigationEntry(this.path, this.title, this.icon) : isDivider = false;
+  const _NavigationEntry(this.path, this.title, this.icon)
+    : isDivider = false,
+      isSignOut = false;
+
+  const _NavigationEntry.signOut(this.title, this.icon)
+    : path = "",
+      isDivider = false,
+      isSignOut = true;
 
   const _NavigationEntry.divider()
     : path = "",
       title = "",
       icon = Icons.horizontal_rule,
-      isDivider = true;
+      isDivider = true,
+      isSignOut = false;
 
   final String path;
   final String title;
   final IconData icon;
   final bool isDivider;
+  final bool isSignOut;
 }

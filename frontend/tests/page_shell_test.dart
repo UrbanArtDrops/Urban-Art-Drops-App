@@ -112,6 +112,39 @@ void main() {
 
     expect(_drawerTitles(tester), contains("My drops"));
   });
+
+  testWidgets(
+    "shows logout and hides login/register when the user is authenticated",
+    (tester) async {
+      await tester.pumpWidget(
+        _TestHarness(
+          role: AppUserRole.hunter,
+          child: const PageShell(title: "Test", body: SizedBox.shrink()),
+        ),
+      );
+
+      final titles = _drawerTitles(tester);
+      expect(titles, contains("Logout"));
+      expect(titles, isNot(contains("Login")));
+      expect(titles, isNot(contains("Register")));
+    },
+  );
+
+  testWidgets(
+    "shows login/register and hides logout when the user is anonymous",
+    (tester) async {
+      await tester.pumpWidget(
+        _TestHarness(
+          child: const PageShell(title: "Test", body: SizedBox.shrink()),
+        ),
+      );
+
+      final titles = _drawerTitles(tester);
+      expect(titles, contains("Login"));
+      expect(titles, contains("Register"));
+      expect(titles, isNot(contains("Logout")));
+    },
+  );
 }
 
 class _TestHarness extends StatelessWidget {

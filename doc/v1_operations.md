@@ -53,6 +53,7 @@
 - Authenticated users can start MFA setup through `/api/profile/mfa/setup` and disable an existing authenticator through `/api/profile/mfa/disable`
 - Hunters can submit role applications through `POST /api/profile/role-application`, and the profile response includes the pending target role plus the request timestamp
 - Startup route guards redirect unauthenticated users away from protected artist, drop-maker, moderation and admin screens to `/auth/login`
+- The drawer navigation hides login/register entries for authenticated sessions and exposes a logout action instead
 - Admin endpoints require an authenticated admin token; moderation endpoints require a moderator/admin token or the scoped artist/drop-maker ownership rules enforced by the API
 - For local development without an explicit signing key, the API can run with an ephemeral process-local JWT key; use user-secrets or environment variables when sessions must survive API restarts
 - Local IDE launch profiles must set `ASPNETCORE_ENVIRONMENT=Development` or `DOTNET_ENVIRONMENT=Development` so the development-only JWT fallback is available during debugging
