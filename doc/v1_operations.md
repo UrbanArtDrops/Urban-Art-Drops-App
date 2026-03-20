@@ -35,9 +35,9 @@
 
 ## Authentication
 - Step-by-step provider setup is documented in `doc/auth_provider_setup.md`
-- Local registration persists the selected account type directly on the user account record
-- Provider registration persists provider, provider subject and role directly on the linked account record
-- Hunters are approved immediately after registration, while Artist and Drop-Maker accounts remain pending until admin approval
+- Local and provider self-service registration always create an approved Hunter account
+- Provider registration still persists provider and provider subject on the linked account record, but role upgrades happen later through the user profile
+- Hunters request Artist or Drop-Maker access from `My profile`, and admin user management approves or rejects those pending role applications
 - Local login consumes the stored backend role and identity payload instead of accepting a client-side role selection
 - Provider login consumes the stored provider link and returns the same JWT session payload as local login
 - `GET /api/auth/providers` returns only the providers that are currently login-ready according to backend configuration, and the public auth screens render exactly that list
@@ -51,6 +51,7 @@
 - While an MFA setup or verification challenge is active, the login screen hides the other authentication forms and shows only the MFA step
 - Authenticated users can call `/api/profile` to read or update their own email address, display name, and optional profile image without entering the admin area
 - Authenticated users can start MFA setup through `/api/profile/mfa/setup` and disable an existing authenticator through `/api/profile/mfa/disable`
+- Hunters can submit role applications through `POST /api/profile/role-application`, and the profile response includes the pending target role plus the request timestamp
 - Startup route guards redirect unauthenticated users away from protected artist, drop-maker, moderation and admin screens to `/auth/login`
 - Admin endpoints require an authenticated admin token; moderation endpoints require a moderator/admin token or the scoped artist/drop-maker ownership rules enforced by the API
 - For local development without an explicit signing key, the API can run with an ephemeral process-local JWT key; use user-secrets or environment variables when sessions must survive API restarts
@@ -59,6 +60,7 @@
 - Flutter Web must serve `frontend/web/auth.html` so the browser callback can hand the `provider_session` back into the app; Android declares the custom scheme `urbanartdrops-auth://oauth/callback` for native callback handling
 - `GET /api/admin/configuration` now returns the persisted app configuration together with the current provider-status snapshot used by the admin settings screen
 - Admin user management supports editing both user name and email address after account creation
+- Admin user management also exposes approve/reject actions for pending Hunter role applications to Artist or Drop-Maker
 - Profile images are served from `/api/media/user-profile-images/{id}` and remain inside the SQL-backed persistence model
 - In-app profile notifications are available through `GET /api/profile/notifications` and can be acknowledged through `POST /api/profile/notifications/{notificationId}/mark-read`
 

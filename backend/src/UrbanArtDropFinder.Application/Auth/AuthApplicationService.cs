@@ -37,11 +37,6 @@ public sealed class AuthApplicationService
             return new AuthResult(false, validation.Error ?? "Invalid password");
         }
 
-        if (request.Role is UserRole.Admin or UserRole.Moderator)
-        {
-            return new AuthResult(false, "Admins and moderators must be created manually.");
-        }
-
         if (await _userAccountStore.EmailExistsAsync(request.Email, cancellationToken))
         {
             return new AuthResult(false, "Email already exists.");
@@ -52,27 +47,17 @@ public sealed class AuthApplicationService
             return new AuthResult(false, "User name already exists.");
         }
 
-        var approved = request.Role == UserRole.Hunter;
         var hash = _passwordHasher.Hash(request.Password);
-        var user = UserAccount.CreateLocal(request.Email, request.UserName, request.Role, hash, approved);
+        var user = UserAccount.CreateLocal(request.Email, request.UserName, UserRole.Hunter, hash, approved: true);
 
         await _userAccountStore.AddAsync(user, null, cancellationToken);
         await _userAccountStore.SaveChangesAsync(cancellationToken);
 
-        var message = approved
-            ? "Registration successful. Verify your email to continue."
-            : "Registration successful. Account requires approval and email verification.";
-
-        return CreateSuccessResult(message, user);
+        return CreateSuccessResult("Registration successful. Verify your email to continue.", user);
     }
 
     public async Task<AuthResult> RegisterProviderAsync(RegisterProviderRequest request, CancellationToken cancellationToken)
     {
-        if (request.Role is UserRole.Admin or UserRole.Moderator)
-        {
-            return new AuthResult(false, "Admins and moderators must be created manually.");
-        }
-
         var existing = await _userAccountStore.GetByProviderSubjectAsync(request.Provider, request.ProviderSubject, cancellationToken);
         if (existing is not null)
         {
@@ -94,8 +79,7 @@ public sealed class AuthApplicationService
             return new AuthResult(false, "Email already exists.");
         }
 
-        var approved = request.Role == UserRole.Hunter;
-        var user = UserAccount.CreateProvider(request.Email, request.UserName, request.Role, request.Provider, approved);
+        var user = UserAccount.CreateProvider(request.Email, request.UserName, UserRole.Hunter, request.Provider, approved: true);
 
         await _userAccountStore.AddAsync(user, request.ProviderSubject, cancellationToken);
         await _userAccountStore.SaveChangesAsync(cancellationToken);

@@ -38,6 +38,24 @@
   "profileMfaSectionTitle": "Multi-Faktor-Authentifizierung",
   "profileMfaEnabled": "MFA aktiv",
   "profileMfaDisabled": "MFA nicht aktiv",
+  "profileRoleApplicationSectionTitle": "Rollenbewerbungen",
+  "profileRoleApplicationHint": "Hunter-Konten koennen hier Artist- oder Drop-Maker-Zugriff beantragen.",
+  "profileRoleApplicationPending": "Ausstehende Rollenbewerbung: {role}",
+  "@profileRoleApplicationPending": {
+    "placeholders": {
+      "role": {}
+    }
+  },
+  "profileRoleApplicationRequestedAt": "Beantragt am: {timestamp}",
+  "@profileRoleApplicationRequestedAt": {
+    "placeholders": {
+      "timestamp": {}
+    }
+  },
+  "profileRoleApplicationSubmitted": "Die Rollenbewerbung wurde eingereicht.",
+  "profileRoleApplicationNotAvailableForCurrentRole": "Rollenbewerbungen stehen nur fuer Hunter-Konten zur Verfuegung.",
+  "profileApplyArtistAction": "Als Artist bewerben",
+  "profileApplyDropMakerAction": "Als Drop-Maker bewerben",
   "profileMfaRequiredByPolicy": "Diese Rolle verlangt eine app-basierte MFA.",
   "profileMfaOptionalHint": "Du kannst fuer dieses Konto eine app-basierte MFA aktivieren.",
   "profileMfaSetupAction": "MFA einrichten",
@@ -304,10 +322,10 @@
   "passwordLabel": "Passwort",
   "authFillCredentialsHint": "Bitte E-Mail und Passwort eingeben.",
   "authFillRegistrationHint": "Bitte Benutzername, E-Mail und Passwort ausfuellen.",
-  "authRoleManagedAtRegistration": "Der Account-Typ wird bei der Registrierung gespeichert und beim Login nicht erneut ausgewaehlt.",
+  "authRoleManagedAtRegistration": "Der aktuelle Account-Typ ist serverseitig gespeichert. Beim Login wird keine Rolle ausgewaehlt.",
   "authProviderLoginComingSoon": "Provider-Anmeldung ist fachlich vorgesehen, aber in diesem lokalen Screen noch nicht verdrahtet.",
   "authProviderLoginHint": "Die Provider-Anmeldung oeffnet ein sicheres Browserfenster und kehrt nach der externen Identitaetspruefung in die App zurueck.",
-  "authProviderRegistrationHint": "Lege ein verknuepftes Provider-Konto mit Provider, Zielrolle und gewuenschtem Benutzernamen an. Die externe Identitaet wird in einem sicheren Browserfenster aufgeloest.",
+  "authProviderRegistrationHint": "Lege ein verknuepftes Provider-Konto mit Provider und gewuenschtem Benutzernamen an. Die externe Identitaet wird in einem sicheren Browserfenster aufgeloest.",
   "authProviderLabel": "Provider",
   "authProviderSubjectLabel": "Provider-Subject",
   "authSelectProviderHint": "Provider auswaehlen",
@@ -325,6 +343,8 @@
   "authHunterProviderRegistrationSuccess": "Hunter-Provider-Konto erstellt. Du kannst dich jetzt anmelden.",
   "authProviderApprovalRequestSubmitted": "Provider-Konto erstellt. Die Freigabe ist jetzt ausstehend.",
   "authHunterSelfServiceHint": "Hunter koennen sich selbst registrieren und sich nach der Verifikation direkt anmelden.",
+  "authRegistrationStartsAsHunter": "Jede Self-Service-Registrierung startet immer als Hunter-Konto.",
+  "authRoleApplicationsMoveToProfile": "Artist- und Drop-Maker-Zugriff werden spaeter auf der Hauptprofilseite beantragt.",
   "authArtistApprovalHint": "Artists koennen eine Freigabe anfordern. Ein Admin muss das Konto vor dem Login freigeben.",
   "authDropMakerApprovalHint": "Drop-Maker koennen eine Freigabe anfordern. Ein Admin muss das Konto vor dem Login freigeben.",
   "authAdminRegistrationManaged": "Admin-Konten werden hier nie selbst registriert. Sie duerfen nur in der Benutzerverwaltung erstellt oder zugewiesen werden.",
@@ -525,6 +545,14 @@
   "globalDropModerationSubtitle": "Bearbeiten, löschen, veröffentlichen, depublizieren",
   "userEditProfileTitle": "Benutzerprofil bearbeiten",
   "userEditProfileAction": "Profil bearbeiten",
+  "userRoleApplicationPending": "Ausstehende Rollenbewerbung: {role}",
+  "@userRoleApplicationPending": {
+    "placeholders": {
+      "role": {}
+    }
+  },
+  "userApproveRoleApplicationAction": "Rollenbewerbung genehmigen",
+  "userRejectRoleApplicationAction": "Rollenbewerbung ablehnen",
   "artPieceSubtitleLabel": "Untertitel",
   "artPieceSubtitleTooLongError": "Der Untertitel darf maximal 200 Zeichen lang sein.",
   "dropMakerCommentLabel": "Kommentar des Drop-Makers",

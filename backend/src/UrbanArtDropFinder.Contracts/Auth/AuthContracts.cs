@@ -2,9 +2,9 @@ using UrbanArtDropFinder.Domain.Users;
 
 namespace UrbanArtDropFinder.Contracts.Auth;
 
-public sealed record RegisterLocalRequest(string Email, string UserName, string Password, UserRole Role);
+public sealed record RegisterLocalRequest(string Email, string UserName, string Password);
 
-public sealed record RegisterProviderRequest(string Provider, string ProviderSubject, string Email, string UserName, UserRole Role);
+public sealed record RegisterProviderRequest(string Provider, string ProviderSubject, string Email, string UserName);
 
 public sealed record LoginLocalRequest(string Email, string Password);
 
@@ -16,8 +16,7 @@ public sealed record BeginExternalProviderRegistrationRequest(
     string Provider,
     string CallbackUrl,
     string Email,
-    string UserName,
-    UserRole Role);
+    string UserName);
 
 public sealed record BeginExternalProviderAuthResponse(string AuthorizationUrl, DateTimeOffset ExpiresAtUtc);
 

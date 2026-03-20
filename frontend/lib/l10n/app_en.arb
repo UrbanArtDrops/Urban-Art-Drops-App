@@ -38,6 +38,24 @@
   "profileMfaSectionTitle": "Multi-factor authentication",
   "profileMfaEnabled": "MFA enabled",
   "profileMfaDisabled": "MFA not enabled",
+  "profileRoleApplicationSectionTitle": "Role applications",
+  "profileRoleApplicationHint": "Hunter accounts can request artist or drop-maker access here.",
+  "profileRoleApplicationPending": "Pending role application: {role}",
+  "@profileRoleApplicationPending": {
+    "placeholders": {
+      "role": {}
+    }
+  },
+  "profileRoleApplicationRequestedAt": "Requested at: {timestamp}",
+  "@profileRoleApplicationRequestedAt": {
+    "placeholders": {
+      "timestamp": {}
+    }
+  },
+  "profileRoleApplicationSubmitted": "Your role application has been submitted.",
+  "profileRoleApplicationNotAvailableForCurrentRole": "Role applications are only available for hunter accounts.",
+  "profileApplyArtistAction": "Apply as artist",
+  "profileApplyDropMakerAction": "Apply as drop-maker",
   "profileMfaRequiredByPolicy": "This role requires app-based MFA.",
   "profileMfaOptionalHint": "You can enable app-based MFA for this account.",
   "profileMfaSetupAction": "Set up MFA",
@@ -304,10 +322,10 @@
   "passwordLabel": "Password",
   "authFillCredentialsHint": "Enter email and password.",
   "authFillRegistrationHint": "Fill in username, email, and password.",
-  "authRoleManagedAtRegistration": "The account type is stored when the account is created. You do not select it again during login.",
+  "authRoleManagedAtRegistration": "The current account type is stored on the server. Login never asks for a role selection.",
   "authProviderLoginComingSoon": "Provider login is prepared in the product, but not wired into this local screen yet.",
   "authProviderLoginHint": "Provider sign-in opens a secure browser window and returns to the app after the external identity has been verified.",
-  "authProviderRegistrationHint": "Create a linked provider account with the external provider, the target role, and your desired username. The external identity is resolved in a secure browser window.",
+  "authProviderRegistrationHint": "Create a linked provider account with the external provider and your desired username. The external identity is resolved in a secure browser window.",
   "authProviderLabel": "Provider",
   "authProviderSubjectLabel": "Provider subject",
   "authSelectProviderHint": "Select a provider",
@@ -325,6 +343,8 @@
   "authHunterProviderRegistrationSuccess": "Hunter provider account created. You can sign in now.",
   "authProviderApprovalRequestSubmitted": "Provider account created. Approval is now pending.",
   "authHunterSelfServiceHint": "Hunters can register directly and start signing in after verification.",
+  "authRegistrationStartsAsHunter": "Every self-service registration starts as a hunter account.",
+  "authRoleApplicationsMoveToProfile": "Artist and drop-maker access can be requested later on the main profile page.",
   "authArtistApprovalHint": "Artists can request an account. An admin must approve the account before login is allowed.",
   "authDropMakerApprovalHint": "Drop-makers can request an account. An admin must approve the account before login is allowed.",
   "authAdminRegistrationManaged": "Admin accounts are never self-registered here. They can only be created or assigned in user management.",
@@ -525,6 +545,14 @@
   "globalDropModerationSubtitle": "Edit, delete, publish and depublish",
   "userEditProfileTitle": "Edit user profile",
   "userEditProfileAction": "Edit profile",
+  "userRoleApplicationPending": "Pending role application: {role}",
+  "@userRoleApplicationPending": {
+    "placeholders": {
+      "role": {}
+    }
+  },
+  "userApproveRoleApplicationAction": "Approve role application",
+  "userRejectRoleApplicationAction": "Reject role application",
   "artPieceSubtitleLabel": "Subtitle",
   "artPieceSubtitleTooLongError": "Subtitle must not exceed 200 characters.",
   "dropMakerCommentLabel": "Drop-maker comment",

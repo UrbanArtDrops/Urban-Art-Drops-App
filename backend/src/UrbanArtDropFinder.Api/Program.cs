@@ -461,6 +461,43 @@ profileGroup.MapPut("/", async (
     }
 }).RequireAuthorization(AuthPolicies.ApprovedAccount);
 
+profileGroup.MapPost("/role-application", async (
+    ApplyForRoleRequest request,
+    HttpContext httpContext,
+    UrbanArtDbContext dbContext,
+    IClock clock,
+    CancellationToken cancellationToken) =>
+{
+    var actorResolution = await ResolveAuthenticatedActorAsync(httpContext, dbContext, cancellationToken);
+    if (actorResolution.Failure is not null)
+    {
+        return actorResolution.Failure;
+    }
+
+    var user = await dbContext.UserAccounts.FirstOrDefaultAsync(
+        account => account.Id == actorResolution.Actor!.Id,
+        cancellationToken);
+    if (user is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    try
+    {
+        user.ApplyForRole(request.Role, clock.UtcNow);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        var profileImage = await dbContext.UserProfileImages
+            .AsNoTracking()
+            .FirstOrDefaultAsync(image => image.UserAccountId == user.Id, cancellationToken);
+        return Results.Ok(ToCurrentUserProfileResponse(user, profileImage, httpContext.Request));
+    }
+    catch (DomainValidationException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+}).RequireAuthorization(AuthPolicies.ApprovedAccount);
+
 profileGroup.MapPost("/notifications/{notificationId:guid}/mark-read", async (
     Guid notificationId,
     HttpContext httpContext,
@@ -2021,6 +2058,52 @@ adminGroup.MapPatch("/users/{userId:guid}/role", async (Guid userId, UserRole ro
     return Results.Ok();
 }).RequireAuthorization(AuthPolicies.AdminOnly);
 
+adminGroup.MapPost("/users/{userId:guid}/role-application/approve", async (
+    Guid userId,
+    UrbanArtDbContext dbContext,
+    CancellationToken cancellationToken) =>
+{
+    var user = await dbContext.UserAccounts.FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
+    if (user is null)
+    {
+        return Results.NotFound();
+    }
+
+    try
+    {
+        user.ApproveRoleApplication();
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return Results.Ok(ToManagedUserResponse(user, includeEmail: true));
+    }
+    catch (DomainValidationException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+}).RequireAuthorization(AuthPolicies.AdminOnly);
+
+adminGroup.MapPost("/users/{userId:guid}/role-application/reject", async (
+    Guid userId,
+    UrbanArtDbContext dbContext,
+    CancellationToken cancellationToken) =>
+{
+    var user = await dbContext.UserAccounts.FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
+    if (user is null)
+    {
+        return Results.NotFound();
+    }
+
+    try
+    {
+        user.RejectRoleApplication();
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return Results.Ok(ToManagedUserResponse(user, includeEmail: true));
+    }
+    catch (DomainValidationException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+}).RequireAuthorization(AuthPolicies.AdminOnly);
+
 adminGroup.MapPatch("/users/{userId:guid}/profile", async (
     Guid userId,
     UpdateManagedUserProfileRequest request,
@@ -2483,6 +2566,8 @@ static ManagedUserResponseDto ToManagedUserResponse(UserAccount user, bool inclu
         includeEmail ? user.Email : string.Empty,
         user.UserName,
         user.Role,
+        user.PendingRoleApplication,
+        user.PendingRoleApplicationRequestedAtUtc,
         user.IsApproved,
         user.IsSuspended,
         user.IsEmailVerified,
@@ -2505,6 +2590,8 @@ static CurrentUserProfileResponse ToCurrentUserProfileResponse(
         user.Email,
         user.UserName,
         user.Role,
+        user.PendingRoleApplication,
+        user.PendingRoleApplicationRequestedAtUtc,
         user.IsProviderAccount,
         user.IsMfaEnabled,
         IsMfaRequiredByPolicy(user),
@@ -3116,6 +3203,8 @@ internal sealed record ManagedUserResponseDto(
     string Email,
     string UserName,
     UserRole Role,
+    UserRole? PendingRoleApplication,
+    DateTimeOffset? PendingRoleApplicationRequestedAtUtc,
     bool IsApproved,
     bool IsSuspended,
     bool IsEmailVerified,

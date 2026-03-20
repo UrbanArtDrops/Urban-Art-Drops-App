@@ -4,6 +4,8 @@ class ManagedUser {
     required this.email,
     required this.userName,
     required this.role,
+    required this.pendingRoleApplication,
+    required this.pendingRoleApplicationRequestedAtUtc,
     required this.isApproved,
     required this.isSuspended,
     required this.isEmailVerified,
@@ -16,6 +18,16 @@ class ManagedUser {
       email: _readString(json, "email", "Email"),
       userName: _readString(json, "userName", "UserName"),
       role: _readInt(json, "role", "Role"),
+      pendingRoleApplication: _readNullableInt(
+        json,
+        "pendingRoleApplication",
+        "PendingRoleApplication",
+      ),
+      pendingRoleApplicationRequestedAtUtc: _readNullableDateTime(
+        json,
+        "pendingRoleApplicationRequestedAtUtc",
+        "PendingRoleApplicationRequestedAtUtc",
+      ),
       isApproved: _readBool(json, "isApproved", "IsApproved"),
       isSuspended: _readBool(json, "isSuspended", "IsSuspended"),
       isEmailVerified: _readBool(json, "isEmailVerified", "IsEmailVerified"),
@@ -31,6 +43,8 @@ class ManagedUser {
   final String email;
   final String userName;
   final int role;
+  final int? pendingRoleApplication;
+  final DateTime? pendingRoleApplicationRequestedAtUtc;
   final bool isApproved;
   final bool isSuspended;
   final bool isEmailVerified;
@@ -215,6 +229,8 @@ class CurrentUserProfileModel {
     required this.email,
     required this.userName,
     required this.role,
+    required this.pendingRoleApplication,
+    required this.pendingRoleApplicationRequestedAtUtc,
     required this.isProviderAccount,
     required this.isMfaEnabled,
     required this.isMfaRequiredByPolicy,
@@ -233,6 +249,16 @@ class CurrentUserProfileModel {
       email: _readString(json, "email", "Email"),
       userName: _readString(json, "userName", "UserName"),
       role: _readInt(json, "role", "Role"),
+      pendingRoleApplication: _readNullableInt(
+        json,
+        "pendingRoleApplication",
+        "PendingRoleApplication",
+      ),
+      pendingRoleApplicationRequestedAtUtc: _readNullableDateTime(
+        json,
+        "pendingRoleApplicationRequestedAtUtc",
+        "PendingRoleApplicationRequestedAtUtc",
+      ),
       isProviderAccount: _readBool(
         json,
         "isProviderAccount",
@@ -254,6 +280,8 @@ class CurrentUserProfileModel {
   final String email;
   final String userName;
   final int role;
+  final int? pendingRoleApplication;
+  final DateTime? pendingRoleApplicationRequestedAtUtc;
   final bool isProviderAccount;
   final bool isMfaEnabled;
   final bool isMfaRequiredByPolicy;
@@ -974,6 +1002,19 @@ int? _readNullableInt(
   }
 
   return null;
+}
+
+DateTime? _readNullableDateTime(
+  Map<String, dynamic> json,
+  String key,
+  String fallbackKey,
+) {
+  final raw = _readNullableString(json, key, fallbackKey);
+  if (raw == null) {
+    return null;
+  }
+
+  return DateTime.tryParse(raw);
 }
 
 double? _readNullableDouble(

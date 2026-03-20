@@ -25,8 +25,6 @@ class _RegisterPageState extends State<RegisterPage> {
       TextEditingController();
   final TextEditingController _providerEmailController =
       TextEditingController();
-  int _selectedRole = 0;
-  int _selectedProviderRole = 0;
   bool _isLoadingProviders = true;
   List<AuthProviderOptionModel> _availableProviders = const [];
   String? _selectedProvider;
@@ -96,7 +94,6 @@ class _RegisterPageState extends State<RegisterPage> {
         email: email,
         userName: userName,
         password: password,
-        role: _selectedRole,
       );
 
       if (!mounted) {
@@ -107,12 +104,9 @@ class _RegisterPageState extends State<RegisterPage> {
         throw ApiException(result.message);
       }
 
-      final successMessage = _selectedRole == 0
-          ? l10n.authHunterRegistrationSuccess
-          : l10n.authApprovalRequestSubmitted;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(successMessage)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.authHunterRegistrationSuccess)),
+      );
       context.go("/auth/login");
     } on ApiException catch (error) {
       if (!mounted) {
@@ -155,7 +149,6 @@ class _RegisterPageState extends State<RegisterPage> {
         callbackUrl: callbackUri.toString(),
         email: email,
         userName: userName,
-        role: _selectedProviderRole,
       );
       final completionUri = await _providerAuthLauncher.authenticate(
         authorizationUrl: beginResult.authorizationUrl,
@@ -189,12 +182,9 @@ class _RegisterPageState extends State<RegisterPage> {
         throw ApiException(result.message);
       }
 
-      final successMessage = _selectedProviderRole == 0
-          ? l10n.authHunterProviderRegistrationSuccess
-          : l10n.authProviderApprovalRequestSubmitted;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(successMessage)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.authHunterProviderRegistrationSuccess)),
+      );
       context.go("/auth/login");
     } on ApiException catch (error) {
       if (!mounted) {
@@ -220,17 +210,6 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-  String _roleHint(AppLocalizations l10n, int role) {
-    switch (role) {
-      case 1:
-        return l10n.authArtistApprovalHint;
-      case 2:
-        return l10n.authDropMakerApprovalHint;
-      default:
-        return l10n.authHunterSelfServiceHint;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -246,7 +225,9 @@ class _RegisterPageState extends State<RegisterPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(l10n.authAdminRegistrationManaged),
+                  Text(l10n.authRegistrationStartsAsHunter),
+                  const SizedBox(height: 8),
+                  Text(l10n.authRoleApplicationsMoveToProfile),
                   const SizedBox(height: 16),
                   TextField(
                     controller: _userNameController,
@@ -264,28 +245,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     obscureText: true,
                     decoration: InputDecoration(labelText: l10n.passwordLabel),
                   ),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<int>(
-                    initialValue: _selectedRole,
-                    items: [
-                      DropdownMenuItem(value: 0, child: Text(l10n.roleHunter)),
-                      DropdownMenuItem(value: 1, child: Text(l10n.roleArtist)),
-                      DropdownMenuItem(
-                        value: 2,
-                        child: Text(l10n.roleDropMaker),
-                      ),
-                    ],
-                    onChanged: _isSaving
-                        ? null
-                        : (value) {
-                            if (value != null) {
-                              setState(() => _selectedRole = value);
-                            }
-                          },
-                    decoration: InputDecoration(labelText: l10n.roleLabel),
-                  ),
                   const SizedBox(height: 12),
-                  Text(_roleHint(l10n, _selectedRole)),
+                  Text(l10n.authHunterSelfServiceHint),
                   const SizedBox(height: 12),
                   FilledButton(
                     onPressed: _isSaving ? null : _register,
@@ -315,6 +276,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(l10n.authProviderRegistrationHint),
+                    const SizedBox(height: 8),
+                    Text(l10n.authRoleApplicationsMoveToProfile),
                     const SizedBox(height: 12),
                     Wrap(
                       spacing: 8,
@@ -351,34 +314,8 @@ class _RegisterPageState extends State<RegisterPage> {
                       keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(labelText: l10n.emailLabel),
                     ),
-                    const SizedBox(height: 8),
-                    DropdownButtonFormField<int>(
-                      initialValue: _selectedProviderRole,
-                      items: [
-                        DropdownMenuItem(
-                          value: 0,
-                          child: Text(l10n.roleHunter),
-                        ),
-                        DropdownMenuItem(
-                          value: 1,
-                          child: Text(l10n.roleArtist),
-                        ),
-                        DropdownMenuItem(
-                          value: 2,
-                          child: Text(l10n.roleDropMaker),
-                        ),
-                      ],
-                      onChanged: _isSaving
-                          ? null
-                          : (value) {
-                              if (value != null) {
-                                setState(() => _selectedProviderRole = value);
-                              }
-                            },
-                      decoration: InputDecoration(labelText: l10n.roleLabel),
-                    ),
                     const SizedBox(height: 12),
-                    Text(_roleHint(l10n, _selectedProviderRole)),
+                    Text(l10n.authHunterSelfServiceHint),
                     const SizedBox(height: 12),
                     OutlinedButton(
                       onPressed: _isSaving ? null : _registerProvider,

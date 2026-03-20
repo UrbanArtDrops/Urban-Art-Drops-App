@@ -8,6 +8,8 @@ public sealed class UserAccount
     public string Email { get; private set; }
     public string UserName { get; private set; }
     public UserRole Role { get; private set; }
+    public UserRole? PendingRoleApplication { get; private set; }
+    public DateTimeOffset? PendingRoleApplicationRequestedAtUtc { get; private set; }
     public bool IsApproved { get; private set; }
     public bool IsSuspended { get; private set; }
     public bool IsEmailVerified { get; private set; }
@@ -82,7 +84,54 @@ public sealed class UserAccount
 
     public void SetSuspended(bool suspended) => IsSuspended = suspended;
 
-    public void ChangeRole(UserRole role) => Role = role;
+    public void ChangeRole(UserRole role)
+    {
+        Role = role;
+        ClearPendingRoleApplication();
+    }
+
+    public void ApplyForRole(UserRole requestedRole, DateTimeOffset requestedAtUtc)
+    {
+        if (Role != UserRole.Hunter)
+        {
+            throw new DomainValidationException("Only hunters can apply for artist or drop-maker access.");
+        }
+
+        if (requestedRole is not (UserRole.Artist or UserRole.DropMaker))
+        {
+            throw new DomainValidationException("Hunters can only apply for artist or drop-maker access.");
+        }
+
+        if (PendingRoleApplication.HasValue)
+        {
+            throw new DomainValidationException("A role application is already pending.");
+        }
+
+        PendingRoleApplication = requestedRole;
+        PendingRoleApplicationRequestedAtUtc = requestedAtUtc;
+    }
+
+    public void ApproveRoleApplication()
+    {
+        if (!PendingRoleApplication.HasValue)
+        {
+            throw new DomainValidationException("No role application is pending.");
+        }
+
+        Role = PendingRoleApplication.Value;
+        IsApproved = true;
+        ClearPendingRoleApplication();
+    }
+
+    public void RejectRoleApplication()
+    {
+        if (!PendingRoleApplication.HasValue)
+        {
+            throw new DomainValidationException("No role application is pending.");
+        }
+
+        ClearPendingRoleApplication();
+    }
 
     public void ChangeUserName(string userName)
     {
@@ -135,5 +184,11 @@ public sealed class UserAccount
     {
         FailedLoginAttempts = 0;
         NextLoginAllowedAtUtc = null;
+    }
+
+    private void ClearPendingRoleApplication()
+    {
+        PendingRoleApplication = null;
+        PendingRoleApplicationRequestedAtUtc = null;
     }
 }

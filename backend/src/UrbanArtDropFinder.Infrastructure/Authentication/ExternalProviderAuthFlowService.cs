@@ -68,7 +68,6 @@ public sealed class ExternalProviderAuthFlowService
             CodeVerifier: codeVerifier,
             RequestedEmail: null,
             RequestedUserName: null,
-            RequestedRole: null,
             ExpiresAtUtc: expiresAtUtc);
 
         _memoryCache.Set(
@@ -99,7 +98,6 @@ public sealed class ExternalProviderAuthFlowService
             CodeVerifier: codeVerifier,
             RequestedEmail: request.Email.Trim(),
             RequestedUserName: request.UserName.Trim(),
-            RequestedRole: request.Role,
             ExpiresAtUtc: expiresAtUtc);
 
         _memoryCache.Set(
@@ -264,10 +262,9 @@ public sealed class ExternalProviderAuthFlowService
             ? providerEmail.Trim()
             : pendingSession.RequestedEmail;
         if (string.IsNullOrWhiteSpace(resolvedEmail) ||
-            string.IsNullOrWhiteSpace(pendingSession.RequestedUserName) ||
-            pendingSession.RequestedRole is null)
+            string.IsNullOrWhiteSpace(pendingSession.RequestedUserName))
         {
-            return new AuthResult(false, "Provider registration requires email, user name, and target role.");
+            return new AuthResult(false, "Provider registration requires email and user name.");
         }
 
         return await _authApplicationService.RegisterProviderAsync(
@@ -275,8 +272,7 @@ public sealed class ExternalProviderAuthFlowService
                 pendingSession.Provider,
                 providerSubject,
                 resolvedEmail,
-                pendingSession.RequestedUserName,
-                pendingSession.RequestedRole.Value),
+                pendingSession.RequestedUserName),
             cancellationToken);
     }
 
@@ -578,7 +574,6 @@ public sealed class ExternalProviderAuthFlowService
         string? CodeVerifier,
         string? RequestedEmail,
         string? RequestedUserName,
-        UserRole? RequestedRole,
         DateTimeOffset ExpiresAtUtc);
 
     private enum ExternalProviderAuthFlowMode

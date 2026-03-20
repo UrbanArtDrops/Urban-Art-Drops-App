@@ -190,7 +190,7 @@ For each enabled provider:
 4. Confirm that the browser returns to the app.
 5. Confirm that the app receives a signed-in Urban Art Drops session.
 
-Repeat the same process for provider registration if self-service registration should be supported for that role.
+Repeat the same process for provider registration if self-service registration should be supported. Provider self-service registration still creates a Hunter account first; Artist and Drop-Maker access is requested later from the in-app profile page.
 
 ## Step 10: Test privileged provider accounts with MFA
 

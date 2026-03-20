@@ -8,25 +8,13 @@ namespace UrbanArtDropFinder.Application.Tests;
 public sealed class AuthApplicationServiceTests
 {
     [Fact]
-    public async Task RegisterLocalAsync_WithAdminRole_ReturnsFailure()
-    {
-        var service = CreateService(new InMemoryUserAccountStore(), new FakePasswordHasher(), new FixedClock());
-
-        var result = await service.RegisterLocalAsync(
-            new RegisterLocalRequest("admin@example.com", "admin", "Aaaaaaaaaaaaaaa!", UserRole.Admin),
-            CancellationToken.None);
-
-        Assert.False(result.Success);
-    }
-
-    [Fact]
-    public async Task RegisterLocalAsync_WithHunterRole_AutoApprovesAndReturnsStoredIdentity()
+    public async Task RegisterLocalAsync_CreatesApprovedHunterAccount()
     {
         var store = new InMemoryUserAccountStore();
         var service = CreateService(store, new FakePasswordHasher(), new FixedClock());
 
         var result = await service.RegisterLocalAsync(
-            new RegisterLocalRequest("hunter@example.com", "hunter", "Aaaaaaaaaaaaaaa!", UserRole.Hunter),
+            new RegisterLocalRequest("hunter@example.com", "hunter", "Aaaaaaaaaaaaaaa!"),
             CancellationToken.None);
 
         Assert.True(result.Success);
@@ -40,21 +28,26 @@ public sealed class AuthApplicationServiceTests
     }
 
     [Fact]
-    public async Task RegisterLocalAsync_WithArtistRole_CreatesPendingApprovalAccount()
+    public async Task RegisterProviderAsync_CreatesApprovedHunterAccount()
     {
         var store = new InMemoryUserAccountStore();
         var service = CreateService(store, new FakePasswordHasher(), new FixedClock());
 
-        var result = await service.RegisterLocalAsync(
-            new RegisterLocalRequest("artist@example.com", "artist", "Aaaaaaaaaaaaaaa!", UserRole.Artist),
+        var result = await service.RegisterProviderAsync(
+            new RegisterProviderRequest(
+                "google",
+                "provider-subject",
+                "artist@example.com",
+                "artist"),
             CancellationToken.None);
 
         Assert.True(result.Success);
-        Assert.Equal(UserRole.Artist, result.Role);
+        Assert.Equal(UserRole.Hunter, result.Role);
 
         var createdUser = await store.GetByEmailAsync("artist@example.com", CancellationToken.None);
         Assert.NotNull(createdUser);
-        Assert.False(createdUser!.IsApproved);
+        Assert.True(createdUser!.IsApproved);
+        Assert.True(createdUser.IsProviderAccount);
     }
 
     [Fact]

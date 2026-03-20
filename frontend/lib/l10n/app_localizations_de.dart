@@ -115,6 +115,37 @@ class AppLocalizationsDe extends AppLocalizations {
   String get profileMfaDisabled => 'MFA nicht aktiv';
 
   @override
+  String get profileRoleApplicationSectionTitle => 'Rollenbewerbungen';
+
+  @override
+  String get profileRoleApplicationHint =>
+      'Hunter-Konten koennen hier Artist- oder Drop-Maker-Zugriff beantragen.';
+
+  @override
+  String profileRoleApplicationPending(Object role) {
+    return 'Ausstehende Rollenbewerbung: $role';
+  }
+
+  @override
+  String profileRoleApplicationRequestedAt(Object timestamp) {
+    return 'Beantragt am: $timestamp';
+  }
+
+  @override
+  String get profileRoleApplicationSubmitted =>
+      'Die Rollenbewerbung wurde eingereicht.';
+
+  @override
+  String get profileRoleApplicationNotAvailableForCurrentRole =>
+      'Rollenbewerbungen stehen nur fuer Hunter-Konten zur Verfuegung.';
+
+  @override
+  String get profileApplyArtistAction => 'Als Artist bewerben';
+
+  @override
+  String get profileApplyDropMakerAction => 'Als Drop-Maker bewerben';
+
+  @override
   String get profileMfaRequiredByPolicy =>
       'Diese Rolle verlangt eine app-basierte MFA.';
 
@@ -684,7 +715,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get authRoleManagedAtRegistration =>
-      'Der Account-Typ wird bei der Registrierung gespeichert und beim Login nicht erneut ausgewaehlt.';
+      'Der aktuelle Account-Typ ist serverseitig gespeichert. Beim Login wird keine Rolle ausgewaehlt.';
 
   @override
   String get authProviderLoginComingSoon =>
@@ -696,7 +727,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get authProviderRegistrationHint =>
-      'Lege ein verknuepftes Provider-Konto mit Provider, Zielrolle und gewuenschtem Benutzernamen an. Die externe Identitaet wird in einem sicheren Browserfenster aufgeloest.';
+      'Lege ein verknuepftes Provider-Konto mit Provider und gewuenschtem Benutzernamen an. Die externe Identitaet wird in einem sicheren Browserfenster aufgeloest.';
 
   @override
   String get authProviderLabel => 'Provider';
@@ -757,6 +788,14 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get authHunterSelfServiceHint =>
       'Hunter koennen sich selbst registrieren und sich nach der Verifikation direkt anmelden.';
+
+  @override
+  String get authRegistrationStartsAsHunter =>
+      'Jede Self-Service-Registrierung startet immer als Hunter-Konto.';
+
+  @override
+  String get authRoleApplicationsMoveToProfile =>
+      'Artist- und Drop-Maker-Zugriff werden spaeter auf der Hauptprofilseite beantragt.';
 
   @override
   String get authArtistApprovalHint =>
@@ -1235,6 +1274,17 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get userEditProfileAction => 'Profil bearbeiten';
+
+  @override
+  String userRoleApplicationPending(Object role) {
+    return 'Ausstehende Rollenbewerbung: $role';
+  }
+
+  @override
+  String get userApproveRoleApplicationAction => 'Rollenbewerbung genehmigen';
+
+  @override
+  String get userRejectRoleApplicationAction => 'Rollenbewerbung ablehnen';
 
   @override
   String get artPieceSubtitleLabel => 'Untertitel';

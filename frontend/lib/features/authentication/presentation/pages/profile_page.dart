@@ -288,6 +288,32 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  Future<void> _applyForRole(int role) async {
+    setState(() => _isSaving = true);
+    try {
+      final updatedProfile = await _apiClient.applyForRole(role: role);
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _applyProfile(updatedProfile);
+        _isSaving = false;
+      });
+      _syncSessionProfile(updatedProfile);
+      _showSnackBar(
+        AppLocalizations.of(context)!.profileRoleApplicationSubmitted,
+      );
+    } on ApiException catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() => _isSaving = false);
+      _showSnackBar(error.message);
+    }
+  }
+
   void _applyProfile(CurrentUserProfileModel profile) {
     _profile = profile;
     _emailController.text = profile.email;
@@ -309,6 +335,7 @@ class _ProfilePageState extends State<ProfilePage> {
       email: profile.email,
       userName: profile.userName,
       profileImageUrl: profile.profileImageUrl,
+      role: appUserRoleFromApiValue(profile.role),
     );
   }
 
@@ -414,6 +441,12 @@ class _ProfilePageState extends State<ProfilePage> {
             return Center(child: Text(l10n.profileLoadFailed));
           }
 
+          final pendingRole = profile.pendingRoleApplication;
+          final hasPendingRoleApplication = pendingRole != null;
+          final canApplyForRole =
+              profile.role == AppUserRole.hunter.index &&
+              !hasPendingRoleApplication;
+
           return ListView(
             padding: const EdgeInsets.all(12),
             children: [
@@ -485,6 +518,72 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                           ],
                         ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Card.outlined(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.profileRoleApplicationSectionTitle,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      if (hasPendingRoleApplication) ...[
+                        Text(
+                          l10n.profileRoleApplicationPending(
+                            _roleLabelForApiValue(l10n, pendingRole),
+                          ),
+                        ),
+                        if (profile.pendingRoleApplicationRequestedAtUtc !=
+                            null) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            l10n.profileRoleApplicationRequestedAt(
+                              _formatNotificationTimestamp(
+                                    context,
+                                    profile
+                                        .pendingRoleApplicationRequestedAtUtc,
+                                  ) ??
+                                  "",
+                            ),
+                          ),
+                        ],
+                      ] else if (profile.role == AppUserRole.hunter.index) ...[
+                        Text(l10n.profileRoleApplicationHint),
+                      ] else ...[
+                        Text(
+                          l10n.profileRoleApplicationNotAvailableForCurrentRole,
+                        ),
+                      ],
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: _isSaving || !canApplyForRole
+                                ? null
+                                : () => _applyForRole(AppUserRole.artist.index),
+                            icon: const Icon(Icons.palette_outlined),
+                            label: Text(l10n.profileApplyArtistAction),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: _isSaving || !canApplyForRole
+                                ? null
+                                : () => _applyForRole(
+                                    AppUserRole.dropMaker.index,
+                                  ),
+                            icon: const Icon(Icons.add_box_outlined),
+                            label: Text(l10n.profileApplyDropMakerAction),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -809,4 +908,13 @@ String _roleLabel(AppLocalizations l10n, AppUserRole role) {
     case AppUserRole.admin:
       return l10n.menuSettings;
   }
+}
+
+String _roleLabelForApiValue(AppLocalizations l10n, int? role) {
+  final appRole = appUserRoleFromApiValue(role);
+  if (appRole == null) {
+    return l10n.roleHunter;
+  }
+
+  return _roleLabel(l10n, appRole);
 }

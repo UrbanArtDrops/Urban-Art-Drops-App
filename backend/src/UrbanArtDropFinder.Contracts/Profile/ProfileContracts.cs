@@ -9,6 +9,8 @@ public sealed record UpdateCurrentUserProfileRequest(
 
 public sealed record DisableCurrentUserMfaRequest(string Code);
 
+public sealed record ApplyForRoleRequest(UserRole Role);
+
 public sealed record ProfileImageReferenceResponse(Guid Id, string Url);
 
 public sealed record UserNotificationResponse(
@@ -26,6 +28,8 @@ public sealed record CurrentUserProfileResponse(
     string Email,
     string UserName,
     UserRole Role,
+    UserRole? PendingRoleApplication,
+    DateTimeOffset? PendingRoleApplicationRequestedAtUtc,
     bool IsProviderAccount,
     bool IsMfaEnabled,
     bool IsMfaRequiredByPolicy,

@@ -302,6 +302,54 @@ abstract class AppLocalizations {
   /// **'MFA not enabled'**
   String get profileMfaDisabled;
 
+  /// No description provided for @profileRoleApplicationSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Role applications'**
+  String get profileRoleApplicationSectionTitle;
+
+  /// No description provided for @profileRoleApplicationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Hunter accounts can request artist or drop-maker access here.'**
+  String get profileRoleApplicationHint;
+
+  /// No description provided for @profileRoleApplicationPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending role application: {role}'**
+  String profileRoleApplicationPending(Object role);
+
+  /// No description provided for @profileRoleApplicationRequestedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Requested at: {timestamp}'**
+  String profileRoleApplicationRequestedAt(Object timestamp);
+
+  /// No description provided for @profileRoleApplicationSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Your role application has been submitted.'**
+  String get profileRoleApplicationSubmitted;
+
+  /// No description provided for @profileRoleApplicationNotAvailableForCurrentRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Role applications are only available for hunter accounts.'**
+  String get profileRoleApplicationNotAvailableForCurrentRole;
+
+  /// No description provided for @profileApplyArtistAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply as artist'**
+  String get profileApplyArtistAction;
+
+  /// No description provided for @profileApplyDropMakerAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply as drop-maker'**
+  String get profileApplyDropMakerAction;
+
   /// No description provided for @profileMfaRequiredByPolicy.
   ///
   /// In en, this message translates to:
@@ -1313,7 +1361,7 @@ abstract class AppLocalizations {
   /// No description provided for @authRoleManagedAtRegistration.
   ///
   /// In en, this message translates to:
-  /// **'The account type is stored when the account is created. You do not select it again during login.'**
+  /// **'The current account type is stored on the server. Login never asks for a role selection.'**
   String get authRoleManagedAtRegistration;
 
   /// No description provided for @authProviderLoginComingSoon.
@@ -1331,7 +1379,7 @@ abstract class AppLocalizations {
   /// No description provided for @authProviderRegistrationHint.
   ///
   /// In en, this message translates to:
-  /// **'Create a linked provider account with the external provider, the target role, and your desired username. The external identity is resolved in a secure browser window.'**
+  /// **'Create a linked provider account with the external provider and your desired username. The external identity is resolved in a secure browser window.'**
   String get authProviderRegistrationHint;
 
   /// No description provided for @authProviderLabel.
@@ -1435,6 +1483,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hunters can register directly and start signing in after verification.'**
   String get authHunterSelfServiceHint;
+
+  /// No description provided for @authRegistrationStartsAsHunter.
+  ///
+  /// In en, this message translates to:
+  /// **'Every self-service registration starts as a hunter account.'**
+  String get authRegistrationStartsAsHunter;
+
+  /// No description provided for @authRoleApplicationsMoveToProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Artist and drop-maker access can be requested later on the main profile page.'**
+  String get authRoleApplicationsMoveToProfile;
 
   /// No description provided for @authArtistApprovalHint.
   ///
@@ -2263,6 +2323,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit profile'**
   String get userEditProfileAction;
+
+  /// No description provided for @userRoleApplicationPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending role application: {role}'**
+  String userRoleApplicationPending(Object role);
+
+  /// No description provided for @userApproveRoleApplicationAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve role application'**
+  String get userApproveRoleApplicationAction;
+
+  /// No description provided for @userRejectRoleApplicationAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject role application'**
+  String get userRejectRoleApplicationAction;
 
   /// No description provided for @artPieceSubtitleLabel.
   ///

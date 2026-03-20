@@ -237,6 +237,20 @@ class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
     });
   }
 
+  Future<void> _approveRoleApplication(ManagedUser user) async {
+    await _withSaving(() async {
+      await _apiClient.approveUserRoleApplication(user.id);
+      await _loadUsers();
+    });
+  }
+
+  Future<void> _rejectRoleApplication(ManagedUser user) async {
+    await _withSaving(() async {
+      await _apiClient.rejectUserRoleApplication(user.id);
+      await _loadUsers();
+    });
+  }
+
   Future<void> _withSaving(Future<void> Function() action) async {
     setState(() => _isSaving = true);
     try {
@@ -336,14 +350,30 @@ class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
                               final suspendedLabel = user.isSuspended
                                   ? l10n.userSuspended
                                   : l10n.userActive;
+                              final pendingRoleLabel =
+                                  user.pendingRoleApplication == null
+                                  ? null
+                                  : _roleLabel(
+                                      l10n,
+                                      user.pendingRoleApplication!,
+                                    );
+                              final subtitleLines = <String>[
+                                user.email,
+                                "${_roleLabel(l10n, user.role)} · $approvedLabel · $suspendedLabel",
+                              ];
+                              if (pendingRoleLabel != null) {
+                                subtitleLines.add(
+                                  l10n.userRoleApplicationPending(
+                                    pendingRoleLabel,
+                                  ),
+                                );
+                              }
 
                               return Card(
                                 child: ListTile(
                                   title: Text(user.userName),
-                                  subtitle: Text(
-                                    "${user.email}\n${_roleLabel(l10n, user.role)} · $approvedLabel · $suspendedLabel",
-                                  ),
-                                  isThreeLine: true,
+                                  subtitle: Text(subtitleLines.join("\n")),
+                                  isThreeLine: pendingRoleLabel != null,
                                   trailing: PopupMenuButton<String>(
                                     onSelected: (value) {
                                       switch (value) {
@@ -359,34 +389,66 @@ class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
                                         case "username":
                                           _editUserProfile(user);
                                           break;
+                                        case "approveRoleApplication":
+                                          _approveRoleApplication(user);
+                                          break;
+                                        case "rejectRoleApplication":
+                                          _rejectRoleApplication(user);
+                                          break;
                                       }
                                     },
-                                    itemBuilder: (_) => [
-                                      PopupMenuItem(
-                                        value: "approval",
-                                        child: Text(
-                                          user.isApproved
-                                              ? l10n.userRevokeApprovalAction
-                                              : l10n.userApproveAction,
+                                    itemBuilder: (_) {
+                                      final items = <PopupMenuEntry<String>>[
+                                        PopupMenuItem(
+                                          value: "approval",
+                                          child: Text(
+                                            user.isApproved
+                                                ? l10n.userRevokeApprovalAction
+                                                : l10n.userApproveAction,
+                                          ),
                                         ),
-                                      ),
-                                      PopupMenuItem(
-                                        value: "suspension",
-                                        child: Text(
-                                          user.isSuspended
-                                              ? l10n.userUnsuspendAction
-                                              : l10n.userSuspendAction,
+                                        PopupMenuItem(
+                                          value: "suspension",
+                                          child: Text(
+                                            user.isSuspended
+                                                ? l10n.userUnsuspendAction
+                                                : l10n.userSuspendAction,
+                                          ),
                                         ),
-                                      ),
-                                      PopupMenuItem(
-                                        value: "role",
-                                        child: Text(l10n.userChangeRoleAction),
-                                      ),
-                                      PopupMenuItem(
-                                        value: "username",
-                                        child: Text(l10n.userEditProfileAction),
-                                      ),
-                                    ],
+                                        PopupMenuItem(
+                                          value: "role",
+                                          child: Text(
+                                            l10n.userChangeRoleAction,
+                                          ),
+                                        ),
+                                        PopupMenuItem(
+                                          value: "username",
+                                          child: Text(
+                                            l10n.userEditProfileAction,
+                                          ),
+                                        ),
+                                      ];
+                                      if (pendingRoleLabel != null) {
+                                        items.add(
+                                          PopupMenuItem(
+                                            value: "approveRoleApplication",
+                                            child: Text(
+                                              l10n.userApproveRoleApplicationAction,
+                                            ),
+                                          ),
+                                        );
+                                        items.add(
+                                          PopupMenuItem(
+                                            value: "rejectRoleApplication",
+                                            child: Text(
+                                              l10n.userRejectRoleApplicationAction,
+                                            ),
+                                          ),
+                                        );
+                                      }
+
+                                      return items;
+                                    },
                                   ),
                                 ),
                               );

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using UrbanArtDropFinder.Domain.Users;
 using UrbanArtDropFinder.Persistence.Db;
@@ -107,8 +108,7 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
                 provider = "google",
                 callbackUrl = "urbanartdrops-auth://oauth/callback",
                 email = requestedEmail,
-                userName = requestedUserName,
-                role = UserRole.Hunter
+                userName = requestedUserName
             });
         await EnsureSuccessWithBodyAsync(beginResponse);
 
@@ -160,8 +160,7 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
             {
                 email,
                 userName,
-                password = "Aaaaaaaaaaaaaaa!",
-                role = UserRole.Hunter
+                password = "Aaaaaaaaaaaaaaa!"
             });
         await EnsureSuccessWithBodyAsync(registerResponse);
 
@@ -193,11 +192,11 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
     }
 
     [Fact]
-    public async Task RegisterLocal_ForArtist_CreatesPendingApprovalAccount()
+    public async Task RegisterLocal_AlwaysCreatesHunterAccount()
     {
         var uniqueId = Guid.NewGuid().ToString("N");
-        var email = $"artist.{uniqueId}@example.com";
-        var userName = $"artist.{uniqueId}";
+        var email = $"hunter.only.{uniqueId}@example.com";
+        var userName = $"hunter.only.{uniqueId}";
 
         var registerResponse = await _client.PostAsJsonAsync(
             "/api/auth/register-local",
@@ -205,31 +204,16 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
             {
                 email,
                 userName,
-                password = "Aaaaaaaaaaaaaaa!",
-                role = UserRole.Artist
+                password = "Aaaaaaaaaaaaaaa!"
             });
         await EnsureSuccessWithBodyAsync(registerResponse);
 
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<UrbanArtDbContext>();
         var createdUser = dbContext.UserAccounts.Single(user => string.Equals(user.Email, email, StringComparison.OrdinalIgnoreCase));
-        Assert.Equal(UserRole.Artist, createdUser.Role);
-        Assert.False(createdUser.IsApproved);
-
-        var verifyResponse = await _client.PostAsync($"/api/auth/verify-email/{createdUser.Id}", null);
-        await EnsureSuccessWithBodyAsync(verifyResponse);
-
-        var loginResponse = await _client.PostAsJsonAsync(
-            "/api/auth/login-local",
-            new
-            {
-                email,
-                password = "Aaaaaaaaaaaaaaa!"
-            });
-
-        Assert.Equal(HttpStatusCode.BadRequest, loginResponse.StatusCode);
-        var loginBody = await loginResponse.Content.ReadAsStringAsync();
-        Assert.Contains("pending", loginBody, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(UserRole.Hunter, createdUser.Role);
+        Assert.True(createdUser.IsApproved);
+        Assert.Null(createdUser.PendingRoleApplication);
     }
 
     [Fact]
@@ -309,8 +293,7 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
                 provider = "google",
                 providerSubject,
                 email,
-                userName,
-                role = UserRole.Hunter
+                userName
             });
         await EnsureSuccessWithBodyAsync(registerResponse);
 
@@ -373,6 +356,76 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
         Assert.NotNull(loginPayload);
         Assert.Equal("updated-hunter-profile", loginPayload!.UserName);
         Assert.Equal(updatedEmail, loginPayload.Email);
+    }
+
+    [Fact]
+    public async Task AdminCanApprovePendingRoleApplication()
+    {
+        var admin = await _factory.CreateAuthenticatedUserAsync(
+            UserRole.Admin,
+            $"admin.roleapplication.{Guid.NewGuid():N}");
+        var hunter = await _factory.CreateAuthenticatedUserAsync(
+            UserRole.Hunter,
+            $"hunter.roleapplication.{Guid.NewGuid():N}");
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<UrbanArtDbContext>();
+            var storedUser = await dbContext.UserAccounts.FirstAsync(user => user.Id == hunter.Id);
+            storedUser.ApplyForRole(UserRole.Artist, DateTimeOffset.UtcNow);
+            await dbContext.SaveChangesAsync();
+        }
+
+        var response = await _client.PostAuthorizedAsync(
+            $"/api/admin/users/{hunter.Id}/role-application/approve",
+            admin.AccessToken);
+        await EnsureSuccessWithBodyAsync(response);
+
+        var payload = await response.Content.ReadFromJsonAsync<ManagedUserDto>();
+        Assert.NotNull(payload);
+        Assert.Equal(UserRole.Artist, payload!.Role);
+        Assert.Null(payload.PendingRoleApplication);
+
+        using var verificationScope = _factory.Services.CreateScope();
+        var verificationDbContext = verificationScope.ServiceProvider.GetRequiredService<UrbanArtDbContext>();
+        var updatedUser = await verificationDbContext.UserAccounts.FirstAsync(user => user.Id == hunter.Id);
+        Assert.Equal(UserRole.Artist, updatedUser.Role);
+        Assert.Null(updatedUser.PendingRoleApplication);
+    }
+
+    [Fact]
+    public async Task AdminCanRejectPendingRoleApplication()
+    {
+        var admin = await _factory.CreateAuthenticatedUserAsync(
+            UserRole.Admin,
+            $"admin.rejectroleapplication.{Guid.NewGuid():N}");
+        var hunter = await _factory.CreateAuthenticatedUserAsync(
+            UserRole.Hunter,
+            $"hunter.rejectroleapplication.{Guid.NewGuid():N}");
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<UrbanArtDbContext>();
+            var storedUser = await dbContext.UserAccounts.FirstAsync(user => user.Id == hunter.Id);
+            storedUser.ApplyForRole(UserRole.DropMaker, DateTimeOffset.UtcNow);
+            await dbContext.SaveChangesAsync();
+        }
+
+        var response = await _client.PostAuthorizedAsync(
+            $"/api/admin/users/{hunter.Id}/role-application/reject",
+            admin.AccessToken);
+        await EnsureSuccessWithBodyAsync(response);
+
+        var payload = await response.Content.ReadFromJsonAsync<ManagedUserDto>();
+        Assert.NotNull(payload);
+        Assert.Equal(UserRole.Hunter, payload!.Role);
+        Assert.Null(payload.PendingRoleApplication);
+
+        using var verificationScope = _factory.Services.CreateScope();
+        var verificationDbContext = verificationScope.ServiceProvider.GetRequiredService<UrbanArtDbContext>();
+        var updatedUser = await verificationDbContext.UserAccounts.FirstAsync(user => user.Id == hunter.Id);
+        Assert.Equal(UserRole.Hunter, updatedUser.Role);
+        Assert.Null(updatedUser.PendingRoleApplication);
     }
 
     [Fact]
@@ -459,6 +512,8 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
         string Email,
         string UserName,
         UserRole Role,
+        UserRole? PendingRoleApplication,
+        DateTimeOffset? PendingRoleApplicationRequestedAtUtc,
         bool IsApproved,
         bool IsSuspended,
         bool IsEmailVerified,

@@ -218,6 +218,7 @@ class AuthSessionCubit extends Cubit<AuthSessionState> {
     required String email,
     required String userName,
     String? profileImageUrl,
+    AppUserRole? role,
   }) {
     final currentState = state;
     if (!currentState.isAuthenticated ||
@@ -233,7 +234,7 @@ class AuthSessionCubit extends Cubit<AuthSessionState> {
       email: email,
       userName: userName,
       profileImageUrl: profileImageUrl,
-      role: currentState.role!,
+      role: role ?? currentState.role!,
       accessToken: currentState.accessToken!,
       accessTokenExpiresAtUtc: currentState.accessTokenExpiresAtUtc,
       tokenType: currentState.tokenType!,

@@ -25,6 +25,8 @@ void main() {
         email: "before@example.com",
         userName: "Before",
         role: 0,
+        pendingRoleApplication: null,
+        pendingRoleApplicationRequestedAtUtc: null,
         isProviderAccount: false,
         isMfaEnabled: false,
         isMfaRequiredByPolicy: false,
@@ -89,6 +91,8 @@ void main() {
         email: "before@example.com",
         userName: "Before",
         role: 0,
+        pendingRoleApplication: null,
+        pendingRoleApplicationRequestedAtUtc: null,
         isProviderAccount: false,
         isMfaEnabled: false,
         isMfaRequiredByPolicy: false,
@@ -146,6 +150,8 @@ void main() {
         email: "before@example.com",
         userName: "Before",
         role: 0,
+        pendingRoleApplication: null,
+        pendingRoleApplicationRequestedAtUtc: null,
         isProviderAccount: false,
         isMfaEnabled: false,
         isMfaRequiredByPolicy: false,
@@ -199,6 +205,65 @@ void main() {
 
     expect(apiClient.lastMarkedNotificationId, "notification-1");
     expect(find.text(l10n.profileNotificationReadState), findsOneWidget);
+  });
+
+  testWidgets("hunter can apply for artist role from profile", (tester) async {
+    tester.view.physicalSize = const Size(1200, 1800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final apiClient = _FakeAppApiClient(
+      profile: const CurrentUserProfileModel(
+        userId: "user-1",
+        email: "before@example.com",
+        userName: "Before",
+        role: 0,
+        pendingRoleApplication: null,
+        pendingRoleApplicationRequestedAtUtc: null,
+        isProviderAccount: false,
+        isMfaEnabled: false,
+        isMfaRequiredByPolicy: false,
+        profileImageUrl: null,
+      ),
+    );
+    final authSessionCubit = AuthSessionCubit(
+      storage: InMemoryAuthSessionStorage(),
+    );
+    authSessionCubit.signIn(
+      userId: "user-1",
+      email: "before@example.com",
+      userName: "Before",
+      role: AppUserRole.hunter,
+      accessToken: "token",
+      accessTokenExpiresAtUtc: DateTime.utc(2099, 3, 17, 18),
+    );
+
+    await tester.pumpWidget(
+      _ProfileHarness(
+        authSessionCubit: authSessionCubit,
+        apiClient: apiClient,
+        photoPicker: const _FakePhotoPicker([]),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final l10n = AppLocalizations.of(tester.element(find.byType(ProfilePage)))!;
+
+    final applyArtistFinder = find.text(
+      l10n.profileApplyArtistAction,
+      skipOffstage: false,
+    );
+    await tester.ensureVisible(applyArtistFinder.first);
+    await tester.tap(applyArtistFinder.first);
+    await tester.pumpAndSettle();
+
+    expect(apiClient.lastAppliedRole, 1);
+    expect(
+      find.text(l10n.profileRoleApplicationPending(l10n.roleArtist)),
+      findsOneWidget,
+    );
   });
 }
 
@@ -257,6 +322,7 @@ class _FakeAppApiClient extends AppApiClient {
   String? lastUpdatedEmail;
   String? lastUpdatedUserName;
   String? lastMarkedNotificationId;
+  int? lastAppliedRole;
 
   @override
   Future<CurrentUserProfileModel> getCurrentUserProfile() async => _profile;
@@ -278,6 +344,9 @@ class _FakeAppApiClient extends AppApiClient {
       email: email,
       userName: userName,
       role: _profile.role,
+      pendingRoleApplication: _profile.pendingRoleApplication,
+      pendingRoleApplicationRequestedAtUtc:
+          _profile.pendingRoleApplicationRequestedAtUtc,
       isProviderAccount: _profile.isProviderAccount,
       isMfaEnabled: _profile.isMfaEnabled,
       isMfaRequiredByPolicy: _profile.isMfaRequiredByPolicy,
@@ -335,6 +404,24 @@ class _FakeAppApiClient extends AppApiClient {
     return _notifications.firstWhere(
       (notification) => notification.id == notificationId,
     );
+  }
+
+  @override
+  Future<CurrentUserProfileModel> applyForRole({required int role}) async {
+    lastAppliedRole = role;
+    _profile = CurrentUserProfileModel(
+      userId: _profile.userId,
+      email: _profile.email,
+      userName: _profile.userName,
+      role: _profile.role,
+      pendingRoleApplication: role,
+      pendingRoleApplicationRequestedAtUtc: DateTime.utc(2026, 3, 20, 9),
+      isProviderAccount: _profile.isProviderAccount,
+      isMfaEnabled: _profile.isMfaEnabled,
+      isMfaRequiredByPolicy: _profile.isMfaRequiredByPolicy,
+      profileImageUrl: _profile.profileImageUrl,
+    );
+    return _profile;
   }
 }
 

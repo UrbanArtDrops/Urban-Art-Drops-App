@@ -115,6 +115,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileMfaDisabled => 'MFA not enabled';
 
   @override
+  String get profileRoleApplicationSectionTitle => 'Role applications';
+
+  @override
+  String get profileRoleApplicationHint =>
+      'Hunter accounts can request artist or drop-maker access here.';
+
+  @override
+  String profileRoleApplicationPending(Object role) {
+    return 'Pending role application: $role';
+  }
+
+  @override
+  String profileRoleApplicationRequestedAt(Object timestamp) {
+    return 'Requested at: $timestamp';
+  }
+
+  @override
+  String get profileRoleApplicationSubmitted =>
+      'Your role application has been submitted.';
+
+  @override
+  String get profileRoleApplicationNotAvailableForCurrentRole =>
+      'Role applications are only available for hunter accounts.';
+
+  @override
+  String get profileApplyArtistAction => 'Apply as artist';
+
+  @override
+  String get profileApplyDropMakerAction => 'Apply as drop-maker';
+
+  @override
   String get profileMfaRequiredByPolicy => 'This role requires app-based MFA.';
 
   @override
@@ -676,7 +707,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get authRoleManagedAtRegistration =>
-      'The account type is stored when the account is created. You do not select it again during login.';
+      'The current account type is stored on the server. Login never asks for a role selection.';
 
   @override
   String get authProviderLoginComingSoon =>
@@ -688,7 +719,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get authProviderRegistrationHint =>
-      'Create a linked provider account with the external provider, the target role, and your desired username. The external identity is resolved in a secure browser window.';
+      'Create a linked provider account with the external provider and your desired username. The external identity is resolved in a secure browser window.';
 
   @override
   String get authProviderLabel => 'Provider';
@@ -749,6 +780,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get authHunterSelfServiceHint =>
       'Hunters can register directly and start signing in after verification.';
+
+  @override
+  String get authRegistrationStartsAsHunter =>
+      'Every self-service registration starts as a hunter account.';
+
+  @override
+  String get authRoleApplicationsMoveToProfile =>
+      'Artist and drop-maker access can be requested later on the main profile page.';
 
   @override
   String get authArtistApprovalHint =>
@@ -1217,6 +1256,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get userEditProfileAction => 'Edit profile';
+
+  @override
+  String userRoleApplicationPending(Object role) {
+    return 'Pending role application: $role';
+  }
+
+  @override
+  String get userApproveRoleApplicationAction => 'Approve role application';
+
+  @override
+  String get userRejectRoleApplicationAction => 'Reject role application';
 
   @override
   String get artPieceSubtitleLabel => 'Subtitle';

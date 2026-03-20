@@ -34,6 +34,8 @@ public sealed class ProfileEndpointsTests : IClassFixture<TestWebApplicationFact
         Assert.Equal(authenticatedUser.Email, payload.Email);
         Assert.Equal(authenticatedUser.UserName, payload.UserName);
         Assert.Equal(UserRole.Admin, payload.Role);
+        Assert.Null(payload.PendingRoleApplication);
+        Assert.Null(payload.PendingRoleApplicationRequestedAtUtc);
         Assert.True(payload.IsMfaEnabled);
         Assert.True(payload.IsMfaRequiredByPolicy);
         Assert.Null(payload.ProfileImage);
@@ -170,6 +172,54 @@ public sealed class ProfileEndpointsTests : IClassFixture<TestWebApplicationFact
     }
 
     [Fact]
+    public async Task HunterCanApplyForArtistRole_FromProfile()
+    {
+        var authenticatedUser = await _factory.CreateAuthenticatedUserAsync(
+            UserRole.Hunter,
+            $"profile.apply.artist.{Guid.NewGuid():N}");
+
+        var response = await _client.PostAuthorizedAsJsonAsync(
+            "/api/profile/role-application",
+            new
+            {
+                role = UserRole.Artist
+            },
+            authenticatedUser.AccessToken);
+        await EnsureSuccessWithBodyAsync(response);
+
+        var payload = await response.Content.ReadFromJsonAsync<CurrentUserProfileDto>();
+        Assert.NotNull(payload);
+        Assert.Equal(UserRole.Hunter, payload!.Role);
+        Assert.Equal(UserRole.Artist, payload.PendingRoleApplication);
+        Assert.NotNull(payload.PendingRoleApplicationRequestedAtUtc);
+
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<UrbanArtDbContext>();
+        var storedUser = await dbContext.UserAccounts.FirstAsync(user => user.Id == authenticatedUser.Id);
+        Assert.Equal(UserRole.Artist, storedUser.PendingRoleApplication);
+    }
+
+    [Fact]
+    public async Task NonHunterCannotApplyForRole_FromProfile()
+    {
+        var authenticatedUser = await _factory.CreateAuthenticatedUserAsync(
+            UserRole.Artist,
+            $"profile.apply.reject.{Guid.NewGuid():N}");
+
+        var response = await _client.PostAuthorizedAsJsonAsync(
+            "/api/profile/role-application",
+            new
+            {
+                role = UserRole.DropMaker
+            },
+            authenticatedUser.AccessToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("Only hunters", body, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task ProfileNotifications_CanBeListedAndMarkedRead()
     {
         var authenticatedUser = await _factory.CreateAuthenticatedUserAsync(
@@ -230,6 +280,8 @@ public sealed class ProfileEndpointsTests : IClassFixture<TestWebApplicationFact
         string Email,
         string UserName,
         UserRole Role,
+        UserRole? PendingRoleApplication,
+        DateTimeOffset? PendingRoleApplicationRequestedAtUtc,
         bool IsProviderAccount,
         bool IsMfaEnabled,
         bool IsMfaRequiredByPolicy,

@@ -38,7 +38,6 @@ class AppApiClient {
     required String email,
     required String userName,
     required String password,
-    required int role,
   }) async {
     final response = await _httpClient.post(
       _uri("/api/auth/register-local"),
@@ -47,7 +46,6 @@ class AppApiClient {
         "email": email,
         "userName": userName,
         "password": password,
-        "role": role,
       }),
     );
     _ensureSuccess(response, "Failed to register account.");
@@ -59,7 +57,6 @@ class AppApiClient {
     required String providerSubject,
     required String email,
     required String userName,
-    required int role,
   }) async {
     final response = await _httpClient.post(
       _uri("/api/auth/register-provider"),
@@ -69,7 +66,6 @@ class AppApiClient {
         "providerSubject": providerSubject,
         "email": email,
         "userName": userName,
-        "role": role,
       }),
     );
     _ensureSuccess(response, "Failed to register provider account.");
@@ -96,7 +92,6 @@ class AppApiClient {
     required String callbackUrl,
     required String email,
     required String userName,
-    required int role,
   }) async {
     final response = await _httpClient.post(
       _uri("/api/auth/provider-register/begin"),
@@ -106,7 +101,6 @@ class AppApiClient {
         "callbackUrl": callbackUrl,
         "email": email,
         "userName": userName,
-        "role": role,
       }),
     );
     _ensureSuccess(response, "Failed to start provider registration.");
@@ -262,6 +256,16 @@ class AppApiClient {
     return CurrentUserProfileModel.fromJson(_decodeObjectResponse(response));
   }
 
+  Future<CurrentUserProfileModel> applyForRole({required int role}) async {
+    final response = await _httpClient.post(
+      _uri("/api/profile/role-application"),
+      headers: _jsonHeaders(),
+      body: jsonEncode({"role": role}),
+    );
+    _ensureSuccess(response, "Failed to submit role application.");
+    return CurrentUserProfileModel.fromJson(_decodeObjectResponse(response));
+  }
+
   Future<UserNotificationModel> markCurrentUserNotificationRead(
     String notificationId,
   ) async {
@@ -336,6 +340,24 @@ class AppApiClient {
       _uri("/api/admin/users/$userId/role", {"role": role.toString()}),
     );
     _ensureSuccess(response, "Failed to update user role.");
+  }
+
+  Future<ManagedUser> approveUserRoleApplication(String userId) async {
+    final response = await _httpClient.post(
+      _uri("/api/admin/users/$userId/role-application/approve"),
+      headers: _headers(),
+    );
+    _ensureSuccess(response, "Failed to approve role application.");
+    return ManagedUser.fromJson(_decodeObjectResponse(response));
+  }
+
+  Future<ManagedUser> rejectUserRoleApplication(String userId) async {
+    final response = await _httpClient.post(
+      _uri("/api/admin/users/$userId/role-application/reject"),
+      headers: _headers(),
+    );
+    _ensureSuccess(response, "Failed to reject role application.");
+    return ManagedUser.fromJson(_decodeObjectResponse(response));
   }
 
   Future<void> updateUserProfile({

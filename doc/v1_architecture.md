@@ -12,7 +12,7 @@
 - Provider auth uses a backend-coordinated OAuth 2.0 / OIDC browser flow instead of Firebase: the Flutter client asks the API for an authorization URL, opens the system browser, and completes the login only after the backend callback has exchanged the authorization code and resolved the external identity
 - App-based MFA for Admin and Moderator is enforced by the authentication boundary before an access token is issued
 - Exponential login backoff: 15s, 30s, 60s, 120s
-- Local self-registration stores the requested account role in the database at creation time; Hunters are auto-approved while Artist and Drop-Maker accounts remain pending until an admin approves them
+- Local and provider self-service registration always create an approved Hunter account first; Hunters request Artist or Drop-Maker access later from the main profile area, and admins approve or reject those role applications in user management
 - Local login no longer asks the client to pick a role; the API returns the stored role and identity payload for the session
 - The API now issues bearer access tokens for local login and enforces authorization policies at the endpoint boundary for admin, moderation, artist and drop-creator workflows
 - Moderation and admin actions no longer trust caller-supplied user headers; the backend resolves the acting user from validated JWT claims
@@ -21,6 +21,7 @@
 - External provider sessions are short-lived server-side pending/completed login states held in memory; the browser callback only returns an opaque completion session back to the app, never raw provider tokens
 - The login and provider-registration screens render only those providers that the backend currently exposes as login-ready, so the public UI reflects actual runtime configuration instead of a static provider list
 - Signed-in users manage their own profile under `My profile`, including email address, display name, profile image, and app-based MFA lifecycle actions
+- Hunter profiles also expose self-service role application actions for Artist and Drop-Maker access, plus the current pending application state and request timestamp
 - Profile images are stored as binary blobs in SQL and served through dedicated media endpoints instead of file-system paths
 - The profile area also surfaces persisted in-app notifications so ownership-impacting system events can be reviewed without relying on external mail delivery
 
