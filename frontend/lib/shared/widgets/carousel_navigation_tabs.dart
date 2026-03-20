@@ -57,10 +57,10 @@ class _CarouselTabButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final isLeft = alignment == Alignment.centerLeft;
     final borderRadius = BorderRadius.only(
-      topRight: Radius.circular(isLeft ? 14 : 0),
-      bottomRight: Radius.circular(isLeft ? 14 : 0),
-      topLeft: Radius.circular(isLeft ? 0 : 14),
-      bottomLeft: Radius.circular(isLeft ? 0 : 14),
+      topRight: Radius.circular(isLeft ? 10 : 0),
+      bottomRight: Radius.circular(isLeft ? 10 : 0),
+      topLeft: Radius.circular(isLeft ? 0 : 10),
+      bottomLeft: Radius.circular(isLeft ? 0 : 10),
     );
 
     return Align(
@@ -72,10 +72,11 @@ class _CarouselTabButton extends StatelessWidget {
           onTap: onPressed,
           borderRadius: borderRadius,
           child: SizedBox(
-            width: 34,
-            height: 72,
+            width: 26,
+            height: 56,
             child: Icon(
               icon,
+              size: 20,
               color: onPressed == null ? Colors.white38 : Colors.white,
             ),
           ),
