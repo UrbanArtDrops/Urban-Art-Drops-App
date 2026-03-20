@@ -245,7 +245,7 @@ abstract class AppLocalizations {
   /// No description provided for @profileImageHint.
   ///
   /// In en, this message translates to:
-  /// **'Upload a profile image or remove the current one. Changes are saved with the profile form.'**
+  /// **'Upload a profile image, capture a selfie, or remove the current one. Changes are saved with the profile form.'**
   String get profileImageHint;
 
   /// No description provided for @profileImageUploadAction.
@@ -253,6 +253,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Upload image'**
   String get profileImageUploadAction;
+
+  /// No description provided for @profileImageSelfieAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Capture selfie'**
+  String get profileImageSelfieAction;
 
   /// No description provided for @profileImageRemoveAction.
   ///
@@ -265,6 +271,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The selected profile image could not be loaded.'**
   String get profileImagePickerFailed;
+
+  /// No description provided for @profileImageSelfieFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The selfie could not be captured.'**
+  String get profileImageSelfieFailed;
 
   /// No description provided for @profileLocalAccountChip.
   ///

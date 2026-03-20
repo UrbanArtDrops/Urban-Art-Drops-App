@@ -77,6 +77,76 @@ void main() {
     expect(authSessionCubit.state.userName, "After");
   });
 
+  testWidgets("captures a selfie as profile image and saves it", (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final apiClient = _FakeAppApiClient(
+      profile: const CurrentUserProfileModel(
+        userId: "user-1",
+        email: "before@example.com",
+        userName: "Before",
+        role: 0,
+        pendingRoleApplication: null,
+        pendingRoleApplicationRequestedAtUtc: null,
+        isProviderAccount: false,
+        isMfaEnabled: false,
+        isMfaRequiredByPolicy: false,
+        profileImageUrl: null,
+      ),
+    );
+    final authSessionCubit = AuthSessionCubit(
+      storage: InMemoryAuthSessionStorage(),
+    );
+    authSessionCubit.signIn(
+      userId: "user-1",
+      email: "before@example.com",
+      userName: "Before",
+      role: AppUserRole.hunter,
+      accessToken: "token",
+      accessTokenExpiresAtUtc: DateTime.utc(2099, 3, 17, 18),
+    );
+    const selfieSource = "data:image/jpeg;base64,SELFIE";
+
+    await tester.pumpWidget(
+      _ProfileHarness(
+        authSessionCubit: authSessionCubit,
+        apiClient: apiClient,
+        photoPicker: const _FakePhotoPicker(
+          [],
+          selfie: LocalPhotoSelection(
+            source: selfieSource,
+            label: "selfie.jpg",
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final l10n = AppLocalizations.of(tester.element(find.byType(ProfilePage)))!;
+
+    final selfieButtonFinder = find.text(
+      l10n.profileImageSelfieAction,
+      skipOffstage: false,
+    );
+    await tester.ensureVisible(selfieButtonFinder.first);
+    await tester.tap(selfieButtonFinder.first);
+    await tester.pumpAndSettle();
+
+    final saveButtonFinder = find.text(l10n.saveButton, skipOffstage: false);
+    await tester.ensureVisible(saveButtonFinder.first);
+    await tester.tap(saveButtonFinder.first);
+    await tester.pumpAndSettle();
+
+    expect(apiClient.lastUpdatedProfileImageSource, selfieSource);
+    expect(authSessionCubit.state.profileImageUrl, selfieSource);
+  });
+
   testWidgets("shows MFA setup UI after starting setup", (tester) async {
     tester.view.physicalSize = const Size(1200, 1600);
     tester.view.devicePixelRatio = 1;
@@ -380,6 +450,7 @@ class _FakeAppApiClient extends AppApiClient {
   final ApiException? notificationsError;
   String? lastUpdatedEmail;
   String? lastUpdatedUserName;
+  String? lastUpdatedProfileImageSource;
   String? lastMarkedNotificationId;
   int? lastAppliedRole;
 
@@ -403,6 +474,7 @@ class _FakeAppApiClient extends AppApiClient {
   }) async {
     lastUpdatedEmail = email;
     lastUpdatedUserName = userName;
+    lastUpdatedProfileImageSource = profileImageSource;
     _profile = CurrentUserProfileModel(
       userId: _profile.userId,
       email: email,
@@ -490,10 +562,14 @@ class _FakeAppApiClient extends AppApiClient {
 }
 
 class _FakePhotoPicker implements LocalPhotoPicker {
-  const _FakePhotoPicker(this._result);
+  const _FakePhotoPicker(this._result, {this.selfie});
 
   final List<LocalPhotoSelection> _result;
+  final LocalPhotoSelection? selfie;
 
   @override
   Future<List<LocalPhotoSelection>> pickPhotos() async => _result;
+
+  @override
+  Future<LocalPhotoSelection?> captureSelfie() async => selfie;
 }

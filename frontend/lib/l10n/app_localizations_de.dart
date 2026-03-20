@@ -84,10 +84,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get profileImageHint =>
-      'Lade ein Profilbild hoch oder entferne das aktuelle Bild. Die Aenderung wird mit dem Profilformular gespeichert.';
+      'Lade ein Profilbild hoch, nimm ein Selfie auf oder entferne das aktuelle Bild. Die Aenderung wird mit dem Profilformular gespeichert.';
 
   @override
   String get profileImageUploadAction => 'Bild hochladen';
+
+  @override
+  String get profileImageSelfieAction => 'Selfie aufnehmen';
 
   @override
   String get profileImageRemoveAction => 'Bild entfernen';
@@ -95,6 +98,10 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get profileImagePickerFailed =>
       'Das ausgewaehlte Profilbild konnte nicht geladen werden.';
+
+  @override
+  String get profileImageSelfieFailed =>
+      'Das Selfie konnte nicht aufgenommen werden.';
 
   @override
   String get profileLocalAccountChip => 'Lokales Konto';

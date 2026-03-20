@@ -84,10 +84,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileImageHint =>
-      'Upload a profile image or remove the current one. Changes are saved with the profile form.';
+      'Upload a profile image, capture a selfie, or remove the current one. Changes are saved with the profile form.';
 
   @override
   String get profileImageUploadAction => 'Upload image';
+
+  @override
+  String get profileImageSelfieAction => 'Capture selfie';
 
   @override
   String get profileImageRemoveAction => 'Remove image';
@@ -95,6 +98,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get profileImagePickerFailed =>
       'The selected profile image could not be loaded.';
+
+  @override
+  String get profileImageSelfieFailed => 'The selfie could not be captured.';
 
   @override
   String get profileLocalAccountChip => 'Local account';

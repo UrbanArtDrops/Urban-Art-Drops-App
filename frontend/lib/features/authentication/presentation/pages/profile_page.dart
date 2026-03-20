@@ -234,6 +234,26 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  Future<void> _captureSelfie() async {
+    try {
+      final selection = await _photoPicker.captureSelfie();
+      if (!mounted || selection == null) {
+        return;
+      }
+
+      setState(() {
+        _profileImageSource = selection.source;
+        _profileImageDirty = true;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      _showSnackBar(AppLocalizations.of(context)!.profileImageSelfieFailed);
+    }
+  }
+
   void _removeProfileImage() {
     setState(() {
       _profileImageSource = null;
@@ -672,14 +692,20 @@ class _ProfilePageState extends State<ProfilePage> {
                       const SizedBox(height: 8),
                       Text(l10n.profileImageHint),
                       const SizedBox(height: 12),
-                      Row(
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
                         children: [
                           OutlinedButton.icon(
                             onPressed: _isSaving ? null : _pickProfileImage,
                             icon: const Icon(Icons.upload_file_outlined),
                             label: Text(l10n.profileImageUploadAction),
                           ),
-                          const SizedBox(width: 8),
+                          OutlinedButton.icon(
+                            onPressed: _isSaving ? null : _captureSelfie,
+                            icon: const Icon(Icons.camera_alt_outlined),
+                            label: Text(l10n.profileImageSelfieAction),
+                          ),
                           OutlinedButton.icon(
                             onPressed: _isSaving || _profileImageSource == null
                                 ? null
