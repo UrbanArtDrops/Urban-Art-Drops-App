@@ -1,20 +1,29 @@
 import "package:flutter/material.dart";
+import "package:flutter_bloc/flutter_bloc.dart";
 import "package:go_router/go_router.dart";
 import "package:urban_art_drops_app/l10n/app_localizations.dart";
 
+import "../../../authentication/presentation/bloc/auth_session_cubit.dart";
 import "../../../../shared/models/app_models.dart";
 import "../../../../shared/services/app_api_client.dart";
 import "../../../../shared/widgets/page_shell.dart";
 
 class LeaderboardPage extends StatefulWidget {
-  const LeaderboardPage({super.key});
+  const LeaderboardPage({super.key, AppApiClient? apiClient})
+    : _apiClient = apiClient;
+
+  final AppApiClient? _apiClient;
 
   @override
   State<LeaderboardPage> createState() => _LeaderboardPageState();
 }
 
 class _LeaderboardPageState extends State<LeaderboardPage> {
-  final AppApiClient _apiClient = AppApiClient();
+  static const double _estimatedLeaderboardEntryExtent = 104;
+
+  late final AppApiClient _apiClient = widget._apiClient ?? AppApiClient();
+  final ScrollController _scrollController = ScrollController();
+  final Map<String, GlobalKey> _entryKeys = <String, GlobalKey>{};
   List<_LeaderboardViewModel> _entries = const [];
   bool _isLoading = true;
   String? _error;
@@ -23,6 +32,12 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
   void initState() {
     super.initState();
     _loadLeaderboard();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadLeaderboard() async {
@@ -46,6 +61,11 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
       final users = results[2] as List<ManagedUser>;
 
       final l10n = AppLocalizations.of(context)!;
+      final authSession = context.read<AuthSessionCubit>().state;
+      final currentHunterKey =
+          authSession.isAuthenticated && authSession.userId != null
+          ? "user:${authSession.userId!}"
+          : null;
       final artById = {for (final art in artPieces) art.id: art};
       final usersById = {for (final user in users) user.id: user};
       final aggregates = <String, _HunterAggregate>{};
@@ -71,7 +91,10 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
 
           final aggregate = aggregates.putIfAbsent(
             hunterKey,
-            () => _HunterAggregate(displayName: hunterDisplayName),
+            () => _HunterAggregate(
+              hunterKey: hunterKey,
+              displayName: hunterDisplayName,
+            ),
           );
           aggregate.totalClaims += 1;
           aggregate.claimedDrops.update(
@@ -92,8 +115,10 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
           aggregates.values
               .map(
                 (aggregate) => _LeaderboardViewModel(
+                  hunterKey: aggregate.hunterKey,
                   hunterName: aggregate.displayName,
                   claims: aggregate.totalClaims,
+                  isCurrentUser: aggregate.hunterKey == currentHunterKey,
                   claimedDrops:
                       aggregate.claimedDrops.values.toList(growable: false)
                         ..sort(
@@ -119,6 +144,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
         _entries = entries;
         _isLoading = false;
       });
+      _centerCurrentUserEntry();
     } catch (_) {
       if (!mounted) {
         return;
@@ -131,9 +157,51 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
     }
   }
 
+  void _centerCurrentUserEntry() {
+    final currentIndex = _entries.indexWhere((entry) => entry.isCurrentUser);
+    if (currentIndex < 0) {
+      return;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) {
+        return;
+      }
+
+      final viewportExtent = _scrollController.position.viewportDimension;
+      final estimatedOffset =
+          (currentIndex * _estimatedLeaderboardEntryExtent) -
+          (viewportExtent / 2) +
+          (_estimatedLeaderboardEntryExtent / 2);
+      final clampedOffset = estimatedOffset.clamp(
+        0.0,
+        _scrollController.position.maxScrollExtent,
+      );
+      _scrollController.jumpTo(clampedOffset);
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+
+        final targetContext =
+            _entryKeys[_entries[currentIndex].hunterKey]?.currentContext;
+        if (targetContext != null) {
+          Scrollable.ensureVisible(
+            targetContext,
+            alignment: 0.5,
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOutCubic,
+          );
+        }
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
 
     return PageShell(
       title: l10n.navLeaderboard,
@@ -158,46 +226,81 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
           : RefreshIndicator(
               onRefresh: _loadLeaderboard,
               child: ListView.separated(
+                controller: _scrollController,
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
                 itemCount: _entries.length,
                 separatorBuilder: (context, _) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final entry = _entries[index];
                   final rank = index + 1;
+                  final borderColor = entry.isCurrentUser
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.outlineVariant;
 
-                  return Card(
-                    child: ExpansionTile(
-                      tilePadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 2,
+                  return KeyedSubtree(
+                    key: _entryKeys.putIfAbsent(entry.hunterKey, GlobalKey.new),
+                    child: Card(
+                      key: ValueKey("leaderboard-entry-${entry.hunterKey}"),
+                      color: entry.isCurrentUser
+                          ? theme.colorScheme.primaryContainer
+                          : null,
+                      surfaceTintColor: entry.isCurrentUser
+                          ? theme.colorScheme.primary
+                          : null,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(color: borderColor, width: 1.5),
                       ),
-                      title: Text(l10n.rankEntry("$rank", entry.hunterName)),
-                      subtitle: Text(
-                        l10n.leaderboardClaimCount("${entry.claims}"),
-                      ),
-                      childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                      children: entry.claimedDrops.isEmpty
-                          ? [Text(l10n.leaderboardNoClaimedDrops)]
-                          : entry.claimedDrops
-                                .map(
-                                  (claimedDrop) => ListTile(
-                                    contentPadding: EdgeInsets.zero,
-                                    leading: _LeaderboardDropImage(
-                                      imageUrl: claimedDrop.previewImageUrl,
-                                    ),
-                                    title: Text(claimedDrop.dropTitle),
-                                    subtitle: Text(
-                                      l10n.leaderboardDropClaimCount(
-                                        "${claimedDrop.claimedItems}",
+                      child: ExpansionTile(
+                        key: PageStorageKey(
+                          "leaderboard-tile-${entry.hunterKey}",
+                        ),
+                        leading: _RankBadge(rank: rank),
+                        initiallyExpanded: entry.isCurrentUser,
+                        tilePadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 2,
+                        ),
+                        title: Text(
+                          l10n.rankEntry("$rank", entry.hunterName),
+                          style: entry.isCurrentUser
+                              ? theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                )
+                              : null,
+                        ),
+                        subtitle: Text(
+                          l10n.leaderboardClaimCount("${entry.claims}"),
+                        ),
+                        childrenPadding: const EdgeInsets.fromLTRB(
+                          12,
+                          0,
+                          12,
+                          12,
+                        ),
+                        children: entry.claimedDrops.isEmpty
+                            ? [Text(l10n.leaderboardNoClaimedDrops)]
+                            : entry.claimedDrops
+                                  .map(
+                                    (claimedDrop) => ListTile(
+                                      contentPadding: EdgeInsets.zero,
+                                      leading: _LeaderboardDropImage(
+                                        imageUrl: claimedDrop.previewImageUrl,
+                                      ),
+                                      title: Text(claimedDrop.dropTitle),
+                                      subtitle: Text(
+                                        l10n.leaderboardDropClaimCount(
+                                          "${claimedDrop.claimedItems}",
+                                        ),
+                                      ),
+                                      trailing: const Icon(Icons.chevron_right),
+                                      onTap: () => context.go(
+                                        "/hunter/drops/${claimedDrop.dropId}",
                                       ),
                                     ),
-                                    trailing: const Icon(Icons.chevron_right),
-                                    onTap: () => context.go(
-                                      "/hunter/drops/${claimedDrop.dropId}",
-                                    ),
-                                  ),
-                                )
-                                .toList(growable: false),
+                                  )
+                                  .toList(growable: false),
+                      ),
                     ),
                   );
                 },
@@ -239,13 +342,17 @@ String _resolveHunterDisplayName({
 
 class _LeaderboardViewModel {
   const _LeaderboardViewModel({
+    required this.hunterKey,
     required this.hunterName,
     required this.claims,
+    required this.isCurrentUser,
     required this.claimedDrops,
   });
 
+  final String hunterKey;
   final String hunterName;
   final int claims;
+  final bool isCurrentUser;
   final List<_ClaimedDropSummary> claimedDrops;
 }
 
@@ -273,11 +380,42 @@ class _ClaimedDropSummary {
 }
 
 class _HunterAggregate {
-  _HunterAggregate({required this.displayName});
+  _HunterAggregate({required this.hunterKey, required this.displayName});
 
+  final String hunterKey;
   final String displayName;
   int totalClaims = 0;
   final Map<String, _ClaimedDropSummary> claimedDrops = {};
+}
+
+class _RankBadge extends StatelessWidget {
+  const _RankBadge({required this.rank});
+
+  final int rank;
+
+  @override
+  Widget build(BuildContext context) {
+    if (rank > 50) {
+      return CircleAvatar(
+        key: ValueKey("leaderboard-rank-badge-$rank"),
+        radius: 20,
+        child: Text("$rank"),
+      );
+    }
+
+    final medalColor = switch (rank) {
+      1 => const Color(0xFFD4AF37),
+      <= 20 => const Color(0xFFC0C0C0),
+      _ => const Color(0xFFCD7F32),
+    };
+
+    return CircleAvatar(
+      key: ValueKey("leaderboard-rank-badge-$rank"),
+      radius: 20,
+      backgroundColor: medalColor.withValues(alpha: 0.18),
+      child: Icon(Icons.military_tech_rounded, color: medalColor),
+    );
+  }
 }
 
 String _resolveDropPreviewImage({

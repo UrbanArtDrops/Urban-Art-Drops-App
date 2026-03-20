@@ -114,6 +114,11 @@
 - Final placement writes coordinates and location photos through `PUT /api/drops/{id}` and can publish the drop immediately afterwards
 - Admins can open the same drop management area to inspect and manage all drops across drop-makers, and admin-triggered drop changes create persisted in-app notifications for the impacted drop-maker accounts
 
+## Leaderboard
+- The leaderboard derives hunter ranks from claimed drop items and expands the signed-in hunter entry automatically when it exists
+- Signed-in users are highlighted visually, scrolled into the vertical center of the page on load, and see their claimed drops opened by default
+- Rank medals are rendered as gold for place 1, silver for places 2 through 20, and bronze for places 21 through 50
+
 ## Claim Flow
 - `GET /api/claims/by-token/{qrToken}` returns a claim preview for app and browser fallback
 - `POST /api/claims/by-token` resolves the QR token to the drop item and executes the claim
