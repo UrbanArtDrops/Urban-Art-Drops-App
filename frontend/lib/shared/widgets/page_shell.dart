@@ -3,6 +3,7 @@ import "package:flutter_bloc/flutter_bloc.dart";
 import "package:go_router/go_router.dart";
 import "package:urban_art_drops_app/l10n/app_localizations.dart";
 
+import "../../app/router/app_navigation_history.dart";
 import "../../features/authentication/presentation/bloc/auth_session_cubit.dart";
 
 class PageShell extends StatelessWidget {
@@ -51,19 +52,26 @@ class PageShell extends StatelessWidget {
     return BlocBuilder<AuthSessionCubit, AuthSessionState>(
       builder: (context, authState) {
         final path = GoRouterState.of(context).uri.path;
-        final canNavigateBack = context.canPop();
+        final currentLocation = GoRouterState.of(context).uri.toString();
+        final router = GoRouter.of(context);
+        final navigator = Navigator.of(context);
+        final canNavigateBack =
+            router.canPop() ||
+            navigator.canPop() ||
+            AppNavigationHistory.instance.canGoBack(currentLocation);
 
         return Scaffold(
           appBar: AppBar(
+            automaticallyImplyLeading: false,
+            leadingWidth: canNavigateBack ? 104 : 56,
+            leading: _PageShellLeading(
+              showBackButton: canNavigateBack,
+              backTooltip: l10n.backAction,
+              onBackPressed: () =>
+                  _handleBackNavigation(context, currentLocation),
+            ),
             title: Text(title),
-            actions: [
-              IconButton(
-                tooltip: l10n.backAction,
-                onPressed: canNavigateBack ? () => context.pop() : null,
-                icon: const Icon(Icons.arrow_back),
-              ),
-              ...actions,
-            ],
+            actions: [...actions],
           ),
           floatingActionButton: floatingActionButton,
           drawer: Drawer(
@@ -108,6 +116,64 @@ class PageShell extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+void _handleBackNavigation(BuildContext context, String currentLocation) {
+  final router = GoRouter.of(context);
+  final navigator = Navigator.of(context);
+
+  if (router.canPop()) {
+    router.pop();
+    return;
+  }
+
+  if (navigator.canPop()) {
+    navigator.pop();
+    return;
+  }
+
+  final targetLocation = AppNavigationHistory.instance.beginBackNavigation(
+    currentLocation,
+  );
+  if (targetLocation != null && targetLocation != currentLocation) {
+    context.go(targetLocation);
+  }
+}
+
+class _PageShellLeading extends StatelessWidget {
+  const _PageShellLeading({
+    required this.showBackButton,
+    required this.backTooltip,
+    required this.onBackPressed,
+  });
+
+  final bool showBackButton;
+  final String backTooltip;
+  final VoidCallback onBackPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final menuTooltip = MaterialLocalizations.of(context).openAppDrawerTooltip;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (showBackButton)
+          IconButton(
+            tooltip: backTooltip,
+            onPressed: onBackPressed,
+            icon: const Icon(Icons.arrow_back),
+          ),
+        Builder(
+          builder: (context) => IconButton(
+            tooltip: menuTooltip,
+            onPressed: Scaffold.of(context).openDrawer,
+            icon: const Icon(Icons.menu),
+          ),
+        ),
+      ],
     );
   }
 }

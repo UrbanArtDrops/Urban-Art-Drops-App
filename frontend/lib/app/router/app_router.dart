@@ -21,9 +21,11 @@ import "../../features/drop_maker/presentation/pages/drop_maker_page.dart";
 import "../../features/drop_maker/presentation/pages/make_drop_wizard_page.dart";
 import "../../features/drop_maker/presentation/pages/my_drops_page.dart";
 import "../../features/moderation/presentation/pages/moderation_page.dart";
+import "app_navigation_history.dart";
 
 GoRouter createAppRouter(AuthSessionCubit authSessionCubit) {
-  return GoRouter(
+  final navigationHistory = AppNavigationHistory.instance;
+  final router = GoRouter(
     initialLocation: "/",
     refreshListenable: _GoRouterRefreshStream(authSessionCubit.stream),
     redirect: (context, state) {
@@ -134,6 +136,17 @@ GoRouter createAppRouter(AuthSessionCubit authSessionCubit) {
       ),
     ],
   );
+
+  navigationHistory.reset(
+    router.routerDelegate.currentConfiguration.uri.toString(),
+  );
+  router.routerDelegate.addListener(() {
+    navigationHistory.record(
+      router.routerDelegate.currentConfiguration.uri.toString(),
+    );
+  });
+
+  return router;
 }
 
 bool _isAuthRoute(String path) =>

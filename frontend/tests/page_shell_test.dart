@@ -2,11 +2,14 @@ import "package:flutter/material.dart";
 import "package:flutter_bloc/flutter_bloc.dart";
 import "package:flutter_test/flutter_test.dart";
 import "package:go_router/go_router.dart";
+import "package:urban_art_drops_app/app/router/app_navigation_history.dart";
 import "package:urban_art_drops_app/features/authentication/presentation/bloc/auth_session_cubit.dart";
 import "package:urban_art_drops_app/l10n/app_localizations.dart";
 import "package:urban_art_drops_app/shared/widgets/page_shell.dart";
 
 void main() {
+  setUp(() => AppNavigationHistory.instance.reset());
+
   testWidgets("applies a configured drawer width", (tester) async {
     await tester.pumpWidget(
       _TestHarness(
@@ -157,6 +160,61 @@ void main() {
       expect(titles, isNot(contains("Logout")));
     },
   );
+
+  testWidgets("renders the back button in the leading area", (tester) async {
+    final router = _buildTwoPageRouter();
+    AppNavigationHistory.instance.reset();
+    AppNavigationHistory.instance.record(
+      router.routerDelegate.currentConfiguration.uri.toString(),
+    );
+    router.routerDelegate.addListener(() {
+      AppNavigationHistory.instance.record(
+        router.routerDelegate.currentConfiguration.uri.toString(),
+      );
+    });
+
+    await tester.pumpWidget(_RouterHarness(router: router));
+    router.go("/details");
+    await tester.pumpAndSettle();
+
+    final appBar = tester.widget<AppBar>(find.byType(AppBar));
+    expect(appBar.leading, isNotNull);
+    expect(find.byTooltip("Back"), findsOneWidget);
+
+    final actionIcons = (appBar.actions ?? [])
+        .whereType<IconButton>()
+        .map((button) => ((button.icon as Icon?)?.icon))
+        .toList(growable: false);
+    expect(actionIcons, isNot(contains(Icons.arrow_back)));
+  });
+
+  testWidgets("navigates back to the previous route from the leading button", (
+    tester,
+  ) async {
+    final router = _buildTwoPageRouter();
+    AppNavigationHistory.instance.reset();
+    AppNavigationHistory.instance.record(
+      router.routerDelegate.currentConfiguration.uri.toString(),
+    );
+    router.routerDelegate.addListener(() {
+      AppNavigationHistory.instance.record(
+        router.routerDelegate.currentConfiguration.uri.toString(),
+      );
+    });
+
+    await tester.pumpWidget(_RouterHarness(router: router));
+    expect(find.text("Home body"), findsOneWidget);
+
+    router.go("/details");
+    await tester.pumpAndSettle();
+    expect(find.text("Details body"), findsOneWidget);
+
+    await tester.tap(find.byTooltip("Back"));
+    await tester.pumpAndSettle();
+
+    expect(find.text("Home body"), findsOneWidget);
+    expect(find.text("Details body"), findsNothing);
+  });
 }
 
 class _TestHarness extends StatelessWidget {
@@ -193,6 +251,41 @@ class _TestHarness extends StatelessWidget {
       ),
     );
   }
+}
+
+class _RouterHarness extends StatelessWidget {
+  const _RouterHarness({required this.router});
+
+  final GoRouter router;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => AuthSessionCubit(),
+      child: MaterialApp.router(
+        routerConfig: router,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+      ),
+    );
+  }
+}
+
+GoRouter _buildTwoPageRouter() {
+  return GoRouter(
+    routes: [
+      GoRoute(
+        path: "/",
+        builder: (context, state) =>
+            const PageShell(title: "Home", body: Text("Home body")),
+      ),
+      GoRoute(
+        path: "/details",
+        builder: (context, state) =>
+            const PageShell(title: "Details", body: Text("Details body")),
+      ),
+    ],
+  );
 }
 
 List<String> _drawerTitles(WidgetTester tester) {
