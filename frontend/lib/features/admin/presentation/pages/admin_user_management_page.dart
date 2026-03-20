@@ -1,6 +1,8 @@
 import "package:flutter/material.dart";
+import "package:flutter_bloc/flutter_bloc.dart";
 import "package:urban_art_drops_app/l10n/app_localizations.dart";
 
+import "../../../authentication/presentation/bloc/auth_session_cubit.dart";
 import "../../../../shared/models/app_models.dart";
 import "../../../../shared/services/app_api_client.dart";
 import "../../../../shared/widgets/page_shell.dart";
@@ -393,6 +395,7 @@ class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final authState = context.watch<AuthSessionCubit>().state;
 
     return PageShell(
       title: l10n.menuUsers,
@@ -441,6 +444,8 @@ class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
                             itemCount: _users.length,
                             itemBuilder: (context, index) {
                               final user = _users[index];
+                              final isCurrentAdmin =
+                                  authState.userId == user.id;
                               final approvedLabel = user.isApproved
                                   ? l10n.userApproved
                                   : l10n.userNotApproved;
@@ -503,22 +508,6 @@ class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
                                     itemBuilder: (_) {
                                       final items = <PopupMenuEntry<String>>[
                                         PopupMenuItem(
-                                          value: "approval",
-                                          child: Text(
-                                            user.isApproved
-                                                ? l10n.userRevokeApprovalAction
-                                                : l10n.userApproveAction,
-                                          ),
-                                        ),
-                                        PopupMenuItem(
-                                          value: "suspension",
-                                          child: Text(
-                                            user.isSuspended
-                                                ? l10n.userUnsuspendAction
-                                                : l10n.userSuspendAction,
-                                          ),
-                                        ),
-                                        PopupMenuItem(
                                           value: "role",
                                           child: Text(
                                             l10n.userChangeRoleAction,
@@ -531,6 +520,30 @@ class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
                                           ),
                                         ),
                                       ];
+                                      if (!isCurrentAdmin) {
+                                        items.insert(
+                                          0,
+                                          PopupMenuItem(
+                                            value: "approval",
+                                            child: Text(
+                                              user.isApproved
+                                                  ? l10n.userRevokeApprovalAction
+                                                  : l10n.userApproveAction,
+                                            ),
+                                          ),
+                                        );
+                                        items.insert(
+                                          1,
+                                          PopupMenuItem(
+                                            value: "suspension",
+                                            child: Text(
+                                              user.isSuspended
+                                                  ? l10n.userUnsuspendAction
+                                                  : l10n.userSuspendAction,
+                                            ),
+                                          ),
+                                        );
+                                      }
                                       if (pendingRoleLabel != null) {
                                         items.add(
                                           PopupMenuItem(

@@ -67,6 +67,58 @@ void main() {
     expect(find.byTooltip(l10n.userApproved), findsOneWidget);
     expect(find.byTooltip(l10n.userActive), findsOneWidget);
   });
+
+  testWidgets(
+    "hides self approval and suspension actions for the signed-in admin",
+    (tester) async {
+      final mockHttpClient = MockClient((request) async {
+        if (request.url.path == "/api/admin/users") {
+          return http.Response(
+            jsonEncode([
+              {
+                "id": "admin-1",
+                "email": "admin@example.com",
+                "userName": "Admin",
+                "role": 4,
+                "pendingRoleApplication": null,
+                "pendingRoleApplicationRequestedAtUtc": null,
+                "isApproved": true,
+                "isSuspended": false,
+                "isEmailVerified": true,
+                "isProviderAccount": false,
+                "profileImage": null,
+              },
+            ]),
+            200,
+            headers: {"content-type": "application/json"},
+          );
+        }
+
+        return http.Response("Not Found", 404);
+      });
+
+      await tester.pumpWidget(
+        _AdminUserManagementHarness(
+          apiClient: AppApiClient(
+            httpClient: mockHttpClient,
+            baseUrl: "http://localhost",
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(AdminUserManagementPage));
+      final l10n = AppLocalizations.of(context)!;
+
+      await tester.tap(find.byType(PopupMenuButton<String>));
+      await tester.pumpAndSettle();
+
+      expect(find.text(l10n.userRevokeApprovalAction), findsNothing);
+      expect(find.text(l10n.userSuspendAction), findsNothing);
+      expect(find.text(l10n.userEditProfileAction), findsOneWidget);
+      expect(find.text(l10n.userChangeRoleAction), findsOneWidget);
+    },
+  );
 }
 
 class _AdminUserManagementHarness extends StatelessWidget {

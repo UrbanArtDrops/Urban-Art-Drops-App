@@ -63,6 +63,7 @@
 - Admin user management supports editing both user name and email address after account creation
 - Admin user management also exposes approve/reject actions for pending Hunter role applications to Artist or Drop-Maker
 - The admin user list renders each account with role, approval and suspension icons plus the stored profile image when one is available
+- Admin user management blocks self-lockout by preventing an admin from suspending their own account or revoking their own approval in both the API and the UI
 - Profile images are served from `/api/media/user-profile-images/{id}` and remain inside the SQL-backed persistence model
 - In-app profile notifications are available through `GET /api/profile/notifications` and can be acknowledged through `POST /api/profile/notifications/{notificationId}/mark-read`
 - The profile screen loads `/api/profile` and `/api/profile/notifications` independently so a notification-loading failure does not hide the main profile data; the notification section shows a retry action instead

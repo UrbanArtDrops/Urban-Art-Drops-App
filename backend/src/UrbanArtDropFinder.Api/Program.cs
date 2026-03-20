@@ -2057,8 +2057,24 @@ adminGroup.MapPost("/users", async (
     return Results.Ok(new AuthResult(true, "Managed user created.", user.Id, user.Role, user.UserName, user.Email));
 }).RequireAuthorization(AuthPolicies.AdminOnly);
 
-adminGroup.MapPatch("/users/{userId:guid}/approval", async (Guid userId, bool approved, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+adminGroup.MapPatch("/users/{userId:guid}/approval", async (
+    Guid userId,
+    bool approved,
+    HttpContext httpContext,
+    UrbanArtDbContext dbContext,
+    CancellationToken cancellationToken) =>
 {
+    var actorResolution = await ResolveAuthenticatedActorAsync(httpContext, dbContext, cancellationToken);
+    if (actorResolution.Failure is not null)
+    {
+        return actorResolution.Failure;
+    }
+
+    if (actorResolution.Actor!.Id == userId && !approved)
+    {
+        return Results.BadRequest(new { error = "Admins cannot revoke their own approval." });
+    }
+
     var user = await dbContext.UserAccounts.FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
     if (user is null)
     {
@@ -2070,8 +2086,24 @@ adminGroup.MapPatch("/users/{userId:guid}/approval", async (Guid userId, bool ap
     return Results.Ok();
 }).RequireAuthorization(AuthPolicies.AdminOnly);
 
-adminGroup.MapPatch("/users/{userId:guid}/suspension", async (Guid userId, bool suspended, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+adminGroup.MapPatch("/users/{userId:guid}/suspension", async (
+    Guid userId,
+    bool suspended,
+    HttpContext httpContext,
+    UrbanArtDbContext dbContext,
+    CancellationToken cancellationToken) =>
 {
+    var actorResolution = await ResolveAuthenticatedActorAsync(httpContext, dbContext, cancellationToken);
+    if (actorResolution.Failure is not null)
+    {
+        return actorResolution.Failure;
+    }
+
+    if (actorResolution.Actor!.Id == userId && suspended)
+    {
+        return Results.BadRequest(new { error = "Admins cannot suspend their own account." });
+    }
+
     var user = await dbContext.UserAccounts.FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
     if (user is null)
     {

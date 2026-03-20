@@ -219,14 +219,17 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
     [Fact]
     public async Task BootstrapAdmin_WhenNoAdminExists_CreatesFirstAdminAndDisablesFurtherBootstrap()
     {
-        var statusResponse = await _client.GetAsync("/api/bootstrap/status");
+        using var isolatedFactory = new TestWebApplicationFactory();
+        using var isolatedClient = isolatedFactory.CreateClient();
+
+        var statusResponse = await isolatedClient.GetAsync("/api/bootstrap/status");
         await EnsureSuccessWithBodyAsync(statusResponse);
         var statusBefore = await statusResponse.Content.ReadFromJsonAsync<BootstrapStatusDto>();
         Assert.NotNull(statusBefore);
         Assert.True(statusBefore!.BootstrapRequired);
 
         var uniqueId = Guid.NewGuid().ToString("N");
-        var bootstrapResponse = await _client.PostAsJsonAsync(
+        var bootstrapResponse = await isolatedClient.PostAsJsonAsync(
             "/api/bootstrap/admin",
             new
             {
@@ -242,7 +245,7 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
         Assert.True(created.IsApproved);
         Assert.True(created.IsEmailVerified);
 
-        var statusAfterResponse = await _client.GetAsync("/api/bootstrap/status");
+        var statusAfterResponse = await isolatedClient.GetAsync("/api/bootstrap/status");
         await EnsureSuccessWithBodyAsync(statusAfterResponse);
         var statusAfter = await statusAfterResponse.Content.ReadFromJsonAsync<BootstrapStatusDto>();
         Assert.NotNull(statusAfter);
@@ -459,6 +462,50 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
         var updatedUser = await verificationDbContext.UserAccounts.FirstAsync(user => user.Id == hunter.Id);
         Assert.Equal(UserRole.Hunter, updatedUser.Role);
         Assert.Null(updatedUser.PendingRoleApplication);
+    }
+
+    [Fact]
+    public async Task AdminCannotRevokeOwnApproval()
+    {
+        var admin = await _factory.CreateAuthenticatedUserAsync(
+            UserRole.Admin,
+            $"admin.self.approval.{Guid.NewGuid():N}");
+
+        var response = await _client.PatchAuthorizedAsJsonAsync(
+            $"/api/admin/users/{admin.Id}/approval?approved=false",
+            new { },
+            admin.AccessToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("cannot revoke", body, StringComparison.OrdinalIgnoreCase);
+
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<UrbanArtDbContext>();
+        var updatedUser = await dbContext.UserAccounts.FirstAsync(user => user.Id == admin.Id);
+        Assert.True(updatedUser.IsApproved);
+    }
+
+    [Fact]
+    public async Task AdminCannotSuspendOwnAccount()
+    {
+        var admin = await _factory.CreateAuthenticatedUserAsync(
+            UserRole.Admin,
+            $"admin.self.suspend.{Guid.NewGuid():N}");
+
+        var response = await _client.PatchAuthorizedAsJsonAsync(
+            $"/api/admin/users/{admin.Id}/suspension?suspended=true",
+            new { },
+            admin.AccessToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("cannot suspend", body, StringComparison.OrdinalIgnoreCase);
+
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<UrbanArtDbContext>();
+        var updatedUser = await dbContext.UserAccounts.FirstAsync(user => user.Id == admin.Id);
+        Assert.False(updatedUser.IsSuspended);
     }
 
     [Fact]
