@@ -8,14 +8,17 @@ import "../../../../shared/widgets/page_shell.dart";
 import "../../../../shared/widgets/source_image.dart";
 
 class DropMakerPage extends StatefulWidget {
-  const DropMakerPage({super.key});
+  const DropMakerPage({super.key, AppApiClient? apiClient})
+    : _apiClient = apiClient;
+
+  final AppApiClient? _apiClient;
 
   @override
   State<DropMakerPage> createState() => _DropMakerPageState();
 }
 
 class _DropMakerPageState extends State<DropMakerPage> {
-  final AppApiClient _apiClient = AppApiClient();
+  late final AppApiClient _apiClient = widget._apiClient ?? AppApiClient();
   List<ArtPieceModel> _artPieces = const [];
   bool _isLoading = true;
   String? _error;

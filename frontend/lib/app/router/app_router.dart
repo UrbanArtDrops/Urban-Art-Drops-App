@@ -157,7 +157,9 @@ _RouteAccess _resolveRouteAccess(String path) {
   if (path == "/drop-maker/art-pieces" ||
       path == "/drop-maker/drops" ||
       path == "/drop-maker/make-drop-wizard") {
-    return _RouteAccess.dropCreatorOnly;
+    return path == "/drop-maker/art-pieces"
+        ? _RouteAccess.artCatalog
+        : _RouteAccess.dropCreatorOnly;
   }
 
   if (path == "/moderation/reports") {
@@ -175,6 +177,11 @@ bool _isAuthorizedForRoute(_RouteAccess access, AppUserRole? role) {
       return role != null;
     case _RouteAccess.artistOnly:
       return role == AppUserRole.artist || role == AppUserRole.admin;
+    case _RouteAccess.artCatalog:
+      return role == AppUserRole.artist ||
+          role == AppUserRole.dropMaker ||
+          role == AppUserRole.moderator ||
+          role == AppUserRole.admin;
     case _RouteAccess.dropCreatorOnly:
       return role == AppUserRole.artist ||
           role == AppUserRole.dropMaker ||
@@ -193,6 +200,7 @@ enum _RouteAccess {
   publicRoute,
   authenticated,
   artistOnly,
+  artCatalog,
   dropCreatorOnly,
   moderationOnly,
   adminOnly,

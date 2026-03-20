@@ -120,14 +120,19 @@ List<_NavigationEntry> _buildNavigationEntries(
   final role = authState.role;
   final isArtist = role == AppUserRole.artist;
   final isAdmin = role == AppUserRole.admin;
+  final isModerator = role == AppUserRole.moderator;
   final isDropMakerOrArtistOrAdmin =
       role == AppUserRole.dropMaker ||
       role == AppUserRole.artist ||
       role == AppUserRole.admin;
+  final canBrowsePublishedArtWorks =
+      role == AppUserRole.dropMaker ||
+      role == AppUserRole.artist ||
+      role == AppUserRole.moderator ||
+      role == AppUserRole.admin;
   final artWorksPath = isAdmin
       ? "/artist/art-pieces"
       : "/drop-maker/art-pieces";
-  final isModerator = role == AppUserRole.moderator;
 
   final entries = <_NavigationEntry>[
     if (isAuthenticated)
@@ -145,7 +150,7 @@ List<_NavigationEntry> _buildNavigationEntries(
         l10n.menuMyArt,
         Icons.palette_outlined,
       ),
-    if (isDropMakerOrArtistOrAdmin)
+    if (canBrowsePublishedArtWorks)
       _NavigationEntry(
         artWorksPath,
         l10n.menuArtWorks,

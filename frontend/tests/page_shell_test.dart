@@ -91,10 +91,22 @@ void main() {
     },
   );
 
-  testWidgets("shows artworks navigation for admins", (tester) async {
+  testWidgets("shows artworks navigation for admins and moderators", (
+    tester,
+  ) async {
     await tester.pumpWidget(
       _TestHarness(
         role: AppUserRole.admin,
+        child: const PageShell(title: "Test", body: SizedBox.shrink()),
+      ),
+    );
+
+    expect(_drawerTitles(tester), contains("Artworks"));
+
+    await tester.pumpWidget(
+      _TestHarness(
+        key: const ValueKey("moderator-artworks"),
+        role: AppUserRole.moderator,
         child: const PageShell(title: "Test", body: SizedBox.shrink()),
       ),
     );

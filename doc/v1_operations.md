@@ -97,6 +97,7 @@
 ## Artist Workspace
 - Artists manage artworks end-to-end in the web client: create, inspect, edit, publish, depublish and delete
 - The artist artwork manager loads only art pieces created by the signed-in artist; admins use the same screen with full global scope
+- The separate `Artworks` catalog at `/drop-maker/art-pieces` shows all published art pieces for Artist, Drop-Maker, Moderator and Admin sessions
 - Admins can open the same full artwork management screen to inspect and manage all artworks across artists
 - Admin-triggered art-piece changes create persisted in-app notifications for the impacted artist accounts
 - Artwork metadata includes an optional subtitle that is editable in the artist workspace and reused in discovery and drop creation screens

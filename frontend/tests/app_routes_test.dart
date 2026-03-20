@@ -9,6 +9,7 @@ import "package:urban_art_drops_app/features/artist_area/presentation/pages/arti
 import "package:urban_art_drops_app/features/authentication/presentation/bloc/auth_session_cubit.dart";
 import "package:urban_art_drops_app/features/authentication/presentation/pages/login_page.dart";
 import "package:urban_art_drops_app/features/navigation/presentation/bloc/navigation_cubit.dart";
+import "package:urban_art_drops_app/features/drop_maker/presentation/pages/drop_maker_page.dart";
 import "package:urban_art_drops_app/l10n/app_localizations.dart";
 
 void main() {
@@ -109,5 +110,35 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(ArtistArtPiecesPage), findsOneWidget);
+  });
+
+  testWidgets("allows moderators to open the published artworks page", (
+    tester,
+  ) async {
+    final authSessionCubit = AuthSessionCubit();
+    authSessionCubit.signIn(
+      userId: "moderator-1",
+      email: "moderator@example.com",
+      userName: "moderator",
+      role: AppUserRole.moderator,
+      accessToken: "moderator-token",
+      accessTokenExpiresAtUtc: DateTime.utc(2099, 3, 17, 18),
+    );
+    final router = createAppRouter(authSessionCubit);
+
+    await tester.pumpWidget(
+      BlocProvider.value(
+        value: authSessionCubit,
+        child: MaterialApp.router(
+          routerConfig: router,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+        ),
+      ),
+    );
+    router.go("/drop-maker/art-pieces");
+    await tester.pumpAndSettle();
+
+    expect(find.byType(DropMakerPage), findsOneWidget);
   });
 }
