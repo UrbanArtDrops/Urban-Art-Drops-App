@@ -41,6 +41,7 @@ void main() {
     final artPiece = ArtPieceModel.fromJson({
       "id": "art-1",
       "artistId": "artist-1",
+      "createdByUserId": "creator-1",
       "title": "Crystal Owl",
       "subtitle": "Night shift",
       "description": "Ein ausfuehrlicher Beschreibungstext fuer das Kunstwerk.",
@@ -58,6 +59,7 @@ void main() {
     expect(artPiece.isReported, isTrue);
     expect(artPiece.reportReason, "Bitte moderieren");
     expect(artPiece.reportedAtUtc, isNotNull);
+    expect(artPiece.createdByUserId, "creator-1");
   });
 
   test("parses auth provider status entries on app configuration", () {

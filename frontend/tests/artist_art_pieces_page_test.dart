@@ -37,6 +37,7 @@ void main() {
         ArtPieceModel(
           id: "art-1",
           artistId: "artist-1",
+          createdByUserId: "artist-1",
           title: "Owned artwork",
           subtitle: "Primary",
           description: "Owned artwork description that is long enough.",
@@ -50,10 +51,11 @@ void main() {
         ),
         ArtPieceModel(
           id: "art-2",
-          artistId: "artist-2",
-          title: "Foreign artwork",
+          artistId: "artist-1",
+          createdByUserId: "admin-1",
+          title: "Admin-created artwork",
           subtitle: "Secondary",
-          description: "Foreign artwork description that is long enough.",
+          description: "Admin-created artwork description that is long enough.",
           assetKind: 0,
           isPublished: true,
           isReported: false,
@@ -102,7 +104,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text("Owned artwork"), findsAtLeastNWidgets(1));
-    expect(find.text("Foreign artwork"), findsNothing);
+    expect(find.text("Admin-created artwork"), findsNothing);
     expect(apiClient.getManageableArtPiecesCallCount, 1);
   });
 }

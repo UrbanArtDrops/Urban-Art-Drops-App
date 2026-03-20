@@ -69,10 +69,12 @@ public sealed class UrbanArtDbContext : DbContext
         modelBuilder.Entity<ArtPiece>(entity =>
         {
             entity.HasKey(x => x.Id);
+            entity.Property(x => x.CreatedByUserId).IsRequired();
             entity.Property(x => x.Title).HasMaxLength(200).IsRequired();
             entity.Property(x => x.Subtitle).HasMaxLength(200).IsRequired();
             entity.Property(x => x.Description).HasMaxLength(3000).IsRequired();
             entity.Property(x => x.ReportReason).HasMaxLength(1000);
+            entity.HasIndex(x => x.CreatedByUserId);
             entity.HasMany(x => x.Photos).WithOne().HasForeignKey(x => x.ArtPieceId);
             entity.HasOne(x => x.AssetFile).WithOne().HasForeignKey<ArtPieceAssetFile>(x => x.ArtPieceId);
         });

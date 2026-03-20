@@ -8,6 +8,7 @@ public sealed class ArtPiece
 
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid ArtistId { get; private set; }
+    public Guid CreatedByUserId { get; private set; }
     public string Title { get; private set; }
     public string Subtitle { get; private set; }
     public string Description { get; private set; }
@@ -26,11 +27,22 @@ public sealed class ArtPiece
         Description = string.Empty;
     }
 
-    public static ArtPiece Create(Guid artistId, string title, string? subtitle, string description, ArtPieceAssetKind assetKind)
+    public static ArtPiece Create(
+        Guid artistId,
+        Guid createdByUserId,
+        string title,
+        string? subtitle,
+        string description,
+        ArtPieceAssetKind assetKind)
     {
         if (artistId == Guid.Empty)
         {
             throw new DomainValidationException("Artist is required.");
+        }
+
+        if (createdByUserId == Guid.Empty)
+        {
+            throw new DomainValidationException("Creator is required.");
         }
 
         if (string.IsNullOrWhiteSpace(title) || title.Trim().Length < 3)
@@ -49,6 +61,7 @@ public sealed class ArtPiece
         return new ArtPiece
         {
             ArtistId = artistId,
+            CreatedByUserId = createdByUserId,
             Title = title.Trim(),
             Subtitle = normalizedSubtitle,
             Description = normalizedDescription,

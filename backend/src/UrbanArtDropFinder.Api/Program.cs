@@ -620,7 +620,7 @@ artGroup.MapGet("/manageable", async (
 
     if (actorResolution.Actor!.Role == UserRole.Artist)
     {
-        query = query.Where(artPiece => artPiece.ArtistId == actorResolution.Actor.Id);
+        query = query.Where(artPiece => artPiece.CreatedByUserId == actorResolution.Actor.Id);
     }
 
     var artPieces = await query.ToListAsync(cancellationToken);
@@ -663,6 +663,7 @@ artGroup.MapPost("/", async (
     {
         var artPiece = ArtPiece.Create(
             request.ArtistId,
+            actorResolution.Actor!.Id,
             request.Title,
             request.Subtitle,
             request.Description,
@@ -2386,7 +2387,7 @@ static bool CanManageArtPiece(UserAccount actor, ArtPiece artPiece, Guid? reques
         return false;
     }
 
-    if (artPiece.ArtistId != actor.Id)
+    if (artPiece.CreatedByUserId != actor.Id)
     {
         return false;
     }
@@ -2525,6 +2526,7 @@ static ArtPieceResponseDto ToArtPieceResponse(ArtPiece artPiece, HttpRequest req
     return new ArtPieceResponseDto(
         artPiece.Id,
         artPiece.ArtistId,
+        artPiece.CreatedByUserId,
         artPiece.Title,
         artPiece.Subtitle,
         artPiece.Description,
@@ -3239,6 +3241,7 @@ internal sealed record BinaryAssetReferenceDto(Guid Id, string Url, string FileN
 internal sealed record ArtPieceResponseDto(
     Guid Id,
     Guid ArtistId,
+    Guid CreatedByUserId,
     string Title,
     string Subtitle,
     string Description,

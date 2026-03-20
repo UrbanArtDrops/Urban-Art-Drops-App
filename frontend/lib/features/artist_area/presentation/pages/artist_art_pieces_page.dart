@@ -134,7 +134,7 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
     }
 
     return artPieces
-        .where((artPiece) => artPiece.artistId == authenticatedUserId)
+        .where((artPiece) => artPiece.createdByUserId == authenticatedUserId)
         .toList(growable: false);
   }
 

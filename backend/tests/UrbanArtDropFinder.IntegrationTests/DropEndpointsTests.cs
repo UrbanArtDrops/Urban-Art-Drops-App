@@ -161,6 +161,7 @@ public sealed class DropEndpointsTests : IClassFixture<TestWebApplicationFactory
 
             var artPiece = ArtPiece.Create(
                 Guid.NewGuid(),
+                Guid.NewGuid(),
                 artPieceTitle,
                 "Subline for the QR claim test.",
                 "A descriptive mural concept with enough text to satisfy validation.",
@@ -237,6 +238,7 @@ public sealed class DropEndpointsTests : IClassFixture<TestWebApplicationFactory
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<UrbanArtDbContext>();
             var artPiece = ArtPiece.Create(
+                Guid.NewGuid(),
                 Guid.NewGuid(),
                 $"Drop Notification Art {uniqueId}",
                 "Admin update notification test",

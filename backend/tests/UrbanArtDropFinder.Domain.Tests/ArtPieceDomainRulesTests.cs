@@ -10,6 +10,7 @@ public sealed class ArtPieceDomainRulesTests
     {
         var artPiece = ArtPiece.Create(
             Guid.NewGuid(),
+            Guid.NewGuid(),
             "Crystal Owl",
             "First subtitle",
             "This description is definitely long enough.",
@@ -36,6 +37,7 @@ public sealed class ArtPieceDomainRulesTests
     {
         var artPiece = ArtPiece.Create(
             Guid.NewGuid(),
+            Guid.NewGuid(),
             "Crystal Owl",
             "First subtitle",
             "This description is definitely long enough.",
@@ -56,6 +58,7 @@ public sealed class ArtPieceDomainRulesTests
         Assert.Throws<DomainValidationException>(() =>
             ArtPiece.Create(
                 Guid.NewGuid(),
+                Guid.NewGuid(),
                 "Crystal Owl",
                 new string('x', 201),
                 "This description is definitely long enough.",
@@ -66,6 +69,7 @@ public sealed class ArtPieceDomainRulesTests
     public void Publish_WhenModelArtPieceHasNoAssetFile_ThrowsValidationException()
     {
         var artPiece = ArtPiece.Create(
+            Guid.NewGuid(),
             Guid.NewGuid(),
             "Crystal Owl",
             "First subtitle",
@@ -80,6 +84,7 @@ public sealed class ArtPieceDomainRulesTests
     public void SetAssetFile_WhenAssetKindIsModel3d_AllowsPublishing()
     {
         var artPiece = ArtPiece.Create(
+            Guid.NewGuid(),
             Guid.NewGuid(),
             "Crystal Owl",
             "First subtitle",
@@ -100,6 +105,7 @@ public sealed class ArtPieceDomainRulesTests
     {
         var artPiece = ArtPiece.Create(
             Guid.NewGuid(),
+            Guid.NewGuid(),
             "Crystal Owl",
             "First subtitle",
             "This description is definitely long enough.",
@@ -114,5 +120,18 @@ public sealed class ArtPieceDomainRulesTests
         Assert.False(artPiece.IsReported);
         Assert.Null(artPiece.ReportReason);
         Assert.Null(artPiece.ReportedAtUtc);
+    }
+
+    [Fact]
+    public void Create_WhenCreatorIsMissing_ThrowsValidationException()
+    {
+        Assert.Throws<DomainValidationException>(() =>
+            ArtPiece.Create(
+                Guid.NewGuid(),
+                Guid.Empty,
+                "Crystal Owl",
+                "First subtitle",
+                "This description is definitely long enough.",
+                ArtPieceAssetKind.Image));
     }
 }

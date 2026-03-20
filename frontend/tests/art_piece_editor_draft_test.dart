@@ -24,6 +24,7 @@ void main() {
     const artPiece = ArtPieceModel(
       id: "art-1",
       artistId: "artist-1",
+      createdByUserId: "artist-1",
       title: "Crystal Owl",
       subtitle: "Limited city edition",
       description: "This description is definitely long enough.",

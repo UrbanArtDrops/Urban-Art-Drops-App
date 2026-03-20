@@ -378,6 +378,7 @@ class ArtPieceModel {
   const ArtPieceModel({
     required this.id,
     required this.artistId,
+    required this.createdByUserId,
     required this.title,
     required this.subtitle,
     required this.description,
@@ -407,6 +408,7 @@ class ArtPieceModel {
     return ArtPieceModel(
       id: _readString(json, "id", "Id"),
       artistId: _readString(json, "artistId", "ArtistId"),
+      createdByUserId: _readString(json, "createdByUserId", "CreatedByUserId"),
       title: _readString(json, "title", "Title"),
       subtitle: _readString(json, "subtitle", "Subtitle"),
       description: _readString(json, "description", "Description"),
@@ -426,6 +428,7 @@ class ArtPieceModel {
 
   final String id;
   final String artistId;
+  final String createdByUserId;
   final String title;
   final String subtitle;
   final String description;

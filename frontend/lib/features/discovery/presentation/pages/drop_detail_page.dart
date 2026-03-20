@@ -233,6 +233,7 @@ class _DropDetailPageState extends State<DropDetailPage> {
         _artPiece = ArtPieceModel(
           id: artPiece.id,
           artistId: artPiece.artistId,
+          createdByUserId: artPiece.createdByUserId,
           title: artPiece.title,
           subtitle: artPiece.subtitle,
           description: artPiece.description,
