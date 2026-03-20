@@ -119,6 +119,88 @@ void main() {
       expect(find.text(l10n.userChangeRoleAction), findsOneWidget);
     },
   );
+
+  testWidgets(
+    "approves a pending role application without requiring a full user reload",
+    (tester) async {
+      var getUsersCalls = 0;
+      var approveCalls = 0;
+      final mockHttpClient = MockClient((request) async {
+        if (request.url.path == "/api/admin/users") {
+          getUsersCalls += 1;
+          return http.Response(
+            jsonEncode([
+              {
+                "id": "user-1",
+                "email": "hunter@example.com",
+                "userName": "Hunter Artist",
+                "role": 0,
+                "pendingRoleApplication": 1,
+                "pendingRoleApplicationRequestedAtUtc": "2026-03-20T10:15:00Z",
+                "isApproved": true,
+                "isSuspended": false,
+                "isEmailVerified": true,
+                "isProviderAccount": false,
+                "profileImage": null,
+              },
+            ]),
+            200,
+            headers: {"content-type": "application/json"},
+          );
+        }
+
+        if (request.url.path ==
+            "/api/admin/users/user-1/role-application/approve") {
+          approveCalls += 1;
+          return http.Response(
+            jsonEncode({
+              "id": "user-1",
+              "email": "hunter@example.com",
+              "userName": "Hunter Artist",
+              "role": 1,
+              "pendingRoleApplication": null,
+              "pendingRoleApplicationRequestedAtUtc": null,
+              "isApproved": true,
+              "isSuspended": false,
+              "isEmailVerified": true,
+              "isProviderAccount": false,
+              "profileImage": null,
+            }),
+            200,
+            headers: {"content-type": "application/json"},
+          );
+        }
+
+        return http.Response("Not Found", 404);
+      });
+
+      await tester.pumpWidget(
+        _AdminUserManagementHarness(
+          apiClient: AppApiClient(
+            httpClient: mockHttpClient,
+            baseUrl: "http://localhost",
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(AdminUserManagementPage));
+      final l10n = AppLocalizations.of(context)!;
+
+      await tester.tap(find.byType(PopupMenuButton<String>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(l10n.userApproveRoleApplicationAction));
+      await tester.pumpAndSettle();
+
+      expect(approveCalls, 1);
+      expect(getUsersCalls, 1);
+
+      await tester.tap(find.byType(PopupMenuButton<String>));
+      await tester.pumpAndSettle();
+
+      expect(find.text(l10n.userApproveRoleApplicationAction), findsNothing);
+    },
+  );
 }
 
 class _AdminUserManagementHarness extends StatelessWidget {

@@ -245,15 +245,31 @@ class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
 
   Future<void> _approveRoleApplication(ManagedUser user) async {
     await _withSaving(() async {
-      await _apiClient.approveUserRoleApplication(user.id);
-      await _loadUsers();
+      final updatedUser = await _apiClient.approveUserRoleApplication(user.id);
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _users = _users
+            .map((entry) => entry.id == updatedUser.id ? updatedUser : entry)
+            .toList(growable: false);
+      });
     });
   }
 
   Future<void> _rejectRoleApplication(ManagedUser user) async {
     await _withSaving(() async {
-      await _apiClient.rejectUserRoleApplication(user.id);
-      await _loadUsers();
+      final updatedUser = await _apiClient.rejectUserRoleApplication(user.id);
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _users = _users
+            .map((entry) => entry.id == updatedUser.id ? updatedUser : entry)
+            .toList(growable: false);
+      });
     });
   }
 
@@ -261,6 +277,12 @@ class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
     setState(() => _isSaving = true);
     try {
       await action();
+    } on ApiException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.message)));
+      }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
