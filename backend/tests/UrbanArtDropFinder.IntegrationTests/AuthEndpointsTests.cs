@@ -359,6 +359,39 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
     }
 
     [Fact]
+    public async Task AdminUsersList_IncludesProfileImageReferenceWhenAvailable()
+    {
+        var admin = await _factory.CreateAuthenticatedUserAsync(
+            UserRole.Admin,
+            $"admin.users.profile-image.{Guid.NewGuid():N}");
+        var managedUser = await _factory.CreateAuthenticatedUserAsync(
+            UserRole.Artist,
+            $"artist.users.profile-image.{Guid.NewGuid():N}");
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<UrbanArtDbContext>();
+            await dbContext.UserProfileImages.AddAsync(
+                new UserProfileImage
+                {
+                    UserAccountId = managedUser.Id,
+                    BinaryData = "hello"u8.ToArray(),
+                    ContentType = "image/png"
+                });
+            await dbContext.SaveChangesAsync();
+        }
+
+        var response = await _client.GetAuthorizedAsync("/api/admin/users", admin.AccessToken);
+        await EnsureSuccessWithBodyAsync(response);
+
+        var payload = await response.Content.ReadFromJsonAsync<List<ManagedUserDto>>();
+        Assert.NotNull(payload);
+        var listedUser = payload!.Single(user => user.Id == managedUser.Id);
+        Assert.NotNull(listedUser.ProfileImage);
+        Assert.Contains("/api/media/user-profile-images/", listedUser.ProfileImage!.Url, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task AdminCanApprovePendingRoleApplication()
     {
         var admin = await _factory.CreateAuthenticatedUserAsync(
@@ -517,7 +550,10 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
         bool IsApproved,
         bool IsSuspended,
         bool IsEmailVerified,
-        bool IsProviderAccount);
+        bool IsProviderAccount,
+        ProfileImageDto? ProfileImage);
+
+    private sealed record ProfileImageDto(Guid Id, string Url);
 
     private sealed record AvailableExternalProviderDto(string Provider, string DisplayName);
 

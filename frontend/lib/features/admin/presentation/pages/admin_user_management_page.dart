@@ -4,9 +4,13 @@ import "package:urban_art_drops_app/l10n/app_localizations.dart";
 import "../../../../shared/models/app_models.dart";
 import "../../../../shared/services/app_api_client.dart";
 import "../../../../shared/widgets/page_shell.dart";
+import "../../../../shared/widgets/source_image.dart";
 
 class AdminUserManagementPage extends StatefulWidget {
-  const AdminUserManagementPage({super.key});
+  const AdminUserManagementPage({super.key, AppApiClient? apiClient})
+    : _apiClient = apiClient;
+
+  final AppApiClient? _apiClient;
 
   @override
   State<AdminUserManagementPage> createState() =>
@@ -14,7 +18,7 @@ class AdminUserManagementPage extends StatefulWidget {
 }
 
 class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
-  final AppApiClient _apiClient = AppApiClient();
+  late final AppApiClient _apiClient = widget._apiClient ?? AppApiClient();
   List<ManagedUser> _users = const [];
   bool _isLoading = true;
   bool _isSaving = false;
@@ -293,6 +297,99 @@ class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
     }
   }
 
+  IconData _roleIcon(int role) {
+    switch (role) {
+      case 1:
+        return Icons.palette_outlined;
+      case 2:
+        return Icons.add_box_outlined;
+      case 3:
+        return Icons.gavel_outlined;
+      case 4:
+        return Icons.admin_panel_settings_outlined;
+      default:
+        return Icons.explore_outlined;
+    }
+  }
+
+  Color _roleIconColor(BuildContext context, int role) {
+    switch (role) {
+      case 1:
+        return Theme.of(context).colorScheme.primary;
+      case 2:
+        return Theme.of(context).colorScheme.tertiary;
+      case 3:
+        return Theme.of(context).colorScheme.secondary;
+      case 4:
+        return Theme.of(context).colorScheme.error;
+      default:
+        return Theme.of(context).colorScheme.onSurfaceVariant;
+    }
+  }
+
+  Widget _buildProfileAvatar(BuildContext context, ManagedUser user) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return CircleAvatar(
+      radius: 24,
+      backgroundColor: colorScheme.surfaceContainerHighest,
+      child: ClipOval(
+        child: SourceImage(
+          source: user.profileImageUrl,
+          fit: BoxFit.cover,
+          width: 48,
+          height: 48,
+          fallback: DecoratedBox(
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest,
+            ),
+            child: Icon(
+              Icons.person_outline,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusIcons(
+    BuildContext context,
+    AppLocalizations l10n,
+    ManagedUser user,
+  ) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 4,
+      children: [
+        Tooltip(
+          message: _roleLabel(l10n, user.role),
+          child: Icon(
+            _roleIcon(user.role),
+            color: _roleIconColor(context, user.role),
+          ),
+        ),
+        Tooltip(
+          message: user.isApproved ? l10n.userApproved : l10n.userNotApproved,
+          child: Icon(
+            user.isApproved ? Icons.verified_outlined : Icons.pending_outlined,
+            color: user.isApproved
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.error,
+          ),
+        ),
+        Tooltip(
+          message: user.isSuspended ? l10n.userSuspended : l10n.userActive,
+          child: Icon(
+            user.isSuspended ? Icons.lock_outline : Icons.lock_open_outlined,
+            color: user.isSuspended
+                ? Theme.of(context).colorScheme.error
+                : Theme.of(context).colorScheme.primary,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -371,7 +468,13 @@ class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
 
                               return Card(
                                 child: ListTile(
-                                  title: Text(user.userName),
+                                  leading: _buildProfileAvatar(context, user),
+                                  title: Row(
+                                    children: [
+                                      Expanded(child: Text(user.userName)),
+                                      _buildStatusIcons(context, l10n, user),
+                                    ],
+                                  ),
                                   subtitle: Text(subtitleLines.join("\n")),
                                   isThreeLine: pendingRoleLabel != null,
                                   trailing: PopupMenuButton<String>(

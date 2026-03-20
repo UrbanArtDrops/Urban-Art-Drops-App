@@ -96,4 +96,25 @@ void main() {
     expect(configuration.authProviders.last.provider, "facebook");
     expect(configuration.authProviders.last.enabled, isFalse);
   });
+
+  test("parses managed user profile image references", () {
+    final managedUser = ManagedUser.fromJson({
+      "id": "user-1",
+      "email": "artist@example.com",
+      "userName": "Artist One",
+      "role": 1,
+      "pendingRoleApplication": null,
+      "pendingRoleApplicationRequestedAtUtc": null,
+      "isApproved": true,
+      "isSuspended": false,
+      "isEmailVerified": true,
+      "isProviderAccount": false,
+      "profileImage": {
+        "id": "profile-image-1",
+        "url": "https://example.com/user-profile.png",
+      },
+    });
+
+    expect(managedUser.profileImageUrl, "https://example.com/user-profile.png");
+  });
 }

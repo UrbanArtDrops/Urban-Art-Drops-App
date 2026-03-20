@@ -10,6 +10,7 @@ class ManagedUser {
     required this.isSuspended,
     required this.isEmailVerified,
     required this.isProviderAccount,
+    required this.profileImageUrl,
   });
 
   factory ManagedUser.fromJson(Map<String, dynamic> json) {
@@ -36,6 +37,11 @@ class ManagedUser {
         "isProviderAccount",
         "IsProviderAccount",
       ),
+      profileImageUrl: _readNullableString(
+        _readNullableMap(json, "profileImage", "ProfileImage") ?? const {},
+        "url",
+        "Url",
+      ),
     );
   }
 
@@ -49,6 +55,7 @@ class ManagedUser {
   final bool isSuspended;
   final bool isEmailVerified;
   final bool isProviderAccount;
+  final String? profileImageUrl;
 }
 
 class AuthResultModel {

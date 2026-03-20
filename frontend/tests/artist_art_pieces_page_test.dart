@@ -75,6 +75,7 @@ void main() {
           isSuspended: false,
           isEmailVerified: true,
           isProviderAccount: false,
+          profileImageUrl: null,
         ),
         ManagedUser(
           id: "artist-2",
@@ -87,6 +88,7 @@ void main() {
           isSuspended: false,
           isEmailVerified: true,
           isProviderAccount: false,
+          profileImageUrl: null,
         ),
       ],
     );

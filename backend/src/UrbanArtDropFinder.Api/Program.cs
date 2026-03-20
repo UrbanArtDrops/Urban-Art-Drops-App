@@ -1958,13 +1958,22 @@ adminGroup.MapPut("/configuration", async (
     return Results.Ok(ToAppConfigurationResponse(config, providerStatusService.GetProviderStatuses()));
 }).RequireAuthorization(AuthPolicies.AdminOnly);
 
-adminGroup.MapGet("/users", async (UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+adminGroup.MapGet("/users", async (HttpContext httpContext, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
 {
     var users = await dbContext.UserAccounts
         .AsNoTracking()
         .OrderBy(user => user.UserName)
         .ToListAsync(cancellationToken);
-    return Results.Ok(users.Select(user => ToManagedUserResponse(user, includeEmail: true)).ToList());
+    var userIds = users.Select(user => user.Id).ToList();
+    var profileImageLookup = await dbContext.UserProfileImages
+        .AsNoTracking()
+        .Where(image => userIds.Contains(image.UserAccountId))
+        .ToDictionaryAsync(image => image.UserAccountId, cancellationToken);
+    return Results.Ok(users.Select(user => ToManagedUserResponse(
+        user,
+        includeEmail: true,
+        httpContext.Request,
+        profileImageLookup.GetValueOrDefault(user.Id))).ToList());
 })
     .RequireAuthorization(AuthPolicies.AdminOnly);
 
@@ -2589,8 +2598,19 @@ static string ResolvePublicAppBaseUrl(AppConfiguration? configuration, HttpReque
 static string BuildClaimUrl(string appBaseUri, string qrToken)
     => $"{appBaseUri}/hunter/claim?token={Uri.EscapeDataString(qrToken)}";
 
-static ManagedUserResponseDto ToManagedUserResponse(UserAccount user, bool includeEmail)
-    => new(
+static ManagedUserResponseDto ToManagedUserResponse(
+    UserAccount user,
+    bool includeEmail,
+    HttpRequest? request = null,
+    UserProfileImage? profileImage = null)
+{
+    var profileImageReference = request is null || profileImage is null
+        ? null
+        : new ProfileImageReferenceResponse(
+            profileImage.Id,
+            $"{request.Scheme}://{request.Host}/api/media/user-profile-images/{profileImage.Id}");
+
+    return new ManagedUserResponseDto(
         user.Id,
         includeEmail ? user.Email : string.Empty,
         user.UserName,
@@ -2600,7 +2620,9 @@ static ManagedUserResponseDto ToManagedUserResponse(UserAccount user, bool inclu
         user.IsApproved,
         user.IsSuspended,
         user.IsEmailVerified,
-        user.IsProviderAccount);
+        user.IsProviderAccount,
+        profileImageReference);
+}
 
 static CurrentUserProfileResponse ToCurrentUserProfileResponse(
     UserAccount user,
@@ -3237,7 +3259,8 @@ internal sealed record ManagedUserResponseDto(
     bool IsApproved,
     bool IsSuspended,
     bool IsEmailVerified,
-    bool IsProviderAccount);
+    bool IsProviderAccount,
+    ProfileImageReferenceResponse? ProfileImage);
 
 internal readonly record struct ResolvedPhotoPayload(byte[] BinaryData, string ContentType);
 internal readonly record struct ResolvedAssetPayload(byte[] BinaryData, string ContentType, string FileName);
