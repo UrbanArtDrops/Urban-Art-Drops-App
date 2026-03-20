@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 import "package:urban_art_drops_app/l10n/app_localizations.dart";
 
 import "../../../../shared/models/app_models.dart";
+import "../../../../shared/widgets/carousel_navigation_tabs.dart";
 import "art_piece_source_image.dart";
 
 class ArtPieceDetailView extends StatelessWidget {
@@ -260,10 +261,22 @@ class _ArtPiecePhotoGalleryState extends State<_ArtPiecePhotoGallery> {
       children: [
         AspectRatio(
           aspectRatio: 16 / 9,
-          child: ArtPieceSourceImage(
-            source: selectedPhoto,
-            fit: BoxFit.cover,
-            borderRadius: BorderRadius.circular(20),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              ArtPieceSourceImage(
+                source: selectedPhoto,
+                fit: BoxFit.cover,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              if (widget.photoUrls.length > 1)
+                CarouselNavigationTabs(
+                  canGoPrevious: _selectedIndex > 0,
+                  canGoNext: _selectedIndex < widget.photoUrls.length - 1,
+                  onPrevious: () => setState(() => _selectedIndex -= 1),
+                  onNext: () => setState(() => _selectedIndex += 1),
+                ),
+            ],
           ),
         ),
         const SizedBox(height: 12),

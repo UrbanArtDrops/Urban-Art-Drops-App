@@ -8,6 +8,7 @@ import "package:urban_art_drops_app/l10n/app_localizations.dart";
 
 import "../../../../shared/models/app_models.dart";
 import "../../../../shared/services/app_api_client.dart";
+import "../../../../shared/widgets/carousel_navigation_tabs.dart";
 import "../../../../shared/widgets/page_shell.dart";
 import "../../../../shared/widgets/source_image.dart";
 import "../../../authentication/presentation/bloc/auth_session_cubit.dart";
@@ -584,12 +585,16 @@ class _DropDetailGalleryState extends State<_DropDetailGallery> {
       }
 
       final nextIndex = (_index + 1) % imageCount;
-      _controller.animateToPage(
-        nextIndex,
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOutCubic,
-      );
+      _goToPage(nextIndex);
     });
+  }
+
+  void _goToPage(int index) {
+    _controller.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   @override
@@ -630,22 +635,32 @@ class _DropDetailGalleryState extends State<_DropDetailGallery> {
               ),
             ),
             if (widget.imageUrls.length > 1)
+              CarouselNavigationTabs(
+                canGoPrevious: _index > 0,
+                canGoNext: _index < widget.imageUrls.length - 1,
+                onPrevious: () => _goToPage(_index - 1),
+                onNext: () => _goToPage(_index + 1),
+              ),
+            if (widget.imageUrls.length > 1)
               Positioned(
-                right: 8,
+                left: 0,
+                right: 0,
                 bottom: 8,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
+                child: Center(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(999),
                     ),
-                    child: Text(
-                      "${_index + 1}/${widget.imageUrls.length}",
-                      style: const TextStyle(color: Colors.white),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      child: Text(
+                        "${_index + 1}/${widget.imageUrls.length}",
+                        style: const TextStyle(color: Colors.white),
+                      ),
                     ),
                   ),
                 ),

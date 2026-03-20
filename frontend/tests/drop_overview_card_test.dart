@@ -22,12 +22,30 @@ void main() {
     expect(find.byType(MarkerLayer), findsOneWidget);
     expect(find.byType(CircleLayer), findsNothing);
   });
+
+  testWidgets("renders side tabs for multi-image carousels", (tester) async {
+    await tester.pumpWidget(
+      _buildHarness(
+        isFullyClaimed: true,
+        claimedItemCount: 3,
+        itemCount: 3,
+        galleryUrls: const [
+          "https://example.com/one.png",
+          "https://example.com/two.png",
+        ],
+      ),
+    );
+
+    expect(find.byKey(const ValueKey("carousel-tab-previous")), findsOneWidget);
+    expect(find.byKey(const ValueKey("carousel-tab-next")), findsOneWidget);
+  });
 }
 
 Widget _buildHarness({
   required bool isFullyClaimed,
   required int claimedItemCount,
   required int itemCount,
+  List<String> galleryUrls = const [],
 }) {
   return MaterialApp(
     localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -40,7 +58,7 @@ Widget _buildHarness({
             title: "Drop",
             subtitle: "Subtitle",
             description: "Description",
-            galleryUrls: const [],
+            galleryUrls: galleryUrls,
             claimedHunterNames: const [],
             claimedItemCount: claimedItemCount,
             itemCount: itemCount,

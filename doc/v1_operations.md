@@ -103,6 +103,7 @@
 - Artwork metadata includes an optional subtitle that is editable in the artist workspace and reused in discovery and drop creation screens
 - Artwork photos are selected locally in the client and stored as binary media in the backend database
 - Model-based artworks additionally upload a binary 3D asset that remains replaceable in edit mode and downloadable from the detail view
+- Multi-image artwork and drop galleries expose compact left and right navigation tabs directly on the image frame in addition to automatic cycling where applicable
 
 ## Drop-Maker Wizard
 - Drop creation in the web client is a multi-step process: artwork review, artwork selection, production confirmation, quantity capture, QR review, placement and optional publish

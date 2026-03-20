@@ -6,6 +6,8 @@ import "package:flutter_map/flutter_map.dart";
 import "package:latlong2/latlong.dart";
 import "package:urban_art_drops_app/l10n/app_localizations.dart";
 
+import "carousel_navigation_tabs.dart";
+
 class DropOverviewCard extends StatelessWidget {
   const DropOverviewCard({
     required this.l10n,
@@ -330,67 +332,38 @@ class _DropPhotoCarouselState extends State<_DropPhotoCarousel> {
               ),
             ),
             if (photos.length > 1)
+              CarouselNavigationTabs(
+                canGoPrevious: _activeIndex > 0,
+                canGoNext: _activeIndex < photos.length - 1,
+                onPrevious: () => _goToPage(_activeIndex - 1),
+                onNext: () => _goToPage(_activeIndex + 1),
+              ),
+            if (photos.length > 1)
               Positioned(
-                left: 8,
-                right: 8,
+                left: 0,
+                right: 0,
                 bottom: 8,
-                child: Row(
-                  children: [
-                    _CarouselButton(
-                      icon: Icons.chevron_left,
-                      onPressed: _activeIndex > 0
-                          ? () => _goToPage(_activeIndex - 1)
-                          : null,
+                child: Center(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(999),
                     ),
-                    const Spacer(),
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(999),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        child: Text(
-                          "${_activeIndex + 1}/${photos.length}",
-                          style: const TextStyle(color: Colors.white),
-                        ),
+                      child: Text(
+                        "${_activeIndex + 1}/${photos.length}",
+                        style: const TextStyle(color: Colors.white),
                       ),
                     ),
-                    const Spacer(),
-                    _CarouselButton(
-                      icon: Icons.chevron_right,
-                      onPressed: _activeIndex < photos.length - 1
-                          ? () => _goToPage(_activeIndex + 1)
-                          : null,
-                    ),
-                  ],
+                  ),
                 ),
               ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _CarouselButton extends StatelessWidget {
-  const _CarouselButton({required this.icon, required this.onPressed});
-
-  final IconData icon;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.black54,
-      shape: const CircleBorder(),
-      child: IconButton(
-        visualDensity: VisualDensity.compact,
-        onPressed: onPressed,
-        icon: Icon(icon, color: Colors.white),
       ),
     );
   }
