@@ -22,6 +22,7 @@
   - `ShowExactPositionWhenFullyClaimed`
 - Drop-list and My Drops mini-maps read `UnclaimedDropRadiusKm` to render not fully claimed drops as a radius instead of a pin
 - Unclaimed drops stay radius-only across public discovery maps and detail maps; only the creating drop-maker sees the exact pin plus per-item claim status for their own incomplete drops
+- Discovery views render claimed-hunter lists with stored profile image avatars when a registered hunter exists; anonymous nicknames stay text-only
 
 ## Database bootstrap
 - The API requires `ConnectionStrings__SqlServer` and will not start without a SQL Server or LocalDB connection string

@@ -8,8 +8,10 @@ import "package:latlong2/latlong.dart";
 import "package:urban_art_drops_app/l10n/app_localizations.dart";
 
 import "../../../../shared/models/app_models.dart";
+import "../../../../shared/models/hunter_identity.dart";
 import "../../../../shared/services/app_api_client.dart";
 import "../../../../shared/widgets/carousel_navigation_tabs.dart";
+import "../../../../shared/widgets/hunter_identity_list.dart";
 import "../../../../shared/widgets/page_shell.dart";
 import "../../../../shared/widgets/source_image.dart";
 import "../../../../shared/widgets/user_avatar.dart";
@@ -378,7 +380,10 @@ class _DropDetailContent extends StatelessWidget {
     final subtitle = artPiece?.subtitle.trim().isNotEmpty == true
         ? artPiece!.subtitle
         : "${l10n.mapArtistLabel}: $artistName · ${l10n.mapDropMakerLabel}: $dropMakerName";
-    final claimedHunters = _extractClaimedHunters(drop, usersById);
+    final claimedHunters = buildClaimedHunterIdentities(
+      items: drop.claimedItems,
+      usersById: usersById,
+    );
     final photos = _buildGalleryUrls(artPiece, drop);
     final canSeePreciseLocation = _canSeePreciseDropLocation(authState, drop);
 
@@ -500,16 +505,10 @@ class _DropDetailContent extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                if (claimedHunters.isEmpty)
-                  Text(l10n.mapUnclaimedLabel)
-                else
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: claimedHunters
-                        .map((name) => Chip(label: Text(name)))
-                        .toList(growable: false),
-                  ),
+                HunterIdentityList(
+                  hunters: claimedHunters,
+                  emptyLabel: l10n.mapUnclaimedLabel,
+                ),
               ],
             ),
           ),
@@ -1135,31 +1134,6 @@ class _SectionCard extends StatelessWidget {
       ),
     );
   }
-}
-
-List<String> _extractClaimedHunters(
-  DropModel drop,
-  Map<String, ManagedUser> usersById,
-) {
-  final hunters = <String>[];
-  final seen = <String>{};
-  for (final item in drop.claimedItems) {
-    String candidate = "";
-    if (item.claimedByUserId != null) {
-      candidate =
-          usersById[item.claimedByUserId!]?.userName ?? item.claimedByUserId!;
-    } else if (item.claimedByAnonymousNickname != null) {
-      candidate = item.claimedByAnonymousNickname!;
-    }
-
-    final normalized = candidate.trim().toLowerCase();
-    if (normalized.isEmpty || !seen.add(normalized)) {
-      continue;
-    }
-    hunters.add(candidate.trim());
-  }
-
-  return hunters;
 }
 
 List<String> _buildGalleryUrls(ArtPieceModel? artPiece, DropModel drop) {

@@ -1205,7 +1205,7 @@ abstract class AppLocalizations {
   /// No description provided for @sampleDropSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Artist + Drop-Maker + mini map + claimed hunters'**
+  /// **'Artist + Drop-Maker + mini map + claimed by hunters'**
   String get sampleDropSubtitle;
 
   /// No description provided for @distanceValue.
@@ -1277,7 +1277,7 @@ abstract class AppLocalizations {
   /// No description provided for @claimedHuntersTitle.
   ///
   /// In en, this message translates to:
-  /// **'Claimed hunters'**
+  /// **'Claimed by hunters'**
   String get claimedHuntersTitle;
 
   /// No description provided for @claimedHuntersValue.

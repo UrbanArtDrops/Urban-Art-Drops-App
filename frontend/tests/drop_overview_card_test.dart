@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 import "package:flutter_map/flutter_map.dart";
 import "package:flutter_test/flutter_test.dart";
 import "package:urban_art_drops_app/l10n/app_localizations.dart";
+import "package:urban_art_drops_app/shared/models/hunter_identity.dart";
 import "package:urban_art_drops_app/shared/widgets/drop_overview_card.dart";
 import "package:urban_art_drops_app/shared/widgets/user_avatar.dart";
 
@@ -66,6 +67,27 @@ void main() {
     expect(find.text("Artist: Artist"), findsOneWidget);
     expect(find.text("Drop-Maker: Drop-Maker"), findsOneWidget);
   });
+
+  testWidgets("renders claimed hunters with profile avatars", (tester) async {
+    await tester.pumpWidget(
+      _buildHarness(
+        isFullyClaimed: true,
+        claimedItemCount: 2,
+        itemCount: 3,
+        claimedHunters: const [
+          HunterIdentity(
+            name: "Hunter One",
+            imageUrl: "https://example.com/hunter-one.png",
+          ),
+          HunterIdentity(name: "Hunter Two"),
+        ],
+      ),
+    );
+
+    expect(find.text("Hunter One"), findsOneWidget);
+    expect(find.text("Hunter Two"), findsOneWidget);
+    expect(find.byType(UserAvatar), findsWidgets);
+  });
 }
 
 Widget _buildHarness({
@@ -73,6 +95,7 @@ Widget _buildHarness({
   required int claimedItemCount,
   required int itemCount,
   List<String> galleryUrls = const [],
+  List<HunterIdentity> claimedHunters = const [],
   bool showPreciseLocationForUnclaimed = false,
 }) {
   return MaterialApp(
@@ -89,7 +112,7 @@ Widget _buildHarness({
             dropMakerName: "Drop-Maker",
             description: "Description",
             galleryUrls: galleryUrls,
-            claimedHunterNames: const [],
+            claimedHunters: claimedHunters,
             claimedItemCount: claimedItemCount,
             itemCount: itemCount,
             isFullyClaimed: isFullyClaimed,

@@ -6,7 +6,9 @@ import "package:flutter_map/flutter_map.dart";
 import "package:latlong2/latlong.dart";
 import "package:urban_art_drops_app/l10n/app_localizations.dart";
 
+import "../models/hunter_identity.dart";
 import "carousel_navigation_tabs.dart";
+import "hunter_identity_list.dart";
 import "user_avatar.dart";
 
 class DropOverviewCard extends StatelessWidget {
@@ -18,7 +20,7 @@ class DropOverviewCard extends StatelessWidget {
     required this.dropMakerName,
     required this.description,
     required this.galleryUrls,
-    required this.claimedHunterNames,
+    required this.claimedHunters,
     required this.claimedItemCount,
     required this.itemCount,
     required this.isFullyClaimed,
@@ -42,7 +44,7 @@ class DropOverviewCard extends StatelessWidget {
   final String dropMakerName;
   final String description;
   final List<String> galleryUrls;
-  final List<String> claimedHunterNames;
+  final List<HunterIdentity> claimedHunters;
   final int claimedItemCount;
   final int itemCount;
   final bool isFullyClaimed;
@@ -73,7 +75,7 @@ class DropOverviewCard extends StatelessWidget {
             artistProfileImageUrl: artistProfileImageUrl,
             dropMakerProfileImageUrl: dropMakerProfileImageUrl,
             description: description,
-            claimedHunterNames: claimedHunterNames,
+            claimedHunters: claimedHunters,
             claimedItemCount: claimedItemCount,
             itemCount: itemCount,
             distanceKm: distanceKm,
@@ -142,7 +144,7 @@ class _DropOverviewMainContent extends StatelessWidget {
     required this.artistProfileImageUrl,
     required this.dropMakerProfileImageUrl,
     required this.description,
-    required this.claimedHunterNames,
+    required this.claimedHunters,
     required this.claimedItemCount,
     required this.itemCount,
     required this.distanceKm,
@@ -157,7 +159,7 @@ class _DropOverviewMainContent extends StatelessWidget {
   final String? artistProfileImageUrl;
   final String? dropMakerProfileImageUrl;
   final String description;
-  final List<String> claimedHunterNames;
+  final List<HunterIdentity> claimedHunters;
   final int claimedItemCount;
   final int itemCount;
   final double? distanceKm;
@@ -239,16 +241,10 @@ class _DropOverviewMainContent extends StatelessWidget {
           style: Theme.of(context).textTheme.labelLarge,
         ),
         const SizedBox(height: 6),
-        if (claimedHunterNames.isEmpty)
-          Text(l10n.mapUnclaimedLabel)
-        else
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: claimedHunterNames
-                .map((name) => Chip(label: Text(name)))
-                .toList(growable: false),
-          ),
+        HunterIdentityList(
+          hunters: claimedHunters,
+          emptyLabel: l10n.mapUnclaimedLabel,
+        ),
       ],
     );
   }

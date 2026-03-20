@@ -275,7 +275,7 @@
   "distanceColumnVisible": "Distanzsortierung ist aktiviert.",
   "sampleDropTitle": "Neon Fox - Oststadt",
   "sampleDropTitleTwo": "Steel Bird - Uferzone",
-  "sampleDropSubtitle": "Artist + Drop-Maker + Mini-Karte + beanspruchte Hunter",
+  "sampleDropSubtitle": "Artist + Drop-Maker + Mini-Karte + beansprucht durch Hunter",
   "distanceValue": "{value} km",
   "@distanceValue": {
     "placeholders": {
@@ -302,7 +302,7 @@
   },
   "dropDetailTechnicalSection": "Technische Daten",
   "dropDetailDescription": "Beschreibung, Galerie, Maker-Kommentar und Claim-Status.",
-  "claimedHuntersTitle": "Beanspruchte Hunter",
+  "claimedHuntersTitle": "Beansprucht durch Hunter",
   "claimedHuntersValue": "HunterOne, HunterTwo",
   "claimTitle": "Gegenstand beanspruchen",
   "claimInstruction": "QR scannen und mit Nickname oder Konto beanspruchen.",

@@ -11,6 +11,7 @@ import "package:urban_art_drops_app/l10n/app_localizations.dart";
 
 import "../../../authentication/presentation/bloc/auth_session_cubit.dart";
 import "../../../../shared/models/app_models.dart";
+import "../../../../shared/models/hunter_identity.dart";
 import "../../../../shared/services/app_api_client.dart";
 import "../../../../shared/widgets/drop_overview_card.dart";
 import "../../../../shared/widgets/page_shell.dart";
@@ -415,24 +416,10 @@ class _DropListPageState extends State<DropListPage> {
           final dropMakerProfileImageUrl =
               _usersById[drop.dropMakerId]?.profileImageUrl;
 
-          final claimedHunterNames = <String>[];
-          final seenClaimers = <String>{};
-          for (final item in drop.claimedItems) {
-            String hunterName = "";
-            if (item.claimedByUserId != null) {
-              hunterName =
-                  _usersById[item.claimedByUserId!]?.userName ??
-                  item.claimedByUserId!;
-            } else if (item.claimedByAnonymousNickname != null) {
-              hunterName = item.claimedByAnonymousNickname!;
-            }
-
-            final normalized = hunterName.trim().toLowerCase();
-            if (normalized.isEmpty || !seenClaimers.add(normalized)) {
-              continue;
-            }
-            claimedHunterNames.add(hunterName.trim());
-          }
+          final claimedHunters = buildClaimedHunterIdentities(
+            items: drop.claimedItems,
+            usersById: _usersById,
+          );
 
           final distanceKm =
               _referenceLocation != null &&
@@ -463,7 +450,7 @@ class _DropListPageState extends State<DropListPage> {
             ),
             artPhotoUrls: art?.photoUrls ?? const [],
             locationPhotoUrls: drop.locationPhotoUrls,
-            claimedHunterNames: claimedHunterNames,
+            claimedHunters: claimedHunters,
             latitude: drop.latitude,
             longitude: drop.longitude,
             claimedItemCount: drop.claimedItemCount,
@@ -706,8 +693,7 @@ class _DropListPageState extends State<DropListPage> {
                                     viewModel.dropMakerProfileImageUrl,
                                 description: viewModel.description,
                                 galleryUrls: viewModel.galleryUrls,
-                                claimedHunterNames:
-                                    viewModel.claimedHunterNames,
+                                claimedHunters: viewModel.claimedHunters,
                                 claimedItemCount: viewModel.claimedItemCount,
                                 itemCount: viewModel.itemCount,
                                 isFullyClaimed: viewModel.isFullyClaimed,
@@ -746,7 +732,7 @@ class _DropListViewModel {
     required this.description,
     required this.artPhotoUrls,
     required this.locationPhotoUrls,
-    required this.claimedHunterNames,
+    required this.claimedHunters,
     required this.latitude,
     required this.longitude,
     required this.claimedItemCount,
@@ -766,7 +752,7 @@ class _DropListViewModel {
   final String description;
   final List<String> artPhotoUrls;
   final List<String> locationPhotoUrls;
-  final List<String> claimedHunterNames;
+  final List<HunterIdentity> claimedHunters;
   final double? latitude;
   final double? longitude;
   final int claimedItemCount;

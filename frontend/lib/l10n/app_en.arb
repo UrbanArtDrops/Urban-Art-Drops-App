@@ -275,7 +275,7 @@
   "distanceColumnVisible": "Distance sorting is enabled.",
   "sampleDropTitle": "Neon Fox - East City",
   "sampleDropTitleTwo": "Steel Bird - Riverside",
-  "sampleDropSubtitle": "Artist + Drop-Maker + mini map + claimed hunters",
+  "sampleDropSubtitle": "Artist + Drop-Maker + mini map + claimed by hunters",
   "distanceValue": "{value} km",
   "@distanceValue": {
     "placeholders": {
@@ -302,7 +302,7 @@
   },
   "dropDetailTechnicalSection": "Technical data",
   "dropDetailDescription": "Description, gallery, maker comment and claim state.",
-  "claimedHuntersTitle": "Claimed hunters",
+  "claimedHuntersTitle": "Claimed by hunters",
   "claimedHuntersValue": "HunterOne, HunterTwo",
   "claimTitle": "Claim item",
   "claimInstruction": "Scan QR and submit nickname or account claim.",

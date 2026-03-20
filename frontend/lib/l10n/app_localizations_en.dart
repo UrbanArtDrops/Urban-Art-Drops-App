@@ -617,7 +617,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sampleDropSubtitle =>
-      'Artist + Drop-Maker + mini map + claimed hunters';
+      'Artist + Drop-Maker + mini map + claimed by hunters';
 
   @override
   String distanceValue(Object value) {
@@ -660,7 +660,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Description, gallery, maker comment and claim state.';
 
   @override
-  String get claimedHuntersTitle => 'Claimed hunters';
+  String get claimedHuntersTitle => 'Claimed by hunters';
 
   @override
   String get claimedHuntersValue => 'HunterOne, HunterTwo';
