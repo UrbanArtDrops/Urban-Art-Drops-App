@@ -107,16 +107,101 @@ void main() {
     expect(find.text("Admin-created artwork"), findsNothing);
     expect(apiClient.getManageableArtPiecesCallCount, 1);
   });
+
+  testWidgets(
+    "reloads the artwork list when the editor dialog is closed without saving",
+    (tester) async {
+      tester.view.physicalSize = const Size(1440, 1600);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final authSessionCubit = AuthSessionCubit(
+        storage: InMemoryAuthSessionStorage(),
+      );
+      authSessionCubit.signIn(
+        userId: "artist-1",
+        email: "artist1@example.com",
+        userName: "artist-one",
+        role: AppUserRole.artist,
+        accessToken: "artist-token",
+        accessTokenExpiresAtUtc: DateTime.utc(2099, 3, 17, 18),
+      );
+
+      final apiClient = _FakeArtistArtPiecesApiClient(
+        artPieces: const [
+          ArtPieceModel(
+            id: "art-1",
+            artistId: "artist-1",
+            createdByUserId: "artist-1",
+            title: "Owned artwork",
+            subtitle: "Primary",
+            description: "Owned artwork description that is long enough.",
+            assetKind: 0,
+            isPublished: false,
+            isReported: false,
+            reportReason: null,
+            reportedAtUtc: null,
+            photoUrls: [],
+            assetFile: null,
+          ),
+        ],
+        artists: const [
+          ManagedUser(
+            id: "artist-1",
+            email: "artist1@example.com",
+            userName: "artist-one",
+            role: 1,
+            pendingRoleApplication: null,
+            pendingRoleApplicationRequestedAtUtc: null,
+            isApproved: true,
+            isSuspended: false,
+            isEmailVerified: true,
+            isProviderAccount: false,
+            profileImageUrl: null,
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        _ArtistArtPiecesHarness(
+          authSessionCubit: authSessionCubit,
+          apiClient: apiClient,
+          artPieceEditorDialogOpener:
+              (
+                context, {
+                required artists,
+                required initialDraft,
+                required photoPicker,
+                required assetPicker,
+              }) async => null,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(ArtistArtPiecesPage));
+      final l10n = AppLocalizations.of(context)!;
+
+      await tester.tap(find.text(l10n.createAction).first);
+      await tester.pumpAndSettle();
+
+      expect(apiClient.getManageableArtPiecesCallCount, 2);
+    },
+  );
 }
 
 class _ArtistArtPiecesHarness extends StatelessWidget {
   const _ArtistArtPiecesHarness({
     required this.authSessionCubit,
     required this.apiClient,
+    this.artPieceEditorDialogOpener,
   });
 
   final AuthSessionCubit authSessionCubit;
   final AppApiClient apiClient;
+  final ArtPieceEditorDialogOpener? artPieceEditorDialogOpener;
 
   @override
   Widget build(BuildContext context) {
@@ -124,8 +209,10 @@ class _ArtistArtPiecesHarness extends StatelessWidget {
       routes: [
         GoRoute(
           path: "/artist/art-pieces",
-          builder: (context, state) =>
-              ArtistArtPiecesPage(apiClient: apiClient),
+          builder: (context, state) => ArtistArtPiecesPage(
+            apiClient: apiClient,
+            artPieceEditorDialogOpener: artPieceEditorDialogOpener,
+          ),
         ),
       ],
       initialLocation: "/artist/art-pieces",

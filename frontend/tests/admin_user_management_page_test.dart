@@ -201,6 +201,61 @@ void main() {
       expect(find.text(l10n.userApproveRoleApplicationAction), findsNothing);
     },
   );
+
+  testWidgets(
+    "reloads the user list when the profile dialog is closed without saving",
+    (tester) async {
+      var getUsersCalls = 0;
+      final mockHttpClient = MockClient((request) async {
+        if (request.url.path == "/api/admin/users") {
+          getUsersCalls += 1;
+          return http.Response(
+            jsonEncode([
+              {
+                "id": "user-1",
+                "email": "artist@example.com",
+                "userName": "Artist One",
+                "role": 1,
+                "pendingRoleApplication": null,
+                "pendingRoleApplicationRequestedAtUtc": null,
+                "isApproved": true,
+                "isSuspended": false,
+                "isEmailVerified": true,
+                "isProviderAccount": false,
+                "profileImage": null,
+              },
+            ]),
+            200,
+            headers: {"content-type": "application/json"},
+          );
+        }
+
+        return http.Response("Not Found", 404);
+      });
+
+      await tester.pumpWidget(
+        _AdminUserManagementHarness(
+          apiClient: AppApiClient(
+            httpClient: mockHttpClient,
+            baseUrl: "http://localhost",
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(AdminUserManagementPage));
+      final l10n = AppLocalizations.of(context)!;
+
+      await tester.tap(find.byType(PopupMenuButton<String>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(l10n.userEditProfileAction));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(l10n.cancelAction).last);
+      await tester.pumpAndSettle();
+
+      expect(getUsersCalls, 2);
+    },
+  );
 }
 
 class _AdminUserManagementHarness extends StatelessWidget {

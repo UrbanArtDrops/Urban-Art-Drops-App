@@ -14,22 +14,34 @@ import "../widgets/art_piece_detail_view.dart";
 import "../widgets/art_piece_editor_dialog.dart";
 import "../widgets/art_piece_source_image.dart";
 
+typedef ArtPieceEditorDialogOpener =
+    Future<ArtPieceEditorDraft?> Function(
+      BuildContext context, {
+      required List<ManagedUser> artists,
+      required ArtPieceEditorDraft initialDraft,
+      required ArtPiecePhotoPicker photoPicker,
+      required ArtPieceAssetPicker assetPicker,
+    });
+
 class ArtistArtPiecesPage extends StatefulWidget {
   const ArtistArtPiecesPage({
     AppApiClient? apiClient,
     ArtPiecePhotoPicker? photoPicker,
     ArtPieceAssetPicker? assetPicker,
     ExternalDownloadLauncher? downloadLauncher,
+    ArtPieceEditorDialogOpener? artPieceEditorDialogOpener,
     super.key,
   }) : _apiClient = apiClient,
        _photoPicker = photoPicker,
        _assetPicker = assetPicker,
-       _downloadLauncher = downloadLauncher;
+       _downloadLauncher = downloadLauncher,
+       _artPieceEditorDialogOpener = artPieceEditorDialogOpener;
 
   final AppApiClient? _apiClient;
   final ArtPiecePhotoPicker? _photoPicker;
   final ArtPieceAssetPicker? _assetPicker;
   final ExternalDownloadLauncher? _downloadLauncher;
+  final ArtPieceEditorDialogOpener? _artPieceEditorDialogOpener;
 
   @override
   State<ArtistArtPiecesPage> createState() => _ArtistArtPiecesPageState();
@@ -43,6 +55,8 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
       widget._assetPicker ?? const FilePickerArtPieceAssetPicker();
   late final ExternalDownloadLauncher _downloadLauncher =
       widget._downloadLauncher ?? const UrlLauncherExternalDownloadLauncher();
+  late final ArtPieceEditorDialogOpener _artPieceEditorDialogOpener =
+      widget._artPieceEditorDialogOpener ?? showArtPieceEditorDialog;
 
   List<ArtPieceModel> _artPieces = const [];
   List<ManagedUser> _artists = const [];
@@ -236,50 +250,56 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
         ? ArtPieceEditorDraft.create(artistId: _preferredArtistId(authState))
         : ArtPieceEditorDraft.fromArtPiece(existing);
 
-    final draft = await showArtPieceEditorDialog(
-      context,
-      artists: _artists,
-      initialDraft: initialDraft,
-      photoPicker: _photoPicker,
-      assetPicker: _assetPicker,
-    );
-    if (draft == null) {
-      return;
-    }
-
-    await _withSaving(() async {
-      final savedArtPiece = existing == null
-          ? await _apiClient.createArtPiece(
-              artistId: draft.artistId,
-              title: draft.title.trim(),
-              subtitle: draft.subtitle.trim(),
-              description: draft.description.trim(),
-              assetKind: draft.assetKind,
-              photoUrls: draft.photoSources,
-              assetSource: draft.assetSource,
-              assetFileName: draft.assetFileName,
-            )
-          : await _apiClient.updateArtPiece(
-              id: existing.id,
-              artistId: draft.artistId,
-              title: draft.title.trim(),
-              subtitle: draft.subtitle.trim(),
-              description: draft.description.trim(),
-              assetKind: draft.assetKind,
-              photoUrls: draft.photoSources,
-              assetSource: draft.assetSource,
-              assetFileName: draft.assetFileName,
-            );
-
-      if (savedArtPiece.isPublished != draft.isPublished) {
-        await _apiClient.setArtPiecePublished(
-          savedArtPiece.id,
-          draft.isPublished,
-        );
+    var selectedArtPieceId = existing?.id;
+    try {
+      final draft = await _artPieceEditorDialogOpener(
+        context,
+        artists: _artists,
+        initialDraft: initialDraft,
+        photoPicker: _photoPicker,
+        assetPicker: _assetPicker,
+      );
+      if (draft == null) {
+        return;
       }
 
-      await _loadData(selectArtPieceId: savedArtPiece.id);
-    });
+      await _withSaving(() async {
+        final savedArtPiece = existing == null
+            ? await _apiClient.createArtPiece(
+                artistId: draft.artistId,
+                title: draft.title.trim(),
+                subtitle: draft.subtitle.trim(),
+                description: draft.description.trim(),
+                assetKind: draft.assetKind,
+                photoUrls: draft.photoSources,
+                assetSource: draft.assetSource,
+                assetFileName: draft.assetFileName,
+              )
+            : await _apiClient.updateArtPiece(
+                id: existing.id,
+                artistId: draft.artistId,
+                title: draft.title.trim(),
+                subtitle: draft.subtitle.trim(),
+                description: draft.description.trim(),
+                assetKind: draft.assetKind,
+                photoUrls: draft.photoSources,
+                assetSource: draft.assetSource,
+                assetFileName: draft.assetFileName,
+              );
+
+        selectedArtPieceId = savedArtPiece.id;
+        if (savedArtPiece.isPublished != draft.isPublished) {
+          await _apiClient.setArtPiecePublished(
+            savedArtPiece.id,
+            draft.isPublished,
+          );
+        }
+      });
+    } finally {
+      if (mounted) {
+        await _loadData(selectArtPieceId: selectedArtPieceId);
+      }
+    }
   }
 
   Future<void> _deleteArtPiece(ArtPieceModel artPiece) async {

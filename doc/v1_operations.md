@@ -63,6 +63,7 @@
 - Admin user management supports editing both user name and email address after account creation
 - Admin user management also exposes approve/reject actions for pending Hunter role applications to Artist or Drop-Maker
 - Admin role-application approvals and rejections update the affected user row directly from the API response instead of depending on an immediate full reload of the user list, and backend validation messages are surfaced in the UI
+- Object-management screens that edit entries through dialogs now refresh their backing lists when the dialog closes, including Admin Users, My Art and My Drops
 - The admin user list renders each account with role, approval and suspension icons plus the stored profile image when one is available
 - Admin user management blocks self-lockout by preventing an admin from suspending their own account or revoking their own approval in both the API and the UI
 - Profile images are served from `/api/media/user-profile-images/{id}` and remain inside the SQL-backed persistence model

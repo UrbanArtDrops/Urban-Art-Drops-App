@@ -67,166 +67,186 @@ class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
     final passwordController = TextEditingController();
     var role = 0;
 
-    final shouldSave = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.userCreateTitle),
-        content: StatefulBuilder(
-          builder: (context, setStateDialog) => SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: emailController,
-                  decoration: InputDecoration(labelText: l10n.emailLabel),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: userNameController,
-                  decoration: InputDecoration(labelText: l10n.usernameLabel),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: passwordController,
-                  decoration: InputDecoration(labelText: l10n.passwordLabel),
-                  obscureText: true,
-                ),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<int>(
-                  initialValue: role,
-                  decoration: InputDecoration(labelText: l10n.roleLabel),
-                  items: _roleOptions(l10n),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setStateDialog(() => role = value);
-                    }
-                  },
-                ),
-              ],
+    try {
+      final shouldSave = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(l10n.userCreateTitle),
+          content: StatefulBuilder(
+            builder: (context, setStateDialog) => SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: emailController,
+                    decoration: InputDecoration(labelText: l10n.emailLabel),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: userNameController,
+                    decoration: InputDecoration(labelText: l10n.usernameLabel),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: passwordController,
+                    decoration: InputDecoration(labelText: l10n.passwordLabel),
+                    obscureText: true,
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<int>(
+                    initialValue: role,
+                    decoration: InputDecoration(labelText: l10n.roleLabel),
+                    items: _roleOptions(l10n),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setStateDialog(() => role = value);
+                      }
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(l10n.cancelAction),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(l10n.saveButton),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(l10n.cancelAction),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(l10n.saveButton),
-          ),
-        ],
-      ),
-    );
-
-    if (shouldSave != true) {
-      return;
-    }
-
-    await _withSaving(() async {
-      await _apiClient.createManagedUser(
-        email: emailController.text.trim(),
-        userName: userNameController.text.trim(),
-        role: role,
-        isApproved: true,
-        isEmailVerified: true,
-        isProviderAccount: false,
-        password: passwordController.text.trim(),
       );
-      await _loadUsers();
-    });
+
+      if (shouldSave != true) {
+        return;
+      }
+
+      await _withSaving(() async {
+        await _apiClient.createManagedUser(
+          email: emailController.text.trim(),
+          userName: userNameController.text.trim(),
+          role: role,
+          isApproved: true,
+          isEmailVerified: true,
+          isProviderAccount: false,
+          password: passwordController.text.trim(),
+        );
+      });
+    } finally {
+      emailController.dispose();
+      userNameController.dispose();
+      passwordController.dispose();
+      if (mounted) {
+        await _loadUsers();
+      }
+    }
   }
 
   Future<void> _editUserProfile(ManagedUser user) async {
     final l10n = AppLocalizations.of(context)!;
     final userNameController = TextEditingController(text: user.userName);
     final emailController = TextEditingController(text: user.email);
-    final shouldSave = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.userEditProfileTitle),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: userNameController,
-              decoration: InputDecoration(labelText: l10n.usernameLabel),
+    try {
+      final shouldSave = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(l10n.userEditProfileTitle),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: userNameController,
+                decoration: InputDecoration(labelText: l10n.usernameLabel),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(labelText: l10n.emailLabel),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(l10n.cancelAction),
             ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(labelText: l10n.emailLabel),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(l10n.saveButton),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(l10n.cancelAction),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(l10n.saveButton),
-          ),
-        ],
-      ),
-    );
-
-    if (shouldSave != true) {
-      return;
-    }
-
-    await _withSaving(() async {
-      await _apiClient.updateUserProfile(
-        userId: user.id,
-        userName: userNameController.text.trim(),
-        email: emailController.text.trim(),
       );
-      await _loadUsers();
-    });
+
+      if (shouldSave != true) {
+        return;
+      }
+
+      await _withSaving(() async {
+        await _apiClient.updateUserProfile(
+          userId: user.id,
+          userName: userNameController.text.trim(),
+          email: emailController.text.trim(),
+        );
+      });
+    } finally {
+      userNameController.dispose();
+      emailController.dispose();
+      if (mounted) {
+        await _loadUsers();
+      }
+    }
   }
 
   Future<void> _changeRole(ManagedUser user) async {
     final l10n = AppLocalizations.of(context)!;
     var role = user.role;
-    final shouldSave = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.userChangeRoleAction),
-        content: StatefulBuilder(
-          builder: (context, setStateDialog) => DropdownButtonFormField<int>(
-            initialValue: role,
-            decoration: InputDecoration(labelText: l10n.roleLabel),
-            items: _roleOptions(l10n),
-            onChanged: (value) {
-              if (value != null) {
-                setStateDialog(() => role = value);
-              }
-            },
+    try {
+      final shouldSave = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(l10n.userChangeRoleAction),
+          content: StatefulBuilder(
+            builder: (context, setStateDialog) => DropdownButtonFormField<int>(
+              initialValue: role,
+              decoration: InputDecoration(labelText: l10n.roleLabel),
+              items: _roleOptions(l10n),
+              onChanged: (value) {
+                if (value != null) {
+                  setStateDialog(() => role = value);
+                }
+              },
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(l10n.cancelAction),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(l10n.saveButton),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(l10n.cancelAction),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(l10n.saveButton),
-          ),
-        ],
-      ),
-    );
+      );
 
-    if (shouldSave != true) {
-      return;
+      if (shouldSave != true) {
+        return;
+      }
+
+      await _withSaving(() async {
+        await _apiClient.updateUserRole(user.id, role);
+      });
+    } finally {
+      if (mounted) {
+        await _loadUsers();
+      }
     }
-
-    await _withSaving(() async {
-      await _apiClient.updateUserRole(user.id, role);
-      await _loadUsers();
-    });
   }
 
   Future<void> _toggleApproval(ManagedUser user) async {
