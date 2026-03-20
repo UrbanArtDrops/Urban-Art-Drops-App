@@ -533,6 +533,7 @@ class _DropDetailContent extends StatelessWidget {
             child: _CommentsSection(
               l10n: l10n,
               comments: comments,
+              usersById: usersById,
               authState: authState,
               isSubmittingComment: isSubmittingComment,
               pendingCommentReportId: pendingCommentReportId,
@@ -856,6 +857,7 @@ class _CommentsSection extends StatefulWidget {
   const _CommentsSection({
     required this.l10n,
     required this.comments,
+    required this.usersById,
     required this.authState,
     required this.isSubmittingComment,
     required this.pendingCommentReportId,
@@ -865,6 +867,7 @@ class _CommentsSection extends StatefulWidget {
 
   final AppLocalizations l10n;
   final List<DropCommentModel> comments;
+  final Map<String, ManagedUser> usersById;
   final AuthSessionState authState;
   final bool isSubmittingComment;
   final String? pendingCommentReportId;
@@ -956,6 +959,7 @@ class _CommentsSectionState extends State<_CommentsSection> {
                     child: _CommentCard(
                       l10n: widget.l10n,
                       comment: comment,
+                      usersById: widget.usersById,
                       isSubmittingReport:
                           widget.pendingCommentReportId == comment.id,
                       onReport: () => widget.onReportComment(comment),
@@ -973,18 +977,21 @@ class _CommentCard extends StatelessWidget {
   const _CommentCard({
     required this.l10n,
     required this.comment,
+    required this.usersById,
     required this.isSubmittingReport,
     required this.onReport,
   });
 
   final AppLocalizations l10n;
   final DropCommentModel comment;
+  final Map<String, ManagedUser> usersById;
   final bool isSubmittingReport;
   final Future<void> Function() onReport;
 
   @override
   Widget build(BuildContext context) {
     final displayName = _commentDisplayName(comment, l10n);
+    final imageUrl = _commentAuthorImageUrl(comment, usersById);
 
     return Card(
       margin: EdgeInsets.zero,
@@ -996,6 +1003,14 @@ class _CommentCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: UserAvatar(
+                    displayName: displayName,
+                    imageUrl: imageUrl,
+                    radius: 20,
+                  ),
+                ),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1203,6 +1218,18 @@ String _commentDisplayName(DropCommentModel comment, AppLocalizations l10n) {
   }
 
   return l10n.leaderboardAnonymousFallback;
+}
+
+String? _commentAuthorImageUrl(
+  DropCommentModel comment,
+  Map<String, ManagedUser> usersById,
+) {
+  final userId = comment.authorUserId?.trim();
+  if (userId == null || userId.isEmpty) {
+    return null;
+  }
+
+  return usersById[userId]?.profileImageUrl;
 }
 
 String _formatDateTime(DateTime? value) {

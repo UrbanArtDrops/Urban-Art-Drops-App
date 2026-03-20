@@ -7,6 +7,7 @@ import "../../../../shared/models/app_models.dart";
 import "../../../../shared/services/app_api_client.dart";
 import "../../../../shared/widgets/page_shell.dart";
 import "../../../../shared/widgets/source_image.dart";
+import "../../../../shared/widgets/user_avatar.dart";
 import "../../../authentication/presentation/bloc/auth_session_cubit.dart";
 
 class ModerationPage extends StatefulWidget {
@@ -22,6 +23,7 @@ class _ModerationPageState extends State<ModerationPage> {
   late final AppApiClient _apiClient;
 
   ModerationQueueModel? _queue;
+  Map<String, ManagedUser> _usersById = const {};
   bool _isLoading = false;
   String? _error;
   String? _pendingActionKey;
@@ -63,6 +65,7 @@ class _ModerationPageState extends State<ModerationPage> {
         setState(() {
           _loadedModerationActorId = null;
           _queue = null;
+          _usersById = const {};
           _error = null;
           _isLoading = false;
           _pendingActionKey = null;
@@ -87,15 +90,19 @@ class _ModerationPageState extends State<ModerationPage> {
     });
 
     try {
-      final queue = await _apiClient.getModerationQueue(
-        actingUserId: actingUserId,
-      );
+      final results = await Future.wait([
+        _apiClient.getModerationQueue(actingUserId: actingUserId),
+        _apiClient.getUserDirectory(),
+      ]);
       if (!mounted || _loadedModerationActorId != actingUserId) {
         return;
       }
 
       setState(() {
-        _queue = queue;
+        _queue = results[0] as ModerationQueueModel;
+        _usersById = {
+          for (final user in (results[1] as List<ManagedUser>)) user.id: user,
+        };
         _isLoading = false;
       });
     } catch (_) {
@@ -199,6 +206,7 @@ class _ModerationPageState extends State<ModerationPage> {
           : _ModerationContent(
               l10n: l10n,
               queue: _queue!,
+              usersById: _usersById,
               showArtPieceReports: canModerateArtPieces,
               pendingActionKey: _pendingActionKey,
               onHideComment: (comment) => _runAction(
@@ -238,6 +246,7 @@ class _ModerationContent extends StatelessWidget {
   const _ModerationContent({
     required this.l10n,
     required this.queue,
+    required this.usersById,
     required this.showArtPieceReports,
     required this.pendingActionKey,
     required this.onHideComment,
@@ -248,6 +257,7 @@ class _ModerationContent extends StatelessWidget {
 
   final AppLocalizations l10n;
   final ModerationQueueModel queue;
+  final Map<String, ManagedUser> usersById;
   final bool showArtPieceReports;
   final String? pendingActionKey;
   final Future<void> Function(ReportedCommentModel comment) onHideComment;
@@ -282,6 +292,7 @@ class _ModerationContent extends StatelessWidget {
               child: _ReportedCommentCard(
                 l10n: l10n,
                 comment: comment,
+                usersById: usersById,
                 isHiding: pendingActionKey == "comment-hide-${comment.id}",
                 isDismissing:
                     pendingActionKey == "comment-dismiss-${comment.id}",
@@ -323,6 +334,7 @@ class _ReportedCommentCard extends StatelessWidget {
   const _ReportedCommentCard({
     required this.l10n,
     required this.comment,
+    required this.usersById,
     required this.isHiding,
     required this.isDismissing,
     required this.onHide,
@@ -331,6 +343,7 @@ class _ReportedCommentCard extends StatelessWidget {
 
   final AppLocalizations l10n;
   final ReportedCommentModel comment;
+  final Map<String, ManagedUser> usersById;
   final bool isHiding;
   final bool isDismissing;
   final Future<void> Function() onHide;
@@ -338,6 +351,8 @@ class _ReportedCommentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final imageUrl = _reportedCommentAuthorImageUrl(comment, usersById);
+
     return Card(
       margin: EdgeInsets.zero,
       child: Padding(
@@ -345,16 +360,40 @@ class _ReportedCommentCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              comment.dropTitle,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 6),
-            Text(l10n.moderationReportedBy(comment.authorDisplayName)),
-            const SizedBox(height: 4),
-            Text(
-              l10n.moderationReportedAt(_formatDateTime(comment.reportedAtUtc)),
-              style: Theme.of(context).textTheme.bodySmall,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: UserAvatar(
+                    displayName: comment.authorDisplayName,
+                    imageUrl: imageUrl,
+                    radius: 20,
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        comment.dropTitle,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        l10n.moderationReportedBy(comment.authorDisplayName),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        l10n.moderationReportedAt(
+                          _formatDateTime(comment.reportedAtUtc),
+                        ),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             Text(comment.content),
@@ -541,4 +580,16 @@ String _normalizeReason(String? reason, AppLocalizations l10n) {
   }
 
   return normalized;
+}
+
+String? _reportedCommentAuthorImageUrl(
+  ReportedCommentModel comment,
+  Map<String, ManagedUser> usersById,
+) {
+  final userId = comment.authorUserId?.trim();
+  if (userId == null || userId.isEmpty) {
+    return null;
+  }
+
+  return usersById[userId]?.profileImageUrl;
 }

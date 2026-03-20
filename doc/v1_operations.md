@@ -95,6 +95,7 @@
 - Moderators and admins process reports through `GET /api/moderation/reports`
 - Artists can review and resolve reported comments for drops that reference their own art pieces
 - Drop-makers can review and resolve reported comments for drops they created
+- Comment cards in both drop details and moderation lists render an author avatar for every entry, using the stored profile image when the author is a registered user
 - Comment moderation supports hide and dismiss flows through the moderation endpoints
 - Art-piece moderation supports depublish and dismiss flows through the moderation endpoints
 
