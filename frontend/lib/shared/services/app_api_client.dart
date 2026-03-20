@@ -378,6 +378,11 @@ class AppApiClient {
     return data.map(ArtPieceModel.fromJson).toList(growable: false);
   }
 
+  Future<List<ArtPieceModel>> getManageableArtPieces() async {
+    final data = await _getList("/api/art-pieces/manageable");
+    return data.map(ArtPieceModel.fromJson).toList(growable: false);
+  }
+
   Future<ArtPieceModel> createArtPiece({
     required String artistId,
     required String title,

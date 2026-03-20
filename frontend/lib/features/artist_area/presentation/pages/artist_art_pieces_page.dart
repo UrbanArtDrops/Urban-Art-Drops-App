@@ -79,18 +79,25 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
     });
 
     try {
+      final authState = context.read<AuthSessionCubit>().state;
       final results = await Future.wait<Object>([
-        _apiClient.getArtPieces(),
+        _apiClient.getManageableArtPieces(),
         _apiClient.getUserDirectory(),
       ]);
       if (!mounted) {
         return;
       }
 
-      final artPieces = results[0] as List<ArtPieceModel>;
-      final artists = (results[1] as List<ManagedUser>)
-          .where((user) => user.role == 1)
-          .toList(growable: false);
+      final artPieces = _filterManageableArtPieces(
+        authState,
+        results[0] as List<ArtPieceModel>,
+      );
+      final artists = _filterEditableArtists(
+        authState,
+        (results[1] as List<ManagedUser>)
+            .where((user) => user.role == AppUserRole.artist.index)
+            .toList(growable: false),
+      );
 
       setState(() {
         _artPieces = artPieces;
@@ -111,6 +118,42 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
         _isLoading = false;
       });
     }
+  }
+
+  List<ArtPieceModel> _filterManageableArtPieces(
+    AuthSessionState authState,
+    List<ArtPieceModel> artPieces,
+  ) {
+    if (authState.role != AppUserRole.artist) {
+      return artPieces;
+    }
+
+    final authenticatedUserId = authState.userId?.trim();
+    if (authenticatedUserId == null || authenticatedUserId.isEmpty) {
+      return const [];
+    }
+
+    return artPieces
+        .where((artPiece) => artPiece.artistId == authenticatedUserId)
+        .toList(growable: false);
+  }
+
+  List<ManagedUser> _filterEditableArtists(
+    AuthSessionState authState,
+    List<ManagedUser> artists,
+  ) {
+    if (authState.role != AppUserRole.artist) {
+      return artists;
+    }
+
+    final authenticatedUserId = authState.userId?.trim();
+    if (authenticatedUserId == null || authenticatedUserId.isEmpty) {
+      return const [];
+    }
+
+    return artists
+        .where((artist) => artist.id == authenticatedUserId)
+        .toList(growable: false);
   }
 
   String? _resolveSelectedArtPieceId(

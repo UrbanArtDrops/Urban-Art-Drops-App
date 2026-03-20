@@ -177,6 +177,56 @@ public sealed class ArtPieceEndpointsTests : IClassFixture<TestWebApplicationFac
                 && notification.RelatedEntityId == createdArtPiece.Id);
     }
 
+    [Fact]
+    public async Task GetManageableArtPieces_WhenArtistRequestsManagerScope_ReturnsOnlyOwnedArtPieces()
+    {
+        var uniqueId = Guid.NewGuid().ToString("N");
+        var admin = await _factory.CreateAuthenticatedUserAsync(UserRole.Admin, $"admin.manageable.{uniqueId}");
+        var owningArtist = await _factory.CreateAuthenticatedUserAsync(UserRole.Artist, $"artist.owner.{uniqueId}");
+        var otherArtist = await _factory.CreateAuthenticatedUserAsync(UserRole.Artist, $"artist.other.{uniqueId}");
+
+        await CreateArtPieceAsync(admin.AccessToken, owningArtist.Id, $"Owned {uniqueId}");
+        await CreateArtPieceAsync(admin.AccessToken, otherArtist.Id, $"Foreign {uniqueId}");
+
+        var response = await _client.GetAuthorizedAsync("/api/art-pieces/manageable", owningArtist.AccessToken);
+        await EnsureSuccessWithBodyAsync(response);
+
+        var payload = await response.Content.ReadFromJsonAsync<List<ArtPieceResponseDto>>();
+        Assert.NotNull(payload);
+        Assert.Single(payload!);
+        Assert.All(payload, artPiece => Assert.Equal(owningArtist.Id, artPiece.ArtistId));
+        Assert.Contains(payload, artPiece => artPiece.Title == $"Owned {uniqueId}");
+    }
+
+    [Fact]
+    public async Task UpdateArtPiece_WhenArtistTargetsForeignArtwork_ReturnsForbidden()
+    {
+        var uniqueId = Guid.NewGuid().ToString("N");
+        var admin = await _factory.CreateAuthenticatedUserAsync(UserRole.Admin, $"admin.foreign-edit.{uniqueId}");
+        var owningArtist = await _factory.CreateAuthenticatedUserAsync(UserRole.Artist, $"artist.owner.edit.{uniqueId}");
+        var foreignArtist = await _factory.CreateAuthenticatedUserAsync(UserRole.Artist, $"artist.foreign.edit.{uniqueId}");
+
+        var createdArtPiece = await CreateArtPieceAsync(
+            admin.AccessToken,
+            owningArtist.Id,
+            $"Protected {uniqueId}");
+
+        var updateResponse = await _client.PutAuthorizedAsJsonAsync(
+            $"/api/art-pieces/{createdArtPiece.Id}",
+            new
+            {
+                artistId = owningArtist.Id,
+                title = $"Protected {uniqueId} Updated",
+                subtitle = "Still owned by the original artist",
+                description = "An updated description that should be rejected for a foreign artist.",
+                assetKind = ArtPieceAssetKind.Image,
+                photoUrls = new[] { SamplePngDataUrl }
+            },
+            foreignArtist.AccessToken);
+
+        Assert.Equal(System.Net.HttpStatusCode.Forbidden, updateResponse.StatusCode);
+    }
+
     private sealed record ArtPieceResponseDto(
         Guid Id,
         Guid ArtistId,
@@ -200,6 +250,30 @@ public sealed class ArtPieceEndpointsTests : IClassFixture<TestWebApplicationFac
         DateTimeOffset CreatedAtUtc,
         Guid? RelatedEntityId,
         string? RelatedEntityType);
+
+    private async Task<ArtPieceResponseDto> CreateArtPieceAsync(
+        string accessToken,
+        Guid artistId,
+        string title)
+    {
+        var response = await _client.PostAuthorizedAsJsonAsync(
+            "/api/art-pieces/",
+            new
+            {
+                artistId,
+                title,
+                subtitle = "Artist scope test",
+                description = "A long enough artwork description for artist ownership validation.",
+                assetKind = ArtPieceAssetKind.Image,
+                photoUrls = new[] { SamplePngDataUrl }
+            },
+            accessToken);
+        await EnsureSuccessWithBodyAsync(response);
+
+        var createdArtPiece = await response.Content.ReadFromJsonAsync<ArtPieceResponseDto>();
+        Assert.NotNull(createdArtPiece);
+        return createdArtPiece!;
+    }
 
     private static async Task EnsureSuccessWithBodyAsync(HttpResponseMessage response)
     {

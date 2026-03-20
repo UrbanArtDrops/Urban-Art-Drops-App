@@ -36,6 +36,7 @@
 - 3D artwork assets are stored as binary payloads in the database, exposed through dedicated media endpoints and surfaced to the Flutter client as downloadable asset references
 - Art piece CRUD supports full metadata updates for artist assignment, asset type, title, description, publish state and photo set
 - Art piece CRUD also supports 3D model upload, replacement and download, while model artworks require a stored asset before publish
+- The authenticated art-piece manager scope is ownership-aware: artists only receive their own art pieces for management, while admins retain the global cross-artist view
 - The Flutter artist workspace uploads local artwork photos as data URLs, which the API resolves into persisted binary media records
 - Admin users can use the same management flows to edit any art piece and any drop across the platform instead of being limited to their own ownership scope
 - The Flutter drop-maker wizard creates a persisted draft drop before placement, so item quantities and backend-generated QR tokens are available mid-process

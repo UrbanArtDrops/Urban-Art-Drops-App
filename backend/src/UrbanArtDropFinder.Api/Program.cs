@@ -601,6 +601,35 @@ artGroup.MapGet("/", async (HttpContext httpContext, UrbanArtDbContext dbContext
     return Results.Ok(response);
 });
 
+artGroup.MapGet("/manageable", async (
+    HttpContext httpContext,
+    UrbanArtDbContext dbContext,
+    CancellationToken cancellationToken) =>
+{
+    var actorResolution = await ResolveAuthenticatedActorAsync(httpContext, dbContext, cancellationToken);
+    if (actorResolution.Failure is not null)
+    {
+        return actorResolution.Failure;
+    }
+
+    var query = dbContext.ArtPieces
+        .Include(x => x.Photos)
+        .Include(x => x.AssetFile)
+        .AsNoTracking()
+        .AsQueryable();
+
+    if (actorResolution.Actor!.Role == UserRole.Artist)
+    {
+        query = query.Where(artPiece => artPiece.ArtistId == actorResolution.Actor.Id);
+    }
+
+    var artPieces = await query.ToListAsync(cancellationToken);
+    var response = artPieces
+        .Select(artPiece => ToArtPieceResponse(artPiece, httpContext.Request))
+        .ToList();
+    return Results.Ok(response);
+}).RequireAuthorization(AuthPolicies.ArtistOrAdmin);
+
 artGroup.MapGet("/{id:guid}", async (Guid id, HttpContext httpContext, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
 {
     var item = await dbContext.ArtPieces
