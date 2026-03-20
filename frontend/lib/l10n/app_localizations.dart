@@ -416,6 +416,12 @@ abstract class AppLocalizations {
   /// **'There are no notifications yet.'**
   String get profileNotificationsEmpty;
 
+  /// No description provided for @profileNotificationsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications could not be loaded.'**
+  String get profileNotificationsLoadFailed;
+
   /// No description provided for @profileNotificationMarkReadAction.
   ///
   /// In en, this message translates to:

@@ -183,6 +183,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Es liegen noch keine Benachrichtigungen vor.';
 
   @override
+  String get profileNotificationsLoadFailed =>
+      'Benachrichtigungen konnten nicht geladen werden.';
+
+  @override
   String get profileNotificationMarkReadAction => 'Als gelesen markieren';
 
   @override

@@ -64,6 +64,7 @@
 - Admin user management also exposes approve/reject actions for pending Hunter role applications to Artist or Drop-Maker
 - Profile images are served from `/api/media/user-profile-images/{id}` and remain inside the SQL-backed persistence model
 - In-app profile notifications are available through `GET /api/profile/notifications` and can be acknowledged through `POST /api/profile/notifications/{notificationId}/mark-read`
+- The profile screen loads `/api/profile` and `/api/profile/notifications` independently so a notification-loading failure does not hide the main profile data; the notification section shows a retry action instead
 
 ## Backup
 - Daily backup job

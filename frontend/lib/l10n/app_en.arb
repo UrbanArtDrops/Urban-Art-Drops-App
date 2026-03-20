@@ -67,6 +67,7 @@
   "profileMfaDisableSuccess": "MFA was disabled.",
   "profileNotificationsSectionTitle": "Notifications",
   "profileNotificationsEmpty": "There are no notifications yet.",
+  "profileNotificationsLoadFailed": "Notifications could not be loaded.",
   "profileNotificationMarkReadAction": "Mark as read",
   "profileNotificationReadState": "Read",
   "profileNotificationUnreadState": "Unread",

@@ -208,12 +208,18 @@ class AppApiClient {
   }
 
   Future<CurrentUserProfileModel> getCurrentUserProfile() async {
-    final data = await _getObject("/api/profile");
+    final data = await _getObject(
+      "/api/profile",
+      fallbackMessage: "Failed to load current profile.",
+    );
     return CurrentUserProfileModel.fromJson(data);
   }
 
   Future<List<UserNotificationModel>> getCurrentUserNotifications() async {
-    final data = await _getList("/api/profile/notifications");
+    final data = await _getList(
+      "/api/profile/notifications",
+      fallbackMessage: "Failed to load notifications.",
+    );
     return data.map(UserNotificationModel.fromJson).toList(growable: false);
   }
 
@@ -688,12 +694,13 @@ class AppApiClient {
   Future<List<Map<String, dynamic>>> _getList(
     String path, {
     bool includeAuthorization = true,
+    String fallbackMessage = "Failed to load data.",
   }) async {
     final response = await _httpClient.get(
       _uri(path),
       headers: _headers(includeAuthorization: includeAuthorization),
     );
-    _ensureSuccess(response, "Failed to load data.");
+    _ensureSuccess(response, fallbackMessage);
     final payload = jsonDecode(response.body);
     if (payload is! List<dynamic>) {
       throw const ApiException("Unexpected API response format.");
@@ -705,12 +712,13 @@ class AppApiClient {
   Future<Map<String, dynamic>> _getObject(
     String path, {
     bool includeAuthorization = true,
+    String fallbackMessage = "Failed to load data.",
   }) async {
     final response = await _httpClient.get(
       _uri(path),
       headers: _headers(includeAuthorization: includeAuthorization),
     );
-    _ensureSuccess(response, "Failed to load data.");
+    _ensureSuccess(response, fallbackMessage);
     return _decodeObjectResponse(response);
   }
 

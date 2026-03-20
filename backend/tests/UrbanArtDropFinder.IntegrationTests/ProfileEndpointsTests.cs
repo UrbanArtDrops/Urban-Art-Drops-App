@@ -7,7 +7,7 @@ using UrbanArtDropFinder.Persistence.Db;
 
 namespace UrbanArtDropFinder.IntegrationTests;
 
-public sealed class ProfileEndpointsTests : IClassFixture<TestWebApplicationFactory>
+public sealed partial class ProfileEndpointsTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly HttpClient _client;
     private readonly TestWebApplicationFactory _factory;
@@ -273,6 +273,74 @@ public sealed class ProfileEndpointsTests : IClassFixture<TestWebApplicationFact
         var storedNotification = await verificationDbContext.UserNotifications.FirstAsync(
             notification => notification.Id == notificationToMarkRead.Id);
         Assert.True(storedNotification.IsRead);
+    }
+
+    [Fact]
+    public async Task ProviderHunterCanLoadCurrentProfileAndNotifications()
+    {
+        var uniqueId = Guid.NewGuid().ToString("N");
+        var email = $"provider.profile.{uniqueId}@example.com";
+        var userName = $"provider-profile-{uniqueId}";
+        var providerSubject = $"provider-profile-subject-{uniqueId}";
+
+        var registerResponse = await _client.PostAsJsonAsync(
+            "/api/auth/register-provider",
+            new
+            {
+                provider = "google",
+                providerSubject,
+                email,
+                userName
+            });
+        await EnsureSuccessWithBodyAsync(registerResponse);
+
+        var loginResponse = await _client.PostAsJsonAsync(
+            "/api/auth/login-provider",
+            new
+            {
+                provider = "google",
+                providerSubject,
+                email
+            });
+        await EnsureSuccessWithBodyAsync(loginResponse);
+
+        var loginResult = await loginResponse.Content.ReadFromJsonAsync<AuthResultDto>();
+        Assert.NotNull(loginResult);
+        Assert.False(string.IsNullOrWhiteSpace(loginResult!.AccessToken));
+
+        var profileResponse = await _client.GetAuthorizedAsync("/api/profile", loginResult.AccessToken!);
+        await EnsureSuccessWithBodyAsync(profileResponse);
+
+        var profilePayload = await profileResponse.Content.ReadFromJsonAsync<CurrentUserProfileDto>();
+        Assert.NotNull(profilePayload);
+        Assert.Equal(email, profilePayload!.Email);
+        Assert.Equal(userName, profilePayload.UserName);
+        Assert.True(profilePayload.IsProviderAccount);
+        Assert.Equal(UserRole.Hunter, profilePayload.Role);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<UrbanArtDbContext>();
+            var user = await dbContext.UserAccounts.SingleAsync(account => account.Email == email);
+            await dbContext.UserNotifications.AddAsync(
+                UserNotification.Create(
+                    user.Id,
+                    "Provider test notification",
+                    "Visible after provider login.",
+                    "provider-test",
+                    Guid.NewGuid(),
+                    "ProviderTest"));
+            await dbContext.SaveChangesAsync();
+        }
+
+        var notificationsResponse = await _client.GetAuthorizedAsync(
+            "/api/profile/notifications",
+            loginResult.AccessToken!);
+        await EnsureSuccessWithBodyAsync(notificationsResponse);
+
+        var notificationsPayload = await notificationsResponse.Content.ReadFromJsonAsync<List<UserNotificationDto>>();
+        Assert.NotNull(notificationsPayload);
+        Assert.Contains(notificationsPayload!, notification => notification.Category == "provider-test");
     }
 
     private sealed record CurrentUserProfileDto(

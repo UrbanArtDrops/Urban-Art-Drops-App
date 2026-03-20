@@ -181,6 +181,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileNotificationsEmpty => 'There are no notifications yet.';
 
   @override
+  String get profileNotificationsLoadFailed =>
+      'Notifications could not be loaded.';
+
+  @override
   String get profileNotificationMarkReadAction => 'Mark as read';
 
   @override

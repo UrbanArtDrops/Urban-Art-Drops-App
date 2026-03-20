@@ -36,8 +36,10 @@ class _ProfilePageState extends State<ProfilePage> {
   CurrentUserProfileModel? _profile;
   List<UserNotificationModel> _notifications = const [];
   bool _isLoading = true;
+  bool _isLoadingNotifications = false;
   bool _isSaving = false;
   String? _loadError;
+  String? _notificationsLoadError;
   String? _profileImageSource;
   bool _profileImageDirty = false;
   String? _markingNotificationId;
@@ -64,26 +66,22 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() {
       _isLoading = true;
       _loadError = null;
+      _notificationsLoadError = null;
     });
 
     try {
-      final results = await Future.wait<Object>([
-        _apiClient.getCurrentUserProfile(),
-        _apiClient.getCurrentUserNotifications(),
-      ]);
+      final profile = await _apiClient.getCurrentUserProfile();
       if (!mounted) {
         return;
       }
 
-      final profile = results[0] as CurrentUserProfileModel;
-      final notifications = results[1] as List<UserNotificationModel>;
-
       setState(() {
         _applyProfile(profile);
-        _notifications = notifications;
+        _notifications = const [];
         _isLoading = false;
       });
       _syncSessionProfile(profile);
+      await _loadNotifications(showLoading: false);
     } on ApiException catch (error) {
       if (!mounted) {
         return;
@@ -92,6 +90,59 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() {
         _isLoading = false;
         _loadError = error.message;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isLoading = false;
+        _loadError = AppLocalizations.of(context)!.profileLoadFailed;
+      });
+    }
+  }
+
+  Future<void> _loadNotifications({required bool showLoading}) async {
+    if (showLoading) {
+      setState(() {
+        _isLoadingNotifications = true;
+        _notificationsLoadError = null;
+      });
+    }
+
+    try {
+      final notifications = await _apiClient.getCurrentUserNotifications();
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _notifications = notifications;
+        _notificationsLoadError = null;
+        _isLoadingNotifications = false;
+      });
+    } on ApiException catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _notifications = const [];
+        _notificationsLoadError = error.message;
+        _isLoadingNotifications = false;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _notifications = const [];
+        _notificationsLoadError = AppLocalizations.of(
+          context,
+        )!.profileNotificationsLoadFailed;
+        _isLoadingNotifications = false;
       });
     }
   }
@@ -755,7 +806,26 @@ class _ProfilePageState extends State<ProfilePage> {
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 8),
-                      if (_notifications.isEmpty)
+                      if (_isLoadingNotifications)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8),
+                          child: SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        )
+                      else if (_notificationsLoadError != null) ...[
+                        Text(_notificationsLoadError!),
+                        const SizedBox(height: 8),
+                        OutlinedButton.icon(
+                          onPressed: _isSaving
+                              ? null
+                              : () => _loadNotifications(showLoading: true),
+                          icon: const Icon(Icons.refresh),
+                          label: Text(l10n.retryButton),
+                        ),
+                      ] else if (_notifications.isEmpty)
                         Text(l10n.profileNotificationsEmpty)
                       else
                         ..._notifications.map((notification) {

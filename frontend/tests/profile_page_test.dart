@@ -207,6 +207,63 @@ void main() {
     expect(find.text(l10n.profileNotificationReadState), findsOneWidget);
   });
 
+  testWidgets(
+    "provider profile still loads when notifications cannot be loaded",
+    (tester) async {
+      tester.view.physicalSize = const Size(1200, 1800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final apiClient = _FakeAppApiClient(
+        profile: const CurrentUserProfileModel(
+          userId: "provider-user-1",
+          email: "provider@example.com",
+          userName: "Provider Hunter",
+          role: 0,
+          pendingRoleApplication: null,
+          pendingRoleApplicationRequestedAtUtc: null,
+          isProviderAccount: true,
+          isMfaEnabled: false,
+          isMfaRequiredByPolicy: false,
+          profileImageUrl: null,
+        ),
+        notificationsError: const ApiException("Failed to load notifications."),
+      );
+      final authSessionCubit = AuthSessionCubit(
+        storage: InMemoryAuthSessionStorage(),
+      );
+      authSessionCubit.signIn(
+        userId: "provider-user-1",
+        email: "provider@example.com",
+        userName: "Provider Hunter",
+        role: AppUserRole.hunter,
+        accessToken: "provider-token",
+        accessTokenExpiresAtUtc: DateTime.utc(2099, 3, 17, 18),
+      );
+
+      await tester.pumpWidget(
+        _ProfileHarness(
+          authSessionCubit: authSessionCubit,
+          apiClient: apiClient,
+          photoPicker: const _FakePhotoPicker([]),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final l10n = AppLocalizations.of(
+        tester.element(find.byType(ProfilePage)),
+      )!;
+
+      expect(find.text("provider@example.com"), findsWidgets);
+      expect(find.text("Provider Hunter"), findsWidgets);
+      expect(find.text(l10n.profileProviderAccountChip), findsOneWidget);
+      expect(find.text("Failed to load notifications."), findsOneWidget);
+      expect(find.text(l10n.retryButton), findsWidgets);
+    },
+  );
+
   testWidgets("hunter can apply for artist role from profile", (tester) async {
     tester.view.physicalSize = const Size(1200, 1800);
     tester.view.devicePixelRatio = 1;
@@ -313,12 +370,14 @@ class _FakeAppApiClient extends AppApiClient {
   _FakeAppApiClient({
     required CurrentUserProfileModel profile,
     List<UserNotificationModel> notifications = const [],
+    this.notificationsError,
   }) : _profile = profile,
        _notifications = List<UserNotificationModel>.from(notifications),
        super(baseUrl: "http://localhost");
 
   CurrentUserProfileModel _profile;
   List<UserNotificationModel> _notifications;
+  final ApiException? notificationsError;
   String? lastUpdatedEmail;
   String? lastUpdatedUserName;
   String? lastMarkedNotificationId;
@@ -328,8 +387,13 @@ class _FakeAppApiClient extends AppApiClient {
   Future<CurrentUserProfileModel> getCurrentUserProfile() async => _profile;
 
   @override
-  Future<List<UserNotificationModel>> getCurrentUserNotifications() async =>
-      List<UserNotificationModel>.from(_notifications);
+  Future<List<UserNotificationModel>> getCurrentUserNotifications() async {
+    if (notificationsError != null) {
+      throw notificationsError!;
+    }
+
+    return List<UserNotificationModel>.from(_notifications);
+  }
 
   @override
   Future<CurrentUserProfileModel> updateCurrentUserProfile({
