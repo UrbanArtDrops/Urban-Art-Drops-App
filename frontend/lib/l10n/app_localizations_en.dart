@@ -631,6 +631,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dropDetailLocationSection => 'Location';
 
   @override
+  String get dropDetailItemStatusSection => 'Drop item status';
+
+  @override
+  String get dropDetailItemStatusAvailable => 'Available';
+
+  @override
+  String dropDetailItemStatusItemLabel(Object index) {
+    return 'Item $index';
+  }
+
+  @override
+  String dropDetailItemStatusClaimedBy(Object name) {
+    return 'Claimed by $name';
+  }
+
+  @override
   String get dropDetailTechnicalSection => 'Technical data';
 
   @override

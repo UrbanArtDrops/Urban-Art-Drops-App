@@ -1226,6 +1226,30 @@ abstract class AppLocalizations {
   /// **'Location'**
   String get dropDetailLocationSection;
 
+  /// No description provided for @dropDetailItemStatusSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop item status'**
+  String get dropDetailItemStatusSection;
+
+  /// No description provided for @dropDetailItemStatusAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Available'**
+  String get dropDetailItemStatusAvailable;
+
+  /// No description provided for @dropDetailItemStatusItemLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Item {index}'**
+  String dropDetailItemStatusItemLabel(Object index);
+
+  /// No description provided for @dropDetailItemStatusClaimedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Claimed by {name}'**
+  String dropDetailItemStatusClaimedBy(Object name);
+
   /// No description provided for @dropDetailTechnicalSection.
   ///
   /// In en, this message translates to:

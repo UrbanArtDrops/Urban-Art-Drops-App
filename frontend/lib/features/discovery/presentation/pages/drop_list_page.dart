@@ -407,8 +407,13 @@ class _DropListPageState extends State<DropListPage> {
           final art = _artPiecesById[drop.artPieceId];
           final artistName =
               _usersById[art?.artistId]?.userName ?? (art?.artistId ?? "-");
+          final artistProfileImageUrl = art == null
+              ? null
+              : _usersById[art.artistId]?.profileImageUrl;
           final dropMakerName =
               _usersById[drop.dropMakerId]?.userName ?? drop.dropMakerId;
+          final dropMakerProfileImageUrl =
+              _usersById[drop.dropMakerId]?.profileImageUrl;
 
           final claimedHunterNames = <String>[];
           final seenClaimers = <String>{};
@@ -446,6 +451,10 @@ class _DropListPageState extends State<DropListPage> {
             subtitle: art?.subtitle.trim().isNotEmpty == true
                 ? art!.subtitle
                 : "${l10n.mapArtistLabel}: $artistName · ${l10n.mapDropMakerLabel}: $dropMakerName",
+            artistName: artistName,
+            artistProfileImageUrl: artistProfileImageUrl,
+            dropMakerName: dropMakerName,
+            dropMakerProfileImageUrl: dropMakerProfileImageUrl,
             description: _buildDropListDescription(
               artDescription: art?.description ?? "",
               dropMakerComment: drop.dropMakerComment,
@@ -689,6 +698,12 @@ class _DropListPageState extends State<DropListPage> {
                                 l10n: l10n,
                                 title: viewModel.title,
                                 subtitle: viewModel.subtitle,
+                                artistName: viewModel.artistName,
+                                artistProfileImageUrl:
+                                    viewModel.artistProfileImageUrl,
+                                dropMakerName: viewModel.dropMakerName,
+                                dropMakerProfileImageUrl:
+                                    viewModel.dropMakerProfileImageUrl,
                                 description: viewModel.description,
                                 galleryUrls: viewModel.galleryUrls,
                                 claimedHunterNames:
@@ -724,6 +739,10 @@ class _DropListViewModel {
     required this.id,
     required this.title,
     required this.subtitle,
+    required this.artistName,
+    required this.artistProfileImageUrl,
+    required this.dropMakerName,
+    required this.dropMakerProfileImageUrl,
     required this.description,
     required this.artPhotoUrls,
     required this.locationPhotoUrls,
@@ -740,6 +759,10 @@ class _DropListViewModel {
   final String id;
   final String title;
   final String subtitle;
+  final String artistName;
+  final String? artistProfileImageUrl;
+  final String dropMakerName;
+  final String? dropMakerProfileImageUrl;
   final String description;
   final List<String> artPhotoUrls;
   final List<String> locationPhotoUrls;

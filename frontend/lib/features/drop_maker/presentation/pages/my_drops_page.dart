@@ -417,6 +417,7 @@ class _MyDropsPageState extends State<MyDropsPage> {
   }
 
   List<_MyDropViewModel> _buildViewModels(AppLocalizations l10n) {
+    final currentUserId = context.read<AuthSessionCubit>().state.userId?.trim();
     final artById = <String, ArtPieceModel>{
       for (final artPiece in _artPieces) artPiece.id: artPiece,
     };
@@ -426,8 +427,13 @@ class _MyDropsPageState extends State<MyDropsPage> {
           final art = artById[drop.artPieceId];
           final artistName =
               _usersById[art?.artistId]?.userName ?? (art?.artistId ?? "-");
+          final artistProfileImageUrl = art == null
+              ? null
+              : _usersById[art.artistId]?.profileImageUrl;
           final dropMakerName =
               _usersById[drop.dropMakerId]?.userName ?? drop.dropMakerId;
+          final dropMakerProfileImageUrl =
+              _usersById[drop.dropMakerId]?.profileImageUrl;
           final claimedHunterNames = <String>[];
           final seenClaimers = <String>{};
           for (final item in drop.claimedItems) {
@@ -454,6 +460,10 @@ class _MyDropsPageState extends State<MyDropsPage> {
             subtitle: art?.subtitle.trim().isNotEmpty == true
                 ? art!.subtitle
                 : "${l10n.mapArtistLabel}: $artistName · ${l10n.mapDropMakerLabel}: $dropMakerName",
+            artistName: artistName,
+            artistProfileImageUrl: artistProfileImageUrl,
+            dropMakerName: dropMakerName,
+            dropMakerProfileImageUrl: dropMakerProfileImageUrl,
             description: _buildDropDescription(
               artDescription: art?.description ?? "",
               dropMakerComment: drop.dropMakerComment,
@@ -468,6 +478,10 @@ class _MyDropsPageState extends State<MyDropsPage> {
             itemCount: drop.itemCount,
             isFullyClaimed: drop.isFullyClaimed,
             unclaimedDropRadiusKm: _appConfiguration.unclaimedDropRadiusKm,
+            showPreciseLocationForUnclaimed:
+                currentUserId != null &&
+                currentUserId.isNotEmpty &&
+                currentUserId == drop.dropMakerId,
             isPublished: drop.isPublished,
             canResumeWizard: drop.canResumeWizard,
           );
@@ -540,6 +554,12 @@ class _MyDropsPageState extends State<MyDropsPage> {
                                   l10n: l10n,
                                   title: viewModel.title,
                                   subtitle: viewModel.subtitle,
+                                  artistName: viewModel.artistName,
+                                  artistProfileImageUrl:
+                                      viewModel.artistProfileImageUrl,
+                                  dropMakerName: viewModel.dropMakerName,
+                                  dropMakerProfileImageUrl:
+                                      viewModel.dropMakerProfileImageUrl,
                                   description: viewModel.description,
                                   galleryUrls: viewModel.galleryUrls,
                                   claimedHunterNames:
@@ -549,6 +569,8 @@ class _MyDropsPageState extends State<MyDropsPage> {
                                   isFullyClaimed: viewModel.isFullyClaimed,
                                   unclaimedDropRadiusKm:
                                       viewModel.unclaimedDropRadiusKm,
+                                  showPreciseLocationForUnclaimed:
+                                      viewModel.showPreciseLocationForUnclaimed,
                                   latitude: viewModel.latitude,
                                   longitude: viewModel.longitude,
                                   onTap: () => context.go(
@@ -641,6 +663,10 @@ class _MyDropViewModel {
     required this.id,
     required this.title,
     required this.subtitle,
+    required this.artistName,
+    required this.artistProfileImageUrl,
+    required this.dropMakerName,
+    required this.dropMakerProfileImageUrl,
     required this.description,
     required this.galleryUrls,
     required this.claimedHunterNames,
@@ -650,6 +676,7 @@ class _MyDropViewModel {
     required this.itemCount,
     required this.isFullyClaimed,
     required this.unclaimedDropRadiusKm,
+    required this.showPreciseLocationForUnclaimed,
     required this.isPublished,
     required this.canResumeWizard,
   });
@@ -658,6 +685,10 @@ class _MyDropViewModel {
   final String id;
   final String title;
   final String subtitle;
+  final String artistName;
+  final String? artistProfileImageUrl;
+  final String dropMakerName;
+  final String? dropMakerProfileImageUrl;
   final String description;
   final List<String> galleryUrls;
   final List<String> claimedHunterNames;
@@ -667,6 +698,7 @@ class _MyDropViewModel {
   final int itemCount;
   final bool isFullyClaimed;
   final int unclaimedDropRadiusKm;
+  final bool showPreciseLocationForUnclaimed;
   final bool isPublished;
   final bool canResumeWizard;
 }

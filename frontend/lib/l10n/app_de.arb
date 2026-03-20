@@ -284,6 +284,20 @@
   "dropDetailLoadFailed": "Drop-Details konnten nicht geladen werden.",
   "dropDetailDescriptionSection": "Beschreibung",
   "dropDetailLocationSection": "Standort",
+  "dropDetailItemStatusSection": "Status der Drop-Gegenstände",
+  "dropDetailItemStatusAvailable": "Verfügbar",
+  "dropDetailItemStatusItemLabel": "Gegenstand {index}",
+  "@dropDetailItemStatusItemLabel": {
+    "placeholders": {
+      "index": {}
+    }
+  },
+  "dropDetailItemStatusClaimedBy": "Beansprucht von {name}",
+  "@dropDetailItemStatusClaimedBy": {
+    "placeholders": {
+      "name": {}
+    }
+  },
   "dropDetailTechnicalSection": "Technische Daten",
   "dropDetailDescription": "Beschreibung, Galerie, Maker-Kommentar und Claim-Status.",
   "claimedHuntersTitle": "Beanspruchte Hunter",

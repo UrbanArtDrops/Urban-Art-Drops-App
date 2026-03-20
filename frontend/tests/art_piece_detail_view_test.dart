@@ -3,6 +3,7 @@ import "package:flutter_test/flutter_test.dart";
 import "package:urban_art_drops_app/features/artist_area/presentation/widgets/art_piece_detail_view.dart";
 import "package:urban_art_drops_app/l10n/app_localizations.dart";
 import "package:urban_art_drops_app/shared/models/app_models.dart";
+import "package:urban_art_drops_app/shared/widgets/user_avatar.dart";
 
 void main() {
   testWidgets("renders side tabs for multi-image artwork galleries", (
@@ -33,6 +34,7 @@ void main() {
               assetFile: null,
             ),
             artistName: "Artist",
+            artistProfileImageUrl: "https://example.com/artist.png",
             onDownloadAsset: null,
             onEdit: null,
             onDelete: null,
@@ -44,5 +46,6 @@ void main() {
 
     expect(find.byKey(const ValueKey("carousel-tab-previous")), findsOneWidget);
     expect(find.byKey(const ValueKey("carousel-tab-next")), findsOneWidget);
+    expect(find.byType(UserAvatar), findsOneWidget);
   });
 }

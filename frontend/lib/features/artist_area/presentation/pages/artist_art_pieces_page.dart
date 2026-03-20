@@ -6,6 +6,7 @@ import "../../../../shared/models/app_models.dart";
 import "../../../../shared/services/app_api_client.dart";
 import "../../../../shared/services/external_download_launcher.dart";
 import "../../../../shared/widgets/page_shell.dart";
+import "../../../../shared/widgets/user_avatar.dart";
 import "../../../authentication/presentation/bloc/auth_session_cubit.dart";
 import "../../application/art_piece_asset_picker.dart";
 import "../../application/art_piece_photo_picker.dart";
@@ -213,6 +214,9 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
     return artist.email;
   }
 
+  String? _artistProfileImageUrl(String artistId) =>
+      _artistById(artistId)?.profileImageUrl;
+
   String _preferredArtistId(AuthSessionState authState) {
     final authenticatedUserId = authState.userId?.trim();
     if (authenticatedUserId != null &&
@@ -377,6 +381,7 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
           child: ArtPieceDetailView(
             artPiece: artPiece,
             artistName: _artistLabel(artPiece.artistId),
+            artistProfileImageUrl: _artistProfileImageUrl(artPiece.artistId),
             compact: true,
             onDownloadAsset: artPiece.assetFile == null
                 ? null
@@ -507,6 +512,10 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
                                               artistName: _artistLabel(
                                                 artPiece.artistId,
                                               ),
+                                              artistProfileImageUrl:
+                                                  _artistProfileImageUrl(
+                                                    artPiece.artistId,
+                                                  ),
                                               isSelected:
                                                   artPiece.id ==
                                                   _selectedArtPieceId,
@@ -560,6 +569,11 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
                                                   artistName: _artistLabel(
                                                     _selectedArtPiece!.artistId,
                                                   ),
+                                                  artistProfileImageUrl:
+                                                      _artistProfileImageUrl(
+                                                        _selectedArtPiece!
+                                                            .artistId,
+                                                      ),
                                                   onDownloadAsset:
                                                       _selectedArtPiece!
                                                               .assetFile ==
@@ -610,6 +624,10 @@ class _ArtistArtPiecesPageState extends State<ArtistArtPiecesPage> {
                                         artistName: _artistLabel(
                                           artPiece.artistId,
                                         ),
+                                        artistProfileImageUrl:
+                                            _artistProfileImageUrl(
+                                              artPiece.artistId,
+                                            ),
                                         isSelected: false,
                                         onTap: () => _openMobileDetail(
                                           artPiece,
@@ -650,6 +668,7 @@ class _ArtPieceListCard extends StatelessWidget {
   const _ArtPieceListCard({
     required this.artPiece,
     required this.artistName,
+    this.artistProfileImageUrl,
     required this.isSelected,
     required this.onTap,
     required this.onOpenDetails,
@@ -660,6 +679,7 @@ class _ArtPieceListCard extends StatelessWidget {
 
   final ArtPieceModel artPiece;
   final String artistName;
+  final String? artistProfileImageUrl;
   final bool isSelected;
   final VoidCallback onTap;
   final VoidCallback onOpenDetails;
@@ -773,7 +793,10 @@ class _ArtPieceListCard extends StatelessWidget {
                       runSpacing: 8,
                       children: [
                         Chip(
-                          avatar: const Icon(Icons.person_outline),
+                          avatar: UserAvatar(
+                            displayName: artistName,
+                            imageUrl: artistProfileImageUrl,
+                          ),
                           label: Text(artistName),
                         ),
                         Chip(

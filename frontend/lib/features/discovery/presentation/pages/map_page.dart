@@ -11,6 +11,7 @@ import "package:urban_art_drops_app/l10n/app_localizations.dart";
 import "../../../../shared/models/app_models.dart";
 import "../../../../shared/services/app_api_client.dart";
 import "../../../../shared/widgets/page_shell.dart";
+import "../../../../shared/widgets/user_avatar.dart";
 
 class MapPage extends StatefulWidget {
   const MapPage({this.focusDropId, super.key});
@@ -100,8 +101,13 @@ class _MapPageState extends State<MapPage> {
             final artistName = artPiece != null
                 ? (usersById[artPiece.artistId]?.userName ?? artPiece.artistId)
                 : "";
+            final artistProfileImageUrl = artPiece == null
+                ? null
+                : usersById[artPiece.artistId]?.profileImageUrl;
             final dropMakerName =
                 usersById[drop.dropMakerId]?.userName ?? drop.dropMakerId;
+            final dropMakerProfileImageUrl =
+                usersById[drop.dropMakerId]?.profileImageUrl;
             final claimedHunterNames = <String>[];
             final seenClaimers = <String>{};
             for (final item in drop.claimedItems) {
@@ -129,7 +135,9 @@ class _MapPageState extends State<MapPage> {
               latitude: drop.latitude ?? _defaultCenter.latitude,
               longitude: drop.longitude ?? _defaultCenter.longitude,
               artistName: artistName,
+              artistProfileImageUrl: artistProfileImageUrl,
               dropMakerName: dropMakerName,
+              dropMakerProfileImageUrl: dropMakerProfileImageUrl,
               description: artPiece?.description ?? "",
               previewImageUrl: artPiece != null && artPiece.photoUrls.isNotEmpty
                   ? artPiece.photoUrls.first
@@ -858,9 +866,22 @@ class _DropDetailsPanel extends StatelessWidget {
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 12),
-                Text("${l10n.mapArtistLabel}: ${drop.artistName}"),
-                const SizedBox(height: 6),
-                Text("${l10n.mapDropMakerLabel}: ${drop.dropMakerName}"),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    UserIdentityChip(
+                      label: l10n.mapArtistLabel,
+                      displayName: drop.artistName,
+                      imageUrl: drop.artistProfileImageUrl,
+                    ),
+                    UserIdentityChip(
+                      label: l10n.mapDropMakerLabel,
+                      displayName: drop.dropMakerName,
+                      imageUrl: drop.dropMakerProfileImageUrl,
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 12),
                 Text(
                   l10n.mapDescriptionLabel,
@@ -911,7 +932,9 @@ class _MapDropViewModel {
     required this.latitude,
     required this.longitude,
     required this.artistName,
+    required this.artistProfileImageUrl,
     required this.dropMakerName,
+    required this.dropMakerProfileImageUrl,
     required this.description,
     required this.previewImageUrl,
     required this.claimedItemCount,
@@ -926,7 +949,9 @@ class _MapDropViewModel {
   final double latitude;
   final double longitude;
   final String artistName;
+  final String? artistProfileImageUrl;
   final String dropMakerName;
+  final String? dropMakerProfileImageUrl;
   final String description;
   final String previewImageUrl;
   final int claimedItemCount;

@@ -3,12 +3,14 @@ import "package:urban_art_drops_app/l10n/app_localizations.dart";
 
 import "../../../../shared/models/app_models.dart";
 import "../../../../shared/widgets/carousel_navigation_tabs.dart";
+import "../../../../shared/widgets/user_avatar.dart";
 import "art_piece_source_image.dart";
 
 class ArtPieceDetailView extends StatelessWidget {
   const ArtPieceDetailView({
     required this.artPiece,
     required this.artistName,
+    this.artistProfileImageUrl,
     required this.onDownloadAsset,
     required this.onEdit,
     required this.onDelete,
@@ -19,6 +21,7 @@ class ArtPieceDetailView extends StatelessWidget {
 
   final ArtPieceModel artPiece;
   final String artistName;
+  final String? artistProfileImageUrl;
   final VoidCallback? onDownloadAsset;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
@@ -142,7 +145,10 @@ class ArtPieceDetailView extends StatelessWidget {
             runSpacing: 8,
             children: [
               Chip(
-                avatar: const Icon(Icons.person_outline),
+                avatar: UserAvatar(
+                  displayName: artistName,
+                  imageUrl: artistProfileImageUrl,
+                ),
                 label: Text("${l10n.artPieceArtistLabel}: $artistName"),
               ),
               Chip(

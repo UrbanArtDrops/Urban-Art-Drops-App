@@ -1,4 +1,5 @@
 import "dart:async";
+import "dart:math" as math;
 
 import "package:flutter/material.dart";
 import "package:flutter_bloc/flutter_bloc.dart";
@@ -11,6 +12,7 @@ import "../../../../shared/services/app_api_client.dart";
 import "../../../../shared/widgets/carousel_navigation_tabs.dart";
 import "../../../../shared/widgets/page_shell.dart";
 import "../../../../shared/widgets/source_image.dart";
+import "../../../../shared/widgets/user_avatar.dart";
 import "../../../authentication/presentation/bloc/auth_session_cubit.dart";
 
 class DropDetailPage extends StatefulWidget {
@@ -28,6 +30,7 @@ class _DropDetailPageState extends State<DropDetailPage> {
 
   DropModel? _drop;
   ArtPieceModel? _artPiece;
+  AppConfigurationModel _appConfiguration = AppConfigurationModel.defaults;
   List<DropCommentModel> _comments = const [];
   Map<String, ManagedUser> _usersById = const {};
   bool _isLoading = true;
@@ -50,6 +53,13 @@ class _DropDetailPageState extends State<DropDetailPage> {
     });
 
     try {
+      var appConfiguration = AppConfigurationModel.defaults;
+      try {
+        appConfiguration = await _apiClient.getAppConfiguration();
+      } catch (_) {
+        appConfiguration = AppConfigurationModel.defaults;
+      }
+
       final results = await Future.wait([
         _apiClient.getDropById(widget.dropId),
         _apiClient.getArtPieces(),
@@ -76,6 +86,7 @@ class _DropDetailPageState extends State<DropDetailPage> {
       setState(() {
         _drop = drop;
         _artPiece = artPiece;
+        _appConfiguration = appConfiguration;
         _comments = comments;
         _usersById = {for (final user in users) user.id: user};
         _isLoading = false;
@@ -294,6 +305,7 @@ class _DropDetailPageState extends State<DropDetailPage> {
               l10n: l10n,
               drop: drop,
               artPiece: _artPiece,
+              appConfiguration: _appConfiguration,
               usersById: _usersById,
               comments: _comments,
               authState: authState,
@@ -313,6 +325,7 @@ class _DropDetailContent extends StatelessWidget {
     required this.l10n,
     required this.drop,
     required this.artPiece,
+    required this.appConfiguration,
     required this.usersById,
     required this.comments,
     required this.authState,
@@ -327,6 +340,7 @@ class _DropDetailContent extends StatelessWidget {
   final AppLocalizations l10n;
   final DropModel drop;
   final ArtPieceModel? artPiece;
+  final AppConfigurationModel appConfiguration;
   final Map<String, ManagedUser> usersById;
   final List<DropCommentModel> comments;
   final AuthSessionState authState;
@@ -354,13 +368,19 @@ class _DropDetailContent extends StatelessWidget {
     final artistName = artPiece == null
         ? "-"
         : (usersById[artPiece!.artistId]?.userName ?? artPiece!.artistId);
+    final artistProfileImageUrl = artPiece == null
+        ? null
+        : usersById[artPiece!.artistId]?.profileImageUrl;
     final dropMakerName =
         usersById[drop.dropMakerId]?.userName ?? drop.dropMakerId;
+    final dropMakerProfileImageUrl =
+        usersById[drop.dropMakerId]?.profileImageUrl;
     final subtitle = artPiece?.subtitle.trim().isNotEmpty == true
         ? artPiece!.subtitle
         : "${l10n.mapArtistLabel}: $artistName · ${l10n.mapDropMakerLabel}: $dropMakerName";
     final claimedHunters = _extractClaimedHunters(drop, usersById);
     final photos = _buildGalleryUrls(artPiece, drop);
+    final canSeePreciseLocation = _canSeePreciseDropLocation(authState, drop);
 
     return ListView(
       padding: const EdgeInsets.all(12),
@@ -381,11 +401,17 @@ class _DropDetailContent extends StatelessWidget {
               runSpacing: 8,
               children: [
                 Chip(
-                  avatar: const Icon(Icons.person_outline),
+                  avatar: UserAvatar(
+                    displayName: artistName,
+                    imageUrl: artistProfileImageUrl,
+                  ),
                   label: Text("${l10n.mapArtistLabel}: $artistName"),
                 ),
                 Chip(
-                  avatar: const Icon(Icons.inventory_2_outlined),
+                  avatar: UserAvatar(
+                    displayName: dropMakerName,
+                    imageUrl: dropMakerProfileImageUrl,
+                  ),
                   label: Text("${l10n.mapDropMakerLabel}: $dropMakerName"),
                 ),
               ],
@@ -488,6 +514,19 @@ class _DropDetailContent extends StatelessWidget {
             ),
           ),
         ),
+        if (canSeePreciseLocation) ...[
+          const SizedBox(height: 12),
+          _withUnifiedWidth(
+            _SectionCard(
+              title: l10n.dropDetailItemStatusSection,
+              child: _DropItemStatusList(
+                l10n: l10n,
+                drop: drop,
+                usersById: usersById,
+              ),
+            ),
+          ),
+        ],
         const SizedBox(height: 12),
         _withUnifiedWidth(
           _SectionCard(
@@ -511,6 +550,9 @@ class _DropDetailContent extends StatelessWidget {
               height: 220,
               child: _DropDetailMap(
                 l10n: l10n,
+                isFullyClaimed: drop.isFullyClaimed,
+                unclaimedDropRadiusKm: appConfiguration.unclaimedDropRadiusKm,
+                showPreciseLocationForUnclaimed: canSeePreciseLocation,
                 latitude: drop.latitude,
                 longitude: drop.longitude,
               ),
@@ -675,13 +717,25 @@ class _DropDetailGalleryState extends State<_DropDetailGallery> {
 class _DropDetailMap extends StatelessWidget {
   const _DropDetailMap({
     required this.l10n,
+    required this.isFullyClaimed,
+    required this.unclaimedDropRadiusKm,
+    required this.showPreciseLocationForUnclaimed,
     required this.latitude,
     required this.longitude,
   });
 
   final AppLocalizations l10n;
+  final bool isFullyClaimed;
+  final int unclaimedDropRadiusKm;
+  final bool showPreciseLocationForUnclaimed;
   final double? latitude;
   final double? longitude;
+
+  double _zoomForRadiusKm(int radiusKm) {
+    final safeRadiusKm = radiusKm < 1 ? 1 : radiusKm;
+    final zoom = 14.0 - (math.log(safeRadiusKm) / math.ln2);
+    return (zoom.clamp(10.5, 14.5) as num).toDouble();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -701,7 +755,9 @@ class _DropDetailMap extends StatelessWidget {
       child: FlutterMap(
         options: MapOptions(
           initialCenter: point,
-          initialZoom: 14.5,
+          initialZoom: isFullyClaimed || showPreciseLocationForUnclaimed
+              ? 14.5
+              : _zoomForRadiusKm(unclaimedDropRadiusKm),
           interactionOptions: const InteractionOptions(
             flags: InteractiveFlag.none,
           ),
@@ -711,22 +767,88 @@ class _DropDetailMap extends StatelessWidget {
             urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
             userAgentPackageName: "urban.art.drops.app",
           ),
-          MarkerLayer(
-            markers: [
-              Marker(
-                point: point,
-                width: 44,
-                height: 44,
-                child: const Icon(
-                  Icons.location_on,
-                  color: Colors.redAccent,
-                  size: 34,
+          if (!isFullyClaimed)
+            CircleLayer(
+              circles: [
+                CircleMarker(
+                  point: point,
+                  radius: unclaimedDropRadiusKm * 1000,
+                  useRadiusInMeter: true,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.15),
+                  borderColor: Theme.of(context).colorScheme.primary,
+                  borderStrokeWidth: 2,
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
+          if (isFullyClaimed || showPreciseLocationForUnclaimed)
+            MarkerLayer(
+              markers: [
+                Marker(
+                  point: point,
+                  width: 44,
+                  height: 44,
+                  child: const Icon(
+                    Icons.location_on,
+                    color: Colors.redAccent,
+                    size: 34,
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
+    );
+  }
+}
+
+class _DropItemStatusList extends StatelessWidget {
+  const _DropItemStatusList({
+    required this.l10n,
+    required this.drop,
+    required this.usersById,
+  });
+
+  final AppLocalizations l10n;
+  final DropModel drop;
+  final Map<String, ManagedUser> usersById;
+
+  @override
+  Widget build(BuildContext context) {
+    if (drop.items.isEmpty) {
+      return const Text("-");
+    }
+
+    return Column(
+      children: List<Widget>.generate(drop.items.length, (index) {
+        final item = drop.items[index];
+        final statusLabel = item.isClaimed
+            ? l10n.dropDetailItemStatusClaimedBy(
+                _resolveClaimDisplayName(
+                  item: item,
+                  usersById: usersById,
+                  l10n: l10n,
+                ),
+              )
+            : l10n.dropDetailItemStatusAvailable;
+
+        return Column(
+          children: [
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(
+                item.isClaimed
+                    ? Icons.check_circle_outline
+                    : Icons.radio_button_unchecked,
+              ),
+              title: Text(l10n.dropDetailItemStatusItemLabel("${index + 1}")),
+              subtitle: Text(statusLabel),
+            ),
+            if (index < drop.items.length - 1) const Divider(height: 1),
+          ],
+        );
+      }),
     );
   }
 }
@@ -1054,6 +1176,30 @@ List<String> _buildGalleryUrls(ArtPieceModel? artPiece, DropModel drop) {
   }
 
   return unique;
+}
+
+String _resolveClaimDisplayName({
+  required DropItemModel item,
+  required Map<String, ManagedUser> usersById,
+  required AppLocalizations l10n,
+}) {
+  if (item.claimedByUserId != null && item.claimedByUserId!.trim().isNotEmpty) {
+    return usersById[item.claimedByUserId!]?.userName ?? item.claimedByUserId!;
+  }
+
+  final anonymous = item.claimedByAnonymousNickname?.trim();
+  if (anonymous != null && anonymous.isNotEmpty) {
+    return anonymous;
+  }
+
+  return l10n.leaderboardAnonymousFallback;
+}
+
+bool _canSeePreciseDropLocation(AuthSessionState authState, DropModel drop) {
+  final currentUserId = authState.userId?.trim();
+  return currentUserId != null &&
+      currentUserId.isNotEmpty &&
+      currentUserId == drop.dropMakerId;
 }
 
 bool _canCreateComments(AuthSessionState authState) {

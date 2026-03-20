@@ -284,6 +284,20 @@
   "dropDetailLoadFailed": "Drop details could not be loaded.",
   "dropDetailDescriptionSection": "Description",
   "dropDetailLocationSection": "Location",
+  "dropDetailItemStatusSection": "Drop item status",
+  "dropDetailItemStatusAvailable": "Available",
+  "dropDetailItemStatusItemLabel": "Item {index}",
+  "@dropDetailItemStatusItemLabel": {
+    "placeholders": {
+      "index": {}
+    }
+  },
+  "dropDetailItemStatusClaimedBy": "Claimed by {name}",
+  "@dropDetailItemStatusClaimedBy": {
+    "placeholders": {
+      "name": {}
+    }
+  },
   "dropDetailTechnicalSection": "Technical data",
   "dropDetailDescription": "Description, gallery, maker comment and claim state.",
   "claimedHuntersTitle": "Claimed hunters",

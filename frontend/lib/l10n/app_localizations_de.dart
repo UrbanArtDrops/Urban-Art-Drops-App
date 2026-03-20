@@ -638,6 +638,22 @@ class AppLocalizationsDe extends AppLocalizations {
   String get dropDetailLocationSection => 'Standort';
 
   @override
+  String get dropDetailItemStatusSection => 'Status der Drop-Gegenstände';
+
+  @override
+  String get dropDetailItemStatusAvailable => 'Verfügbar';
+
+  @override
+  String dropDetailItemStatusItemLabel(Object index) {
+    return 'Gegenstand $index';
+  }
+
+  @override
+  String dropDetailItemStatusClaimedBy(Object name) {
+    return 'Beansprucht von $name';
+  }
+
+  @override
   String get dropDetailTechnicalSection => 'Technische Daten';
 
   @override

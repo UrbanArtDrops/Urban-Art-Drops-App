@@ -21,6 +21,7 @@
   - `UnclaimedDropRadiusKm` (default 3)
   - `ShowExactPositionWhenFullyClaimed`
 - Drop-list and My Drops mini-maps read `UnclaimedDropRadiusKm` to render not fully claimed drops as a radius instead of a pin
+- Unclaimed drops stay radius-only across public discovery maps and detail maps; only the creating drop-maker sees the exact pin plus per-item claim status for their own incomplete drops
 
 ## Database bootstrap
 - The API requires `ConnectionStrings__SqlServer` and will not start without a SQL Server or LocalDB connection string
@@ -98,6 +99,7 @@
 - Artists manage artworks end-to-end in the web client: create, inspect, edit, publish, depublish and delete
 - The artist artwork manager loads only art pieces created by the signed-in artist; admins use the same screen with full global scope
 - The separate `Artworks` catalog at `/drop-maker/art-pieces` shows all published art pieces for Artist, Drop-Maker, Moderator and Admin sessions
+- Wherever artist or drop-maker ownership is rendered in cards or detail views, the UI now shows the stored profile image avatar instead of a generic role icon
 - Admins can open the same full artwork management screen to inspect and manage all artworks across artists
 - Admin-triggered art-piece changes create persisted in-app notifications for the impacted artist accounts
 - Artwork metadata includes an optional subtitle that is editable in the artist workspace and reused in discovery and drop creation screens

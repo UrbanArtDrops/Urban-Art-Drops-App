@@ -7,12 +7,15 @@ import "package:latlong2/latlong.dart";
 import "package:urban_art_drops_app/l10n/app_localizations.dart";
 
 import "carousel_navigation_tabs.dart";
+import "user_avatar.dart";
 
 class DropOverviewCard extends StatelessWidget {
   const DropOverviewCard({
     required this.l10n,
     required this.title,
     required this.subtitle,
+    required this.artistName,
+    required this.dropMakerName,
     required this.description,
     required this.galleryUrls,
     required this.claimedHunterNames,
@@ -22,6 +25,9 @@ class DropOverviewCard extends StatelessWidget {
     required this.unclaimedDropRadiusKm,
     required this.latitude,
     required this.longitude,
+    this.showPreciseLocationForUnclaimed = false,
+    this.artistProfileImageUrl,
+    this.dropMakerProfileImageUrl,
     this.distanceKm,
     this.onTap,
     this.onMiniMapTap,
@@ -32,6 +38,8 @@ class DropOverviewCard extends StatelessWidget {
   final AppLocalizations l10n;
   final String title;
   final String subtitle;
+  final String artistName;
+  final String dropMakerName;
   final String description;
   final List<String> galleryUrls;
   final List<String> claimedHunterNames;
@@ -41,6 +49,9 @@ class DropOverviewCard extends StatelessWidget {
   final int unclaimedDropRadiusKm;
   final double? latitude;
   final double? longitude;
+  final bool showPreciseLocationForUnclaimed;
+  final String? artistProfileImageUrl;
+  final String? dropMakerProfileImageUrl;
   final double? distanceKm;
   final VoidCallback? onTap;
   final VoidCallback? onMiniMapTap;
@@ -57,6 +68,10 @@ class DropOverviewCard extends StatelessWidget {
             l10n: l10n,
             title: title,
             subtitle: subtitle,
+            artistName: artistName,
+            dropMakerName: dropMakerName,
+            artistProfileImageUrl: artistProfileImageUrl,
+            dropMakerProfileImageUrl: dropMakerProfileImageUrl,
             description: description,
             claimedHunterNames: claimedHunterNames,
             claimedItemCount: claimedItemCount,
@@ -70,6 +85,7 @@ class DropOverviewCard extends StatelessWidget {
             unclaimedDropRadiusKm: unclaimedDropRadiusKm,
             latitude: latitude,
             longitude: longitude,
+            showPreciseLocationForUnclaimed: showPreciseLocationForUnclaimed,
             onTap: onMiniMapTap,
           );
 
@@ -121,6 +137,10 @@ class _DropOverviewMainContent extends StatelessWidget {
     required this.l10n,
     required this.title,
     required this.subtitle,
+    required this.artistName,
+    required this.dropMakerName,
+    required this.artistProfileImageUrl,
+    required this.dropMakerProfileImageUrl,
     required this.description,
     required this.claimedHunterNames,
     required this.claimedItemCount,
@@ -132,6 +152,10 @@ class _DropOverviewMainContent extends StatelessWidget {
   final AppLocalizations l10n;
   final String title;
   final String subtitle;
+  final String artistName;
+  final String dropMakerName;
+  final String? artistProfileImageUrl;
+  final String? dropMakerProfileImageUrl;
   final String description;
   final List<String> claimedHunterNames;
   final int claimedItemCount;
@@ -169,6 +193,23 @@ class _DropOverviewMainContent extends StatelessWidget {
           style: Theme.of(context).textTheme.bodySmall,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            UserIdentityChip(
+              label: l10n.mapArtistLabel,
+              displayName: artistName,
+              imageUrl: artistProfileImageUrl,
+            ),
+            UserIdentityChip(
+              label: l10n.mapDropMakerLabel,
+              displayName: dropMakerName,
+              imageUrl: dropMakerProfileImageUrl,
+            ),
+          ],
         ),
         const SizedBox(height: 10),
         Text(
@@ -376,6 +417,7 @@ class _DropMiniMap extends StatelessWidget {
     required this.unclaimedDropRadiusKm,
     required this.latitude,
     required this.longitude,
+    required this.showPreciseLocationForUnclaimed,
     required this.onTap,
   });
 
@@ -384,6 +426,7 @@ class _DropMiniMap extends StatelessWidget {
   final int unclaimedDropRadiusKm;
   final double? latitude;
   final double? longitude;
+  final bool showPreciseLocationForUnclaimed;
   final VoidCallback? onTap;
 
   double _zoomForRadiusKm(int radiusKm) {
@@ -441,7 +484,7 @@ class _DropMiniMap extends StatelessWidget {
                 ),
               ],
             ),
-          if (isFullyClaimed)
+          if (isFullyClaimed || showPreciseLocationForUnclaimed)
             MarkerLayer(
               markers: [
                 Marker(
