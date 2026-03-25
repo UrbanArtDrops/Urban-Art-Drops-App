@@ -66,6 +66,7 @@ void main() {
     final configuration = AppConfigurationModel.fromJson({
       "smtpHost": "smtp.example.test",
       "smtpPort": 2525,
+      "smtpSecurityMode": 1,
       "smtpUserName": "mailer-user",
       "smtpUserEmail": "mailer@example.test",
       "publicAppBaseUrl": "https://app.example.test",
@@ -97,6 +98,7 @@ void main() {
 
     expect(configuration.authProviders, hasLength(2));
     expect(configuration.smtpPort, 2525);
+    expect(configuration.smtpSecurityMode, SmtpSecurityModeModel.tls);
     expect(configuration.smtpUserName, "mailer-user");
     expect(configuration.smtpUserEmail, "mailer@example.test");
     expect(configuration.authProviders.first.provider, "google");

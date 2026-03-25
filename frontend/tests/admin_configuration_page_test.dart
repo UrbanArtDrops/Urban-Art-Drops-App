@@ -19,8 +19,8 @@ void main() {
         return http.Response(
           jsonEncode({
             "smtpHost": "smtp.example.test",
-            "smtpPort": 2525,
-            "smtpSecurityMode": 0,
+            "smtpPort": 465,
+            "smtpSecurityMode": 1,
             "smtpUserName": "mailer-user",
             "smtpUserEmail": "mailer@example.test",
             "publicAppBaseUrl": "https://app.example.test",
@@ -112,8 +112,8 @@ void main() {
         return http.Response(
           jsonEncode({
             "smtpHost": "smtp.example.test",
-            "smtpPort": 2525,
-            "smtpSecurityMode": 0,
+            "smtpPort": 465,
+            "smtpSecurityMode": 1,
             "smtpUserName": "mailer-user",
             "smtpUserEmail": "mailer@example.test",
             "publicAppBaseUrl": "https://app.example.test",
@@ -169,12 +169,8 @@ void main() {
 
     await tester.enterText(
       find.widgetWithText(TextField, l10n.smtpPortLabel),
-      "587",
+      "465",
     );
-    await tester.tap(find.text(l10n.smtpSecurityModeStartTls));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(l10n.smtpSecurityModeTls).last);
-    await tester.pumpAndSettle();
     await tester.enterText(
       find.widgetWithText(TextField, l10n.smtpUserNameLabel),
       "mailer-admin",
@@ -197,7 +193,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(updatePayload, isNotNull);
-    expect(updatePayload!["smtpPort"], 587);
+    expect(updatePayload!["smtpPort"], 465);
     expect(updatePayload!["smtpSecurityMode"], 1);
     expect(updatePayload!["smtpUserName"], "mailer-admin");
     expect(updatePayload!["smtpUserEmail"], "smtp-admin@example.test");
@@ -213,8 +209,8 @@ void main() {
         return http.Response(
           jsonEncode({
             "smtpHost": "smtp.example.test",
-            "smtpPort": 587,
-            "smtpSecurityMode": 0,
+            "smtpPort": 465,
+            "smtpSecurityMode": 1,
             "smtpUserName": "mailer-user",
             "smtpUserEmail": "mailer@example.test",
             "publicAppBaseUrl": "https://app.example.test",
@@ -278,8 +274,8 @@ void main() {
 
     expect(smtpTestPayload, isNotNull);
     expect(smtpTestPayload!["smtpHost"], "smtp.example.test");
-    expect(smtpTestPayload!["smtpPort"], 587);
-    expect(smtpTestPayload!["smtpSecurityMode"], 0);
+    expect(smtpTestPayload!["smtpPort"], 465);
+    expect(smtpTestPayload!["smtpSecurityMode"], 1);
     expect(smtpTestPayload!["smtpUserName"], "mailer-admin");
     expect(smtpTestPayload!["smtpPassword"], "TopSecretPassword!123");
   });

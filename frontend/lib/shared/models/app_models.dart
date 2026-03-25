@@ -884,8 +884,8 @@ class AppConfigurationModel {
 
   static const AppConfigurationModel defaults = AppConfigurationModel(
     smtpHost: "",
-    smtpPort: 587,
-    smtpSecurityMode: SmtpSecurityModeModel.startTls,
+    smtpPort: 465,
+    smtpSecurityMode: SmtpSecurityModeModel.tls,
     smtpUserName: "",
     smtpUserEmail: "",
     publicAppBaseUrl: "",

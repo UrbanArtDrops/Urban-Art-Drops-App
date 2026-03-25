@@ -32,7 +32,7 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
       TextEditingController();
 
   AppConfigurationModel _configuration = AppConfigurationModel.defaults;
-  SmtpSecurityModeModel _smtpSecurityMode = SmtpSecurityModeModel.startTls;
+  SmtpSecurityModeModel _smtpSecurityMode = SmtpSecurityModeModel.tls;
   bool _showExactPositionWhenFullyClaimed = true;
   bool _isLoading = true;
   bool _isSaving = false;

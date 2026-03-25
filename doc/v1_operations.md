@@ -72,7 +72,7 @@
 - The admin user list renders each account with role, approval and suspension icons plus the stored profile image when one is available
 - Pending Artist or Drop-Maker applications are highlighted in the admin user list with a dedicated red status icon in addition to the pending-role subtitle
 - Admin user management blocks self-lockout by preventing an admin from suspending their own account or revoking their own approval in both the API and the UI
-- Admin settings persist SMTP host, SMTP port, SMTP security mode, SMTP user name and SMTP user email together with the existing public app base URL and map settings; SMTP passwords stay transient in the admin UI and are only forwarded to the dedicated connection-test endpoint
+- Admin settings persist SMTP host, SMTP port, SMTP security mode, SMTP user name and SMTP user email together with the existing public app base URL and map settings; fresh configurations default to port 465 with TLS, while SMTP passwords stay transient in the admin UI and are only forwarded to the dedicated connection-test endpoint
 - Profile images are served from `/api/media/user-profile-images/{id}` and remain inside the SQL-backed persistence model
 - In-app profile notifications are available through `GET /api/profile/notifications` and can be acknowledged through `POST /api/profile/notifications/{notificationId}/mark-read`
 - The profile screen loads `/api/profile` and `/api/profile/notifications` independently so a notification-loading failure does not hide the main profile data; the notification section shows a retry action instead

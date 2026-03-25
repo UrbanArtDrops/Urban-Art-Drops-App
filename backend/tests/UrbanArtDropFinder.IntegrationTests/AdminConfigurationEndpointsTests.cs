@@ -106,8 +106,8 @@ public sealed class AdminConfigurationEndpointsTests : IClassFixture<TestWebAppl
             new
             {
                 smtpHost = "smtp.example.test",
-                smtpPort = 587,
-                smtpSecurityMode = (int)SmtpSecurityMode.StartTls,
+                smtpPort = 465,
+                smtpSecurityMode = (int)SmtpSecurityMode.Tls,
                 smtpUserName = "mailer-user",
                 smtpPassword = "TopSecretPassword!123"
             },
@@ -119,8 +119,8 @@ public sealed class AdminConfigurationEndpointsTests : IClassFixture<TestWebAppl
         Assert.True(payload!.Success);
         Assert.Equal("SMTP connection successful.", payload.Message);
         Assert.Equal("smtp.example.test", _factory.SmtpConnectionTester.LastRequest?.Host);
-        Assert.Equal(587, _factory.SmtpConnectionTester.LastRequest?.Port);
-        Assert.Equal(SmtpSecurityMode.StartTls, _factory.SmtpConnectionTester.LastRequest?.SecurityMode);
+        Assert.Equal(465, _factory.SmtpConnectionTester.LastRequest?.Port);
+        Assert.Equal(SmtpSecurityMode.Tls, _factory.SmtpConnectionTester.LastRequest?.SecurityMode);
         Assert.Equal("mailer-user", _factory.SmtpConnectionTester.LastRequest?.UserName);
         Assert.Equal("TopSecretPassword!123", _factory.SmtpConnectionTester.LastRequest?.Password);
 
