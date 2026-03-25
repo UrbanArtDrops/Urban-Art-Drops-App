@@ -11,6 +11,16 @@ public sealed record UpdateAppConfigurationRequest(
     int UnclaimedDropRadiusKm,
     bool ShowExactPositionWhenFullyClaimed);
 
+public sealed record TestSmtpConnectionRequest(
+    string? SmtpHost,
+    int SmtpPort,
+    string? SmtpUserName,
+    string? SmtpPassword);
+
+public sealed record TestSmtpConnectionResponse(
+    bool Success,
+    string Message);
+
 public sealed record ExternalProviderConfigurationStatusResponse(
     string Provider,
     string DisplayName,

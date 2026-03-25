@@ -2318,6 +2318,42 @@ abstract class AppLocalizations {
   /// **'SMTP user email'**
   String get smtpUserEmailLabel;
 
+  /// No description provided for @smtpPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'SMTP password'**
+  String get smtpPasswordLabel;
+
+  /// No description provided for @smtpPasswordTransientHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Used only for the connection test. The password is not stored in the application configuration.'**
+  String get smtpPasswordTransientHint;
+
+  /// No description provided for @smtpTestConnectionButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Test connection'**
+  String get smtpTestConnectionButton;
+
+  /// No description provided for @smtpTestConnectionHostRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an SMTP host before running the connection test.'**
+  String get smtpTestConnectionHostRequired;
+
+  /// No description provided for @smtpTestConnectionPortInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid SMTP port between 1 and 65535.'**
+  String get smtpTestConnectionPortInvalid;
+
+  /// No description provided for @smtpTestConnectionCredentialsRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Provide both SMTP user name and SMTP password for authenticated connection tests.'**
+  String get smtpTestConnectionCredentialsRequired;
+
   /// No description provided for @mainMapRadiusSetting.
   ///
   /// In en, this message translates to:

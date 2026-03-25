@@ -1942,9 +1942,9 @@ adminGroup.MapGet("/configuration", async (
     .RequireAuthorization(AuthPolicies.AdminOnly);
 
 adminGroup.MapPut("/configuration", async (
-    UpdateAppConfigurationRequest request,
-    UrbanArtDbContext dbContext,
-    ExternalProviderStatusService providerStatusService,
+      UpdateAppConfigurationRequest request,
+      UrbanArtDbContext dbContext,
+      ExternalProviderStatusService providerStatusService,
     CancellationToken cancellationToken) =>
 {
     if (request.SmtpPort is < 1 or > 65535)
@@ -1966,6 +1966,44 @@ adminGroup.MapPut("/configuration", async (
     await dbContext.SaveChangesAsync(cancellationToken);
     return Results.Ok(ToAppConfigurationResponse(config, providerStatusService.GetProviderStatuses()));
 }).RequireAuthorization(AuthPolicies.AdminOnly);
+
+adminGroup.MapPost("/configuration/smtp/test", async (
+      TestSmtpConnectionRequest request,
+      ISmtpConnectionTester smtpConnectionTester,
+      CancellationToken cancellationToken) =>
+  {
+      var smtpHost = NormalizeOptionalText(request.SmtpHost);
+      if (string.IsNullOrWhiteSpace(smtpHost))
+      {
+          return Results.BadRequest(new { error = "SMTP host is required." });
+      }
+
+      if (request.SmtpPort is < 1 or > 65535)
+      {
+          return Results.BadRequest(new { error = "SMTP port must be between 1 and 65535." });
+      }
+
+      var smtpUserName = NormalizeOptionalText(request.SmtpUserName);
+      var smtpPassword = NormalizeOptionalText(request.SmtpPassword);
+      if ((smtpUserName is null) != (smtpPassword is null))
+      {
+          return Results.BadRequest(new
+          {
+              error = "SMTP username and password must both be provided for authenticated connection tests."
+          });
+      }
+
+      var result = await smtpConnectionTester.TestAsync(
+          smtpHost,
+          request.SmtpPort,
+          smtpUserName,
+          smtpPassword,
+          cancellationToken);
+
+      return result.Success
+          ? Results.Ok(new TestSmtpConnectionResponse(true, result.Message))
+          : Results.BadRequest(new { error = result.Message });
+  }).RequireAuthorization(AuthPolicies.AdminOnly);
 
 adminGroup.MapGet("/users", async (HttpContext httpContext, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
 {

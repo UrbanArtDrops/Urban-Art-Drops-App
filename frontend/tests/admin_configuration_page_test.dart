@@ -10,6 +10,7 @@ import "package:urban_art_drops_app/features/admin/presentation/pages/admin_conf
 import "package:urban_art_drops_app/features/authentication/presentation/bloc/auth_session_cubit.dart";
 import "package:urban_art_drops_app/l10n/app_localizations.dart";
 import "package:urban_art_drops_app/shared/services/app_api_client.dart";
+import "package:urban_art_drops_app/shared/widgets/password_text_field.dart";
 
 void main() {
   testWidgets("shows auth provider configuration status", (tester) async {
@@ -175,6 +176,10 @@ void main() {
       find.widgetWithText(TextField, l10n.smtpUserEmailLabel),
       "smtp-admin@example.test",
     );
+    await tester.enterText(
+      find.byType(PasswordTextField),
+      "TopSecretPassword!123",
+    );
     final saveButtonFinder = find.widgetWithText(FilledButton, l10n.saveButton);
     await tester.scrollUntilVisible(
       saveButtonFinder,
@@ -188,6 +193,85 @@ void main() {
     expect(updatePayload!["smtpPort"], 587);
     expect(updatePayload!["smtpUserName"], "mailer-admin");
     expect(updatePayload!["smtpUserEmail"], "smtp-admin@example.test");
+    expect(updatePayload!.containsKey("smtpPassword"), isFalse);
+  });
+
+  testWidgets("tests smtp connection with transient password", (tester) async {
+    Map<String, dynamic>? smtpTestPayload;
+
+    final mockHttpClient = MockClient((request) async {
+      if (request.url.path == "/api/admin/configuration" &&
+          request.method == "GET") {
+        return http.Response(
+          jsonEncode({
+            "smtpHost": "smtp.example.test",
+            "smtpPort": 587,
+            "smtpUserName": "mailer-user",
+            "smtpUserEmail": "mailer@example.test",
+            "publicAppBaseUrl": "https://app.example.test",
+            "mainMapRadiusKm": 30,
+            "miniMapRadiusKm": 5,
+            "unclaimedDropRadiusKm": 3,
+            "showExactPositionWhenFullyClaimed": true,
+            "authProviders": [],
+          }),
+          200,
+          headers: {"content-type": "application/json"},
+        );
+      }
+
+      if (request.url.path == "/api/admin/configuration/smtp/test" &&
+          request.method == "POST") {
+        smtpTestPayload = jsonDecode(request.body) as Map<String, dynamic>;
+        return http.Response(
+          jsonEncode({
+            "success": true,
+            "message": "SMTP connection successful.",
+          }),
+          200,
+          headers: {"content-type": "application/json"},
+        );
+      }
+
+      return http.Response("Not Found", 404);
+    });
+
+    await tester.pumpWidget(
+      _AdminConfigurationHarness(
+        apiClient: AppApiClient(
+          httpClient: mockHttpClient,
+          baseUrl: "http://localhost",
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final context = tester.element(find.byType(AdminConfigurationPage));
+    final l10n = AppLocalizations.of(context)!;
+
+    await tester.enterText(
+      find.widgetWithText(TextField, l10n.smtpUserNameLabel),
+      "mailer-admin",
+    );
+    await tester.enterText(
+      find.byType(PasswordTextField),
+      "TopSecretPassword!123",
+    );
+
+    final testButtonFinder = find.text(l10n.smtpTestConnectionButton);
+    await tester.scrollUntilVisible(
+      testButtonFinder,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(testButtonFinder);
+    await tester.pumpAndSettle();
+
+    expect(smtpTestPayload, isNotNull);
+    expect(smtpTestPayload!["smtpHost"], "smtp.example.test");
+    expect(smtpTestPayload!["smtpPort"], 587);
+    expect(smtpTestPayload!["smtpUserName"], "mailer-admin");
+    expect(smtpTestPayload!["smtpPassword"], "TopSecretPassword!123");
   });
 }
 

@@ -3,12 +3,16 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using UrbanArtDropFinder.Application.Abstractions;
 using UrbanArtDropFinder.Persistence.Db;
 
 namespace UrbanArtDropFinder.IntegrationTests;
 
 public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
+    public FakeSmtpConnectionTester SmtpConnectionTester { get; } = new();
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         var databaseName = $"urban-art-drops-tests-{Guid.NewGuid():N}";
@@ -60,6 +64,8 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
                 options.UseInMemoryDatabase(databaseName));
             services.AddHttpClient("external-auth")
                 .ConfigurePrimaryHttpMessageHandler(() => new FakeExternalProviderHttpMessageHandler());
+            services.RemoveAll<ISmtpConnectionTester>();
+            services.AddSingleton<ISmtpConnectionTester>(SmtpConnectionTester);
         });
     }
 }

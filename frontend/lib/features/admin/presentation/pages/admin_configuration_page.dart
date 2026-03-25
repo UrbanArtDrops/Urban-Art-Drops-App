@@ -4,6 +4,7 @@ import "package:urban_art_drops_app/l10n/app_localizations.dart";
 import "../../../../shared/models/app_models.dart";
 import "../../../../shared/services/app_api_client.dart";
 import "../../../../shared/widgets/page_shell.dart";
+import "../../../../shared/widgets/password_text_field.dart";
 
 class AdminConfigurationPage extends StatefulWidget {
   const AdminConfigurationPage({super.key, this.apiClient});
@@ -20,6 +21,7 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
   final TextEditingController _smtpUserNameController = TextEditingController();
   final TextEditingController _smtpUserEmailController =
       TextEditingController();
+  final TextEditingController _smtpPasswordController = TextEditingController();
   final TextEditingController _publicAppBaseUrlController =
       TextEditingController();
   final TextEditingController _mainMapRadiusController =
@@ -33,6 +35,7 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
   bool _showExactPositionWhenFullyClaimed = true;
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _isTestingConnection = false;
   String? _errorMessage;
 
   @override
@@ -47,6 +50,7 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
     _smtpPortController.dispose();
     _smtpUserNameController.dispose();
     _smtpUserEmailController.dispose();
+    _smtpPasswordController.dispose();
     _publicAppBaseUrlController.dispose();
     _mainMapRadiusController.dispose();
     _miniMapRadiusController.dispose();
@@ -90,6 +94,7 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
     _smtpPortController.text = configuration.smtpPort.toString();
     _smtpUserNameController.text = configuration.smtpUserName;
     _smtpUserEmailController.text = configuration.smtpUserEmail;
+    _smtpPasswordController.clear();
     _publicAppBaseUrlController.text = configuration.publicAppBaseUrl;
     _mainMapRadiusController.text = configuration.mainMapRadiusKm.toString();
     _miniMapRadiusController.text = configuration.miniMapRadiusKm.toString();
@@ -101,7 +106,7 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
 
   Future<void> _saveConfiguration() async {
     final l10n = AppLocalizations.of(context)!;
-    final smtpPort = int.tryParse(_smtpPortController.text.trim());
+    final smtpPort = _parseSmtpPort();
     final mainMapRadiusKm = int.tryParse(_mainMapRadiusController.text.trim());
     final miniMapRadiusKm = int.tryParse(_miniMapRadiusController.text.trim());
     final unclaimedDropRadiusKm = int.tryParse(
@@ -158,6 +163,64 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
     }
   }
 
+  int? _parseSmtpPort() => int.tryParse(_smtpPortController.text.trim());
+
+  Future<void> _testSmtpConnection() async {
+    final l10n = AppLocalizations.of(context)!;
+    final smtpHost = _smtpHostController.text.trim();
+    final smtpPort = _parseSmtpPort();
+    final smtpUserName = _smtpUserNameController.text.trim();
+    final smtpPassword = _smtpPasswordController.text;
+
+    if (smtpHost.isEmpty) {
+      _showSnackBar(l10n.smtpTestConnectionHostRequired);
+      return;
+    }
+
+    if (smtpPort == null || smtpPort < 1 || smtpPort > 65535) {
+      _showSnackBar(l10n.smtpTestConnectionPortInvalid);
+      return;
+    }
+
+    final hasUserName = smtpUserName.isNotEmpty;
+    final hasPassword = smtpPassword.isNotEmpty;
+    if (hasUserName != hasPassword) {
+      _showSnackBar(l10n.smtpTestConnectionCredentialsRequired);
+      return;
+    }
+
+    setState(() => _isTestingConnection = true);
+    try {
+      final result = await _apiClient.testSmtpConnection(
+        smtpHost: smtpHost,
+        smtpPort: smtpPort,
+        smtpUserName: smtpUserName,
+        smtpPassword: smtpPassword,
+      );
+      if (!mounted) {
+        return;
+      }
+
+      _showSnackBar(result.message);
+    } on ApiException catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      _showSnackBar(error.message);
+    } finally {
+      if (mounted) {
+        setState(() => _isTestingConnection = false);
+      }
+    }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -206,6 +269,15 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
                   keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
                     labelText: l10n.smtpUserEmailLabel,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                PasswordTextField(
+                  controller: _smtpPasswordController,
+                  enabled: !_isSaving && !_isTestingConnection,
+                  decoration: InputDecoration(
+                    labelText: l10n.smtpPasswordLabel,
+                    helperText: l10n.smtpPasswordTransientHint,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -324,15 +396,36 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
                     ),
                   ),
                 const SizedBox(height: 12),
-                FilledButton(
-                  onPressed: _isSaving ? null : _saveConfiguration,
-                  child: _isSaving
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(l10n.saveButton),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    FilledButton(
+                      onPressed: _isSaving || _isTestingConnection
+                          ? null
+                          : _saveConfiguration,
+                      child: _isSaving
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(l10n.saveButton),
+                    ),
+                    FilledButton.tonalIcon(
+                      onPressed: _isSaving || _isTestingConnection
+                          ? null
+                          : _testSmtpConnection,
+                      icon: _isTestingConnection
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.network_check_outlined),
+                      label: Text(l10n.smtpTestConnectionButton),
+                    ),
+                  ],
                 ),
               ],
             ),

@@ -72,6 +72,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ITotpService, TotpService>();
         services.AddSingleton<IMfaChallengeTokenService, JwtMfaChallengeTokenService>();
         services.AddSingleton<IAccessTokenIssuer, JwtAccessTokenIssuer>();
+        services.AddSingleton<ISmtpConnectionTester, SmtpConnectionTester>();
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<ExternalProviderStatusService>();
         services.AddScoped<AuthApplicationService>();

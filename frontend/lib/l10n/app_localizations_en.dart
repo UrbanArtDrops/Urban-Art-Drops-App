@@ -1255,6 +1255,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get smtpUserEmailLabel => 'SMTP user email';
 
   @override
+  String get smtpPasswordLabel => 'SMTP password';
+
+  @override
+  String get smtpPasswordTransientHint =>
+      'Used only for the connection test. The password is not stored in the application configuration.';
+
+  @override
+  String get smtpTestConnectionButton => 'Test connection';
+
+  @override
+  String get smtpTestConnectionHostRequired =>
+      'Enter an SMTP host before running the connection test.';
+
+  @override
+  String get smtpTestConnectionPortInvalid =>
+      'Enter a valid SMTP port between 1 and 65535.';
+
+  @override
+  String get smtpTestConnectionCredentialsRequired =>
+      'Provide both SMTP user name and SMTP password for authenticated connection tests.';
+
+  @override
   String get mainMapRadiusSetting => 'Main map radius (km)';
 
   @override

@@ -675,6 +675,28 @@ class AppApiClient {
     return AppConfigurationModel.fromJson(_decodeObjectResponse(response));
   }
 
+  Future<SmtpConnectionTestResultModel> testSmtpConnection({
+    required String smtpHost,
+    required int smtpPort,
+    required String smtpUserName,
+    required String smtpPassword,
+  }) async {
+    final response = await _httpClient.post(
+      _uri("/api/admin/configuration/smtp/test"),
+      headers: _jsonHeaders(),
+      body: jsonEncode({
+        "smtpHost": smtpHost,
+        "smtpPort": smtpPort,
+        "smtpUserName": smtpUserName,
+        "smtpPassword": smtpPassword,
+      }),
+    );
+    _ensureSuccess(response, "Failed to test SMTP connection.");
+    return SmtpConnectionTestResultModel.fromJson(
+      _decodeObjectResponse(response),
+    );
+  }
+
   Future<ClaimPreviewModel> getClaimPreview(String qrToken) async {
     final data = await _getObject("/api/claims/by-token/$qrToken");
     return ClaimPreviewModel.fromJson(data);

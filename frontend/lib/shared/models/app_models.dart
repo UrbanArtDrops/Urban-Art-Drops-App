@@ -903,6 +903,23 @@ class AppConfigurationModel {
   final List<AuthProviderConfigurationStatusModel> authProviders;
 }
 
+class SmtpConnectionTestResultModel {
+  const SmtpConnectionTestResultModel({
+    required this.success,
+    required this.message,
+  });
+
+  factory SmtpConnectionTestResultModel.fromJson(Map<String, dynamic> json) {
+    return SmtpConnectionTestResultModel(
+      success: _readBool(json, "success", "Success"),
+      message: _readString(json, "message", "Message"),
+    );
+  }
+
+  final bool success;
+  final String message;
+}
+
 class ClaimPreviewModel {
   const ClaimPreviewModel({
     required this.dropId,
