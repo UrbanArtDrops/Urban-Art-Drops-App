@@ -1946,26 +1946,32 @@ adminGroup.MapPut("/configuration", async (
       UrbanArtDbContext dbContext,
       ExternalProviderStatusService providerStatusService,
     CancellationToken cancellationToken) =>
-{
-    if (request.SmtpPort is < 1 or > 65535)
-    {
-        return Results.BadRequest(new { error = "SMTP port must be between 1 and 65535." });
-    }
+  {
+      if (request.SmtpPort is < 1 or > 65535)
+      {
+          return Results.BadRequest(new { error = "SMTP port must be between 1 and 65535." });
+      }
 
-    var config = await GetConfigurationAsync(dbContext, cancellationToken);
-    config.SmtpHost = NormalizeOptionalText(request.SmtpHost);
-    config.SmtpPort = request.SmtpPort;
-    config.SmtpUserName = NormalizeOptionalText(request.SmtpUserName);
-    config.SmtpUserEmail = NormalizeOptionalText(request.SmtpUserEmail);
-    config.PublicAppBaseUrl = NormalizeOptionalBaseUrl(request.PublicAppBaseUrl);
-    config.MainMapRadiusKm = request.MainMapRadiusKm;
-    config.MiniMapRadiusKm = request.MiniMapRadiusKm;
-    config.UnclaimedDropRadiusKm = request.UnclaimedDropRadiusKm;
-    config.ShowExactPositionWhenFullyClaimed = request.ShowExactPositionWhenFullyClaimed;
+      if (!Enum.IsDefined(typeof(SmtpSecurityMode), request.SmtpSecurityMode))
+      {
+          return Results.BadRequest(new { error = "SMTP security mode is invalid." });
+      }
 
-    await dbContext.SaveChangesAsync(cancellationToken);
-    return Results.Ok(ToAppConfigurationResponse(config, providerStatusService.GetProviderStatuses()));
-}).RequireAuthorization(AuthPolicies.AdminOnly);
+      var config = await GetConfigurationAsync(dbContext, cancellationToken);
+      config.SmtpHost = NormalizeOptionalText(request.SmtpHost);
+      config.SmtpPort = request.SmtpPort;
+      config.SmtpSecurityMode = (SmtpSecurityMode)request.SmtpSecurityMode;
+      config.SmtpUserName = NormalizeOptionalText(request.SmtpUserName);
+      config.SmtpUserEmail = NormalizeOptionalText(request.SmtpUserEmail);
+      config.PublicAppBaseUrl = NormalizeOptionalBaseUrl(request.PublicAppBaseUrl);
+      config.MainMapRadiusKm = request.MainMapRadiusKm;
+      config.MiniMapRadiusKm = request.MiniMapRadiusKm;
+      config.UnclaimedDropRadiusKm = request.UnclaimedDropRadiusKm;
+      config.ShowExactPositionWhenFullyClaimed = request.ShowExactPositionWhenFullyClaimed;
+
+      await dbContext.SaveChangesAsync(cancellationToken);
+      return Results.Ok(ToAppConfigurationResponse(config, providerStatusService.GetProviderStatuses()));
+  }).RequireAuthorization(AuthPolicies.AdminOnly);
 
 adminGroup.MapPost("/configuration/smtp/test", async (
       TestSmtpConnectionRequest request,
@@ -1983,6 +1989,11 @@ adminGroup.MapPost("/configuration/smtp/test", async (
           return Results.BadRequest(new { error = "SMTP port must be between 1 and 65535." });
       }
 
+      if (!Enum.IsDefined(typeof(SmtpSecurityMode), request.SmtpSecurityMode))
+      {
+          return Results.BadRequest(new { error = "SMTP security mode is invalid." });
+      }
+
       var smtpUserName = NormalizeOptionalText(request.SmtpUserName);
       var smtpPassword = NormalizeOptionalText(request.SmtpPassword);
       if ((smtpUserName is null) != (smtpPassword is null))
@@ -1996,6 +2007,7 @@ adminGroup.MapPost("/configuration/smtp/test", async (
       var result = await smtpConnectionTester.TestAsync(
           smtpHost,
           request.SmtpPort,
+          (SmtpSecurityMode)request.SmtpSecurityMode,
           smtpUserName,
           smtpPassword,
           cancellationToken);
@@ -2298,6 +2310,7 @@ static AppConfigurationResponse ToAppConfigurationResponse(
     new(
         configuration.SmtpHost,
         configuration.SmtpPort,
+        (int)configuration.SmtpSecurityMode,
         configuration.SmtpUserName,
         configuration.SmtpUserEmail,
         configuration.PublicAppBaseUrl,

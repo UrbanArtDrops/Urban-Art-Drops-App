@@ -1249,6 +1249,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get smtpPortLabel => 'SMTP port';
 
   @override
+  String get smtpSecurityModeLabel => 'SMTP security';
+
+  @override
+  String get smtpSecurityModeStartTls => 'StartTLS';
+
+  @override
+  String get smtpSecurityModeTls => 'TLS';
+
+  @override
   String get smtpUserNameLabel => 'SMTP user name';
 
   @override

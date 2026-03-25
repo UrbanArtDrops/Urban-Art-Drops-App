@@ -1,6 +1,7 @@
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using UrbanArtDropFinder.Application.Abstractions;
+using UrbanArtDropFinder.Domain.Configuration;
 
 namespace UrbanArtDropFinder.Infrastructure.Services;
 
@@ -9,6 +10,7 @@ public sealed class SmtpConnectionTester : ISmtpConnectionTester
     public async Task<SmtpConnectionTestResult> TestAsync(
         string host,
         int port,
+        SmtpSecurityMode securityMode,
         string? userName,
         string? password,
         CancellationToken cancellationToken)
@@ -20,7 +22,11 @@ public sealed class SmtpConnectionTester : ISmtpConnectionTester
                 Timeout = 10000
             };
 
-            await client.ConnectAsync(host, port, SecureSocketOptions.Auto, cancellationToken);
+            await client.ConnectAsync(
+                host,
+                port,
+                ToSecureSocketOptions(securityMode),
+                cancellationToken);
 
             if (!string.IsNullOrWhiteSpace(userName) || !string.IsNullOrWhiteSpace(password))
             {
@@ -42,4 +48,12 @@ public sealed class SmtpConnectionTester : ISmtpConnectionTester
             return new SmtpConnectionTestResult(false, exception.Message);
         }
     }
+
+    private static SecureSocketOptions ToSecureSocketOptions(SmtpSecurityMode securityMode) =>
+        securityMode switch
+        {
+            SmtpSecurityMode.StartTls => SecureSocketOptions.StartTls,
+            SmtpSecurityMode.Tls => SecureSocketOptions.SslOnConnect,
+            _ => throw new ArgumentOutOfRangeException(nameof(securityMode), securityMode, "Unsupported SMTP security mode.")
+        };
 }

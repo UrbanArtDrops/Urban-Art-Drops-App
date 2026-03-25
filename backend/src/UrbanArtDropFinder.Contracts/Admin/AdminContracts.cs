@@ -3,6 +3,7 @@ namespace UrbanArtDropFinder.Contracts.Admin;
 public sealed record UpdateAppConfigurationRequest(
     string? SmtpHost,
     int SmtpPort,
+    int SmtpSecurityMode,
     string? SmtpUserName,
     string? SmtpUserEmail,
     string? PublicAppBaseUrl,
@@ -14,6 +15,7 @@ public sealed record UpdateAppConfigurationRequest(
 public sealed record TestSmtpConnectionRequest(
     string? SmtpHost,
     int SmtpPort,
+    int SmtpSecurityMode,
     string? SmtpUserName,
     string? SmtpPassword);
 
@@ -33,6 +35,7 @@ public sealed record ExternalProviderConfigurationStatusResponse(
 public sealed record AppConfigurationResponse(
     string? SmtpHost,
     int SmtpPort,
+    int SmtpSecurityMode,
     string? SmtpUserName,
     string? SmtpUserEmail,
     string? PublicAppBaseUrl,

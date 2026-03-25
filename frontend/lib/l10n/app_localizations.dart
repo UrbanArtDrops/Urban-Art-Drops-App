@@ -2306,6 +2306,24 @@ abstract class AppLocalizations {
   /// **'SMTP port'**
   String get smtpPortLabel;
 
+  /// No description provided for @smtpSecurityModeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'SMTP security'**
+  String get smtpSecurityModeLabel;
+
+  /// No description provided for @smtpSecurityModeStartTls.
+  ///
+  /// In en, this message translates to:
+  /// **'StartTLS'**
+  String get smtpSecurityModeStartTls;
+
+  /// No description provided for @smtpSecurityModeTls.
+  ///
+  /// In en, this message translates to:
+  /// **'TLS'**
+  String get smtpSecurityModeTls;
+
   /// No description provided for @smtpUserNameLabel.
   ///
   /// In en, this message translates to:

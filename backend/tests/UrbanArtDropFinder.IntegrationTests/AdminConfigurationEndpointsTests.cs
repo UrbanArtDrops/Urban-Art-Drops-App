@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using UrbanArtDropFinder.Application.Abstractions;
+using UrbanArtDropFinder.Domain.Configuration;
 using UrbanArtDropFinder.Domain.Users;
 
 namespace UrbanArtDropFinder.IntegrationTests;
@@ -30,6 +31,7 @@ public sealed class AdminConfigurationEndpointsTests : IClassFixture<TestWebAppl
             {
                 smtpHost = "smtp.example.test",
                 smtpPort = 2525,
+                smtpSecurityMode = (int)SmtpSecurityMode.Tls,
                 smtpUserName = "mailer-user",
                 smtpUserEmail = "mailer@example.test",
                 publicAppBaseUrl = "https://app.example.test",
@@ -50,6 +52,7 @@ public sealed class AdminConfigurationEndpointsTests : IClassFixture<TestWebAppl
         Assert.NotNull(payload);
         Assert.Equal("smtp.example.test", payload!.SmtpHost);
         Assert.Equal(2525, payload.SmtpPort);
+        Assert.Equal((int)SmtpSecurityMode.Tls, payload.SmtpSecurityMode);
         Assert.Equal("mailer-user", payload.SmtpUserName);
         Assert.Equal("mailer@example.test", payload.SmtpUserEmail);
         Assert.Equal("https://app.example.test", payload.PublicAppBaseUrl);
@@ -95,7 +98,7 @@ public sealed class AdminConfigurationEndpointsTests : IClassFixture<TestWebAppl
             UserRole.Admin,
             $"admin.smtp.{Guid.NewGuid():N}");
 
-        _factory.SmtpConnectionTester.Handler = static (_, _, _, _, _) =>
+        _factory.SmtpConnectionTester.Handler = static (_, _, _, _, _, _) =>
             Task.FromResult(new SmtpConnectionTestResult(true, "SMTP connection successful."));
 
         var response = await _client.PostAuthorizedAsJsonAsync(
@@ -104,6 +107,7 @@ public sealed class AdminConfigurationEndpointsTests : IClassFixture<TestWebAppl
             {
                 smtpHost = "smtp.example.test",
                 smtpPort = 587,
+                smtpSecurityMode = (int)SmtpSecurityMode.StartTls,
                 smtpUserName = "mailer-user",
                 smtpPassword = "TopSecretPassword!123"
             },
@@ -116,6 +120,7 @@ public sealed class AdminConfigurationEndpointsTests : IClassFixture<TestWebAppl
         Assert.Equal("SMTP connection successful.", payload.Message);
         Assert.Equal("smtp.example.test", _factory.SmtpConnectionTester.LastRequest?.Host);
         Assert.Equal(587, _factory.SmtpConnectionTester.LastRequest?.Port);
+        Assert.Equal(SmtpSecurityMode.StartTls, _factory.SmtpConnectionTester.LastRequest?.SecurityMode);
         Assert.Equal("mailer-user", _factory.SmtpConnectionTester.LastRequest?.UserName);
         Assert.Equal("TopSecretPassword!123", _factory.SmtpConnectionTester.LastRequest?.Password);
 
@@ -131,6 +136,7 @@ public sealed class AdminConfigurationEndpointsTests : IClassFixture<TestWebAppl
     private sealed record AppConfigurationDto(
         string SmtpHost,
         int SmtpPort,
+        int SmtpSecurityMode,
         string? SmtpUserName,
         string? SmtpUserEmail,
         string? SmtpPassword,

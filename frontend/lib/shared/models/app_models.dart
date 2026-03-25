@@ -837,6 +837,7 @@ class AppConfigurationModel {
   const AppConfigurationModel({
     required this.smtpHost,
     required this.smtpPort,
+    required this.smtpSecurityMode,
     required this.smtpUserName,
     required this.smtpUserEmail,
     required this.publicAppBaseUrl,
@@ -852,6 +853,9 @@ class AppConfigurationModel {
     return AppConfigurationModel(
       smtpHost: _readString(json, "smtpHost", "SmtpHost"),
       smtpPort: _readInt(json, "smtpPort", "SmtpPort"),
+      smtpSecurityMode: SmtpSecurityModeModel.fromWireValue(
+        _readInt(json, "smtpSecurityMode", "SmtpSecurityMode"),
+      ),
       smtpUserName: _readString(json, "smtpUserName", "SmtpUserName"),
       smtpUserEmail: _readString(json, "smtpUserEmail", "SmtpUserEmail"),
       publicAppBaseUrl: _readString(
@@ -881,6 +885,7 @@ class AppConfigurationModel {
   static const AppConfigurationModel defaults = AppConfigurationModel(
     smtpHost: "",
     smtpPort: 587,
+    smtpSecurityMode: SmtpSecurityModeModel.startTls,
     smtpUserName: "",
     smtpUserEmail: "",
     publicAppBaseUrl: "",
@@ -893,6 +898,7 @@ class AppConfigurationModel {
 
   final String smtpHost;
   final int smtpPort;
+  final SmtpSecurityModeModel smtpSecurityMode;
   final String smtpUserName;
   final String smtpUserEmail;
   final String publicAppBaseUrl;
@@ -901,6 +907,25 @@ class AppConfigurationModel {
   final int unclaimedDropRadiusKm;
   final bool showExactPositionWhenFullyClaimed;
   final List<AuthProviderConfigurationStatusModel> authProviders;
+}
+
+enum SmtpSecurityModeModel {
+  startTls(0),
+  tls(1);
+
+  const SmtpSecurityModeModel(this.wireValue);
+
+  final int wireValue;
+
+  static SmtpSecurityModeModel fromWireValue(int value) {
+    for (final mode in values) {
+      if (mode.wireValue == value) {
+        return mode;
+      }
+    }
+
+    throw FormatException("Unsupported SMTP security mode: $value");
+  }
 }
 
 class SmtpConnectionTestResultModel {

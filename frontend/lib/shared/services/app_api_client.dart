@@ -648,6 +648,7 @@ class AppApiClient {
   Future<AppConfigurationModel> updateAppConfiguration({
     required String smtpHost,
     required int smtpPort,
+    required SmtpSecurityModeModel smtpSecurityMode,
     required String smtpUserName,
     required String smtpUserEmail,
     required String publicAppBaseUrl,
@@ -662,6 +663,7 @@ class AppApiClient {
       body: jsonEncode({
         "smtpHost": smtpHost,
         "smtpPort": smtpPort,
+        "smtpSecurityMode": smtpSecurityMode.wireValue,
         "smtpUserName": smtpUserName,
         "smtpUserEmail": smtpUserEmail,
         "publicAppBaseUrl": publicAppBaseUrl,
@@ -678,6 +680,7 @@ class AppApiClient {
   Future<SmtpConnectionTestResultModel> testSmtpConnection({
     required String smtpHost,
     required int smtpPort,
+    required SmtpSecurityModeModel smtpSecurityMode,
     required String smtpUserName,
     required String smtpPassword,
   }) async {
@@ -687,6 +690,7 @@ class AppApiClient {
       body: jsonEncode({
         "smtpHost": smtpHost,
         "smtpPort": smtpPort,
+        "smtpSecurityMode": smtpSecurityMode.wireValue,
         "smtpUserName": smtpUserName,
         "smtpPassword": smtpPassword,
       }),

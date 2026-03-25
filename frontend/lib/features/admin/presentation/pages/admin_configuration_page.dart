@@ -32,6 +32,7 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
       TextEditingController();
 
   AppConfigurationModel _configuration = AppConfigurationModel.defaults;
+  SmtpSecurityModeModel _smtpSecurityMode = SmtpSecurityModeModel.startTls;
   bool _showExactPositionWhenFullyClaimed = true;
   bool _isLoading = true;
   bool _isSaving = false;
@@ -92,6 +93,7 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
     _configuration = configuration;
     _smtpHostController.text = configuration.smtpHost;
     _smtpPortController.text = configuration.smtpPort.toString();
+    _smtpSecurityMode = configuration.smtpSecurityMode;
     _smtpUserNameController.text = configuration.smtpUserName;
     _smtpUserEmailController.text = configuration.smtpUserEmail;
     _smtpPasswordController.clear();
@@ -132,6 +134,7 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
       final updated = await _apiClient.updateAppConfiguration(
         smtpHost: _smtpHostController.text.trim(),
         smtpPort: smtpPort,
+        smtpSecurityMode: _smtpSecurityMode,
         smtpUserName: _smtpUserNameController.text.trim(),
         smtpUserEmail: _smtpUserEmailController.text.trim(),
         publicAppBaseUrl: _publicAppBaseUrlController.text.trim(),
@@ -194,6 +197,7 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
       final result = await _apiClient.testSmtpConnection(
         smtpHost: smtpHost,
         smtpPort: smtpPort,
+        smtpSecurityMode: _smtpSecurityMode,
         smtpUserName: smtpUserName,
         smtpPassword: smtpPassword,
       );
@@ -255,6 +259,32 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
                   controller: _smtpPortController,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(labelText: l10n.smtpPortLabel),
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<SmtpSecurityModeModel>(
+                  initialValue: _smtpSecurityMode,
+                  decoration: InputDecoration(
+                    labelText: l10n.smtpSecurityModeLabel,
+                  ),
+                  items: [
+                    DropdownMenuItem(
+                      value: SmtpSecurityModeModel.startTls,
+                      child: Text(l10n.smtpSecurityModeStartTls),
+                    ),
+                    DropdownMenuItem(
+                      value: SmtpSecurityModeModel.tls,
+                      child: Text(l10n.smtpSecurityModeTls),
+                    ),
+                  ],
+                  onChanged: _isSaving || _isTestingConnection
+                      ? null
+                      : (value) {
+                          if (value == null) {
+                            return;
+                          }
+
+                          setState(() => _smtpSecurityMode = value);
+                        },
                 ),
                 const SizedBox(height: 8),
                 TextField(
