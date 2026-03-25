@@ -401,6 +401,10 @@ class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
     AppLocalizations l10n,
     ManagedUser user,
   ) {
+    final pendingRoleLabel = user.pendingRoleApplication == null
+        ? null
+        : _roleLabel(l10n, user.pendingRoleApplication!);
+
     return Wrap(
       spacing: 8,
       runSpacing: 4,
@@ -412,6 +416,14 @@ class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
             color: _roleIconColor(context, user.role),
           ),
         ),
+        if (pendingRoleLabel != null)
+          Tooltip(
+            message: l10n.userRoleApplicationPending(pendingRoleLabel),
+            child: Icon(
+              Icons.notifications_active_outlined,
+              color: Theme.of(context).colorScheme.error,
+            ),
+          ),
         Tooltip(
           message: user.isApproved ? l10n.userApproved : l10n.userNotApproved,
           child: Icon(

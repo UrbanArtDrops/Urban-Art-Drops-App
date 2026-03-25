@@ -57,7 +57,7 @@
 - Hunters can submit role applications through `POST /api/profile/role-application`, and the profile response includes the pending target role plus the request timestamp
 - Startup route guards redirect unauthenticated users away from protected artist, drop-maker, moderation and admin screens to `/auth/login`
 - The drawer navigation hides login/register entries for authenticated sessions and exposes a logout action instead
-- The page shell keeps the drawer menu on the left and renders the back button in the leading area; when a page was opened via `context.go(...)`, the back action falls back to the tracked route history instead of staying disabled
+- The page shell keeps the burger menu at the far left of the app bar and renders the back button to its right in the leading area; when a page was opened via `context.go(...)`, the back action falls back to the tracked route history instead of staying disabled
 - Admin endpoints require an authenticated admin token; moderation endpoints require a moderator/admin token or the scoped artist/drop-maker ownership rules enforced by the API
 - For local development without an explicit signing key, the API can run with an ephemeral process-local JWT key; use user-secrets or environment variables when sessions must survive API restarts
 - Local IDE launch profiles must set `ASPNETCORE_ENVIRONMENT=Development` or `DOTNET_ENVIRONMENT=Development` so the development-only JWT fallback is available during debugging
@@ -69,6 +69,7 @@
 - Admin role-application approvals and rejections update the affected user row directly from the API response instead of depending on an immediate full reload of the user list, and backend validation messages are surfaced in the UI
 - Object-management screens that edit entries through dialogs now refresh their backing lists when the dialog closes, including Admin Users, My Art and My Drops
 - The admin user list renders each account with role, approval and suspension icons plus the stored profile image when one is available
+- Pending Artist or Drop-Maker applications are highlighted in the admin user list with a dedicated red status icon in addition to the pending-role subtitle
 - Admin user management blocks self-lockout by preventing an admin from suspending their own account or revoking their own approval in both the API and the UI
 - Profile images are served from `/api/media/user-profile-images/{id}` and remain inside the SQL-backed persistence model
 - In-app profile notifications are available through `GET /api/profile/notifications` and can be acknowledged through `POST /api/profile/notifications/{notificationId}/mark-read`

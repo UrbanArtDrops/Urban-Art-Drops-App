@@ -188,6 +188,30 @@ void main() {
     expect(actionIcons, isNot(contains(Icons.arrow_back)));
   });
 
+  testWidgets("renders the burger menu to the left of the back button", (
+    tester,
+  ) async {
+    final router = _buildTwoPageRouter();
+    AppNavigationHistory.instance.reset();
+    AppNavigationHistory.instance.record(
+      router.routerDelegate.currentConfiguration.uri.toString(),
+    );
+    router.routerDelegate.addListener(() {
+      AppNavigationHistory.instance.record(
+        router.routerDelegate.currentConfiguration.uri.toString(),
+      );
+    });
+
+    await tester.pumpWidget(_RouterHarness(router: router));
+    router.go("/details");
+    await tester.pumpAndSettle();
+
+    final menuLeft = tester.getTopLeft(find.byIcon(Icons.menu));
+    final backLeft = tester.getTopLeft(find.byIcon(Icons.arrow_back));
+
+    expect(menuLeft.dx, lessThan(backLeft.dx));
+  });
+
   testWidgets("navigates back to the previous route from the leading button", (
     tester,
   ) async {

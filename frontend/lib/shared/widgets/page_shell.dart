@@ -160,12 +160,6 @@ class _PageShellLeading extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (showBackButton)
-          IconButton(
-            tooltip: backTooltip,
-            onPressed: onBackPressed,
-            icon: const Icon(Icons.arrow_back),
-          ),
         Builder(
           builder: (context) => IconButton(
             tooltip: menuTooltip,
@@ -173,6 +167,12 @@ class _PageShellLeading extends StatelessWidget {
             icon: const Icon(Icons.menu),
           ),
         ),
+        if (showBackButton)
+          IconButton(
+            tooltip: backTooltip,
+            onPressed: onBackPressed,
+            icon: const Icon(Icons.arrow_back),
+          ),
       ],
     );
   }

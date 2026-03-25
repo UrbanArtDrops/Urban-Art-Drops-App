@@ -69,6 +69,56 @@ void main() {
   });
 
   testWidgets(
+    "shows a red application icon for pending artist or drop-maker requests",
+    (tester) async {
+      final mockHttpClient = MockClient((request) async {
+        if (request.url.path == "/api/admin/users") {
+          return http.Response(
+            jsonEncode([
+              {
+                "id": "user-1",
+                "email": "hunter@example.com",
+                "userName": "Hunter Artist",
+                "role": 0,
+                "pendingRoleApplication": 1,
+                "pendingRoleApplicationRequestedAtUtc": "2026-03-20T10:15:00Z",
+                "isApproved": true,
+                "isSuspended": false,
+                "isEmailVerified": true,
+                "isProviderAccount": false,
+                "profileImage": null,
+              },
+            ]),
+            200,
+            headers: {"content-type": "application/json"},
+          );
+        }
+
+        return http.Response("Not Found", 404);
+      });
+
+      await tester.pumpWidget(
+        _AdminUserManagementHarness(
+          apiClient: AppApiClient(
+            httpClient: mockHttpClient,
+            baseUrl: "http://localhost",
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(AdminUserManagementPage));
+      final l10n = AppLocalizations.of(context)!;
+
+      expect(find.byIcon(Icons.notifications_active_outlined), findsOneWidget);
+      expect(
+        find.byTooltip(l10n.userRoleApplicationPending(l10n.roleArtist)),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
     "hides self approval and suspension actions for the signed-in admin",
     (tester) async {
       final mockHttpClient = MockClient((request) async {
