@@ -337,6 +337,8 @@
   },
   "emailLabel": "E-Mail",
   "passwordLabel": "Passwort",
+  "showPasswordAction": "Passwort anzeigen",
+  "hidePasswordAction": "Passwort verbergen",
   "authFillCredentialsHint": "Bitte E-Mail und Passwort eingeben.",
   "authFillRegistrationHint": "Bitte Benutzername, E-Mail und Passwort ausfuellen.",
   "authRoleManagedAtRegistration": "Der aktuelle Account-Typ ist serverseitig gespeichert. Beim Login wird keine Rolle ausgewaehlt.",

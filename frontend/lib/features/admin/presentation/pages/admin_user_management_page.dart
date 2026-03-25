@@ -6,6 +6,7 @@ import "../../../authentication/presentation/bloc/auth_session_cubit.dart";
 import "../../../../shared/models/app_models.dart";
 import "../../../../shared/services/app_api_client.dart";
 import "../../../../shared/widgets/page_shell.dart";
+import "../../../../shared/widgets/password_text_field.dart";
 import "../../../../shared/widgets/source_image.dart";
 
 class AdminUserManagementPage extends StatefulWidget {
@@ -87,10 +88,9 @@ class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
                     decoration: InputDecoration(labelText: l10n.usernameLabel),
                   ),
                   const SizedBox(height: 8),
-                  TextField(
+                  PasswordTextField(
                     controller: passwordController,
                     decoration: InputDecoration(labelText: l10n.passwordLabel),
-                    obscureText: true,
                   ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<int>(

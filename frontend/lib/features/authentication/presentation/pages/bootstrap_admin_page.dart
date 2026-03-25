@@ -5,6 +5,7 @@ import "package:urban_art_drops_app/l10n/app_localizations.dart";
 import "../../../../shared/models/app_models.dart";
 import "../../../../shared/services/app_api_client.dart";
 import "../../../../shared/widgets/page_shell.dart";
+import "../../../../shared/widgets/password_text_field.dart";
 
 class BootstrapAdminPage extends StatefulWidget {
   const BootstrapAdminPage({super.key});
@@ -196,9 +197,8 @@ class _BootstrapAdminPageState extends State<BootstrapAdminPage> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          TextField(
+                          PasswordTextField(
                             controller: _passwordController,
-                            obscureText: true,
                             decoration: InputDecoration(
                               labelText: l10n.passwordLabel,
                             ),

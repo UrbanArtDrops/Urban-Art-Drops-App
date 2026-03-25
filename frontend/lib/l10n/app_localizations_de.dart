@@ -734,6 +734,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get passwordLabel => 'Passwort';
 
   @override
+  String get showPasswordAction => 'Passwort anzeigen';
+
+  @override
+  String get hidePasswordAction => 'Passwort verbergen';
+
+  @override
   String get authFillCredentialsHint => 'Bitte E-Mail und Passwort eingeben.';
 
   @override

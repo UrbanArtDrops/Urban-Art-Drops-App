@@ -51,6 +51,7 @@
 - Local login returns a JWT bearer token with expiry metadata and the Flutter client attaches that token automatically to protected API calls
 - Admin and Moderator logins require a TOTP-based MFA challenge; the login call returns a setup or verification challenge and the access token is only issued after `/api/auth/mfa/complete`
 - While an MFA setup or verification challenge is active, the login screen hides the other authentication forms and shows only the MFA step
+- All password entry fields expose a visibility toggle only after the user has entered a password value
 - Authenticated users can call `/api/profile` to read or update their own email address, display name, and optional profile image without entering the admin area
 - The profile image flow supports both local file upload and an in-app selfie capture path for the current user profile
 - Authenticated users can start MFA setup through `/api/profile/mfa/setup` and disable an existing authenticator through `/api/profile/mfa/disable`

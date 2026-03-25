@@ -337,6 +337,8 @@
   },
   "emailLabel": "Email",
   "passwordLabel": "Password",
+  "showPasswordAction": "Show password",
+  "hidePasswordAction": "Hide password",
   "authFillCredentialsHint": "Enter email and password.",
   "authFillRegistrationHint": "Fill in username, email, and password.",
   "authRoleManagedAtRegistration": "The current account type is stored on the server. Login never asks for a role selection.",

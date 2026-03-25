@@ -6,6 +6,7 @@ import "../../../../shared/models/app_models.dart";
 import "../../../../shared/services/app_api_client.dart";
 import "../../../../shared/services/external_provider_auth_launcher.dart";
 import "../../../../shared/widgets/page_shell.dart";
+import "../../../../shared/widgets/password_text_field.dart";
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key, this.apiClient, this.providerAuthLauncher});
@@ -240,9 +241,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     decoration: InputDecoration(labelText: l10n.emailLabel),
                   ),
                   const SizedBox(height: 8),
-                  TextField(
+                  PasswordTextField(
                     controller: _passwordController,
-                    obscureText: true,
                     decoration: InputDecoration(labelText: l10n.passwordLabel),
                   ),
                   const SizedBox(height: 12),
