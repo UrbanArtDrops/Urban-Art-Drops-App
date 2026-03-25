@@ -65,6 +65,9 @@ void main() {
   test("parses auth provider status entries on app configuration", () {
     final configuration = AppConfigurationModel.fromJson({
       "smtpHost": "smtp.example.test",
+      "smtpPort": 2525,
+      "smtpUserName": "mailer-user",
+      "smtpUserEmail": "mailer@example.test",
       "publicAppBaseUrl": "https://app.example.test",
       "mainMapRadiusKm": 30,
       "miniMapRadiusKm": 5,
@@ -93,6 +96,9 @@ void main() {
     });
 
     expect(configuration.authProviders, hasLength(2));
+    expect(configuration.smtpPort, 2525);
+    expect(configuration.smtpUserName, "mailer-user");
+    expect(configuration.smtpUserEmail, "mailer@example.test");
     expect(configuration.authProviders.first.provider, "google");
     expect(configuration.authProviders.first.visibleOnLogin, isTrue);
     expect(configuration.authProviders.last.provider, "facebook");

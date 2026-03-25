@@ -2288,6 +2288,24 @@ abstract class AppLocalizations {
   /// **'SMTP host'**
   String get smtpLabel;
 
+  /// No description provided for @smtpPortLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'SMTP port'**
+  String get smtpPortLabel;
+
+  /// No description provided for @smtpUserNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'SMTP user name'**
+  String get smtpUserNameLabel;
+
+  /// No description provided for @smtpUserEmailLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'SMTP user email'**
+  String get smtpUserEmailLabel;
+
   /// No description provided for @mainMapRadiusSetting.
   ///
   /// In en, this message translates to:

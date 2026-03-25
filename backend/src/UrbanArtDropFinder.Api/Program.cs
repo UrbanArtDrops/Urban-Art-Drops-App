@@ -1947,8 +1947,16 @@ adminGroup.MapPut("/configuration", async (
     ExternalProviderStatusService providerStatusService,
     CancellationToken cancellationToken) =>
 {
+    if (request.SmtpPort is < 1 or > 65535)
+    {
+        return Results.BadRequest(new { error = "SMTP port must be between 1 and 65535." });
+    }
+
     var config = await GetConfigurationAsync(dbContext, cancellationToken);
-    config.SmtpHost = request.SmtpHost;
+    config.SmtpHost = NormalizeOptionalText(request.SmtpHost);
+    config.SmtpPort = request.SmtpPort;
+    config.SmtpUserName = NormalizeOptionalText(request.SmtpUserName);
+    config.SmtpUserEmail = NormalizeOptionalText(request.SmtpUserEmail);
     config.PublicAppBaseUrl = NormalizeOptionalBaseUrl(request.PublicAppBaseUrl);
     config.MainMapRadiusKm = request.MainMapRadiusKm;
     config.MiniMapRadiusKm = request.MiniMapRadiusKm;
@@ -2251,6 +2259,9 @@ static AppConfigurationResponse ToAppConfigurationResponse(
     IReadOnlyCollection<ExternalProviderStatusSnapshot> providerStatuses) =>
     new(
         configuration.SmtpHost,
+        configuration.SmtpPort,
+        configuration.SmtpUserName,
+        configuration.SmtpUserEmail,
         configuration.PublicAppBaseUrl,
         configuration.MainMapRadiusKm,
         configuration.MiniMapRadiusKm,
@@ -2280,6 +2291,12 @@ static string? NormalizeOptionalBaseUrl(string? value)
     }
 
     return normalized.TrimEnd('/');
+}
+
+static string? NormalizeOptionalText(string? value)
+{
+    var normalized = value?.Trim();
+    return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
 }
 
 static async Task<(UserAccount? Actor, IResult? Failure)> ResolveAuthenticatedActorAsync(

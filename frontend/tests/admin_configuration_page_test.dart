@@ -18,6 +18,9 @@ void main() {
         return http.Response(
           jsonEncode({
             "smtpHost": "smtp.example.test",
+            "smtpPort": 2525,
+            "smtpUserName": "mailer-user",
+            "smtpUserEmail": "mailer@example.test",
             "publicAppBaseUrl": "https://app.example.test",
             "mainMapRadiusKm": 30,
             "miniMapRadiusKm": 5,
@@ -65,8 +68,19 @@ void main() {
     final context = tester.element(find.byType(AdminConfigurationPage));
     final l10n = AppLocalizations.of(context)!;
     final facebookFinder = find.text("Facebook", skipOffstage: false);
+    final providerSectionFinder = find.text(
+      l10n.authProviderStatusSectionTitle,
+      skipOffstage: false,
+    );
 
-    expect(find.text(l10n.authProviderStatusSectionTitle), findsOneWidget);
+    await tester.scrollUntilVisible(
+      providerSectionFinder,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
+    expect(providerSectionFinder, findsOneWidget);
     expect(find.text("Google"), findsOneWidget);
     expect(facebookFinder, findsOneWidget);
     expect(
@@ -85,6 +99,95 @@ void main() {
       find.text(l10n.authProviderStatusClientIdMissing, skipOffstage: false),
       findsOneWidget,
     );
+  });
+
+  testWidgets("saves smtp port and user fields", (tester) async {
+    Map<String, dynamic>? updatePayload;
+
+    final mockHttpClient = MockClient((request) async {
+      if (request.url.path == "/api/admin/configuration" &&
+          request.method == "GET") {
+        return http.Response(
+          jsonEncode({
+            "smtpHost": "smtp.example.test",
+            "smtpPort": 2525,
+            "smtpUserName": "mailer-user",
+            "smtpUserEmail": "mailer@example.test",
+            "publicAppBaseUrl": "https://app.example.test",
+            "mainMapRadiusKm": 30,
+            "miniMapRadiusKm": 5,
+            "unclaimedDropRadiusKm": 3,
+            "showExactPositionWhenFullyClaimed": true,
+            "authProviders": [],
+          }),
+          200,
+          headers: {"content-type": "application/json"},
+        );
+      }
+
+      if (request.url.path == "/api/admin/configuration" &&
+          request.method == "PUT") {
+        updatePayload = jsonDecode(request.body) as Map<String, dynamic>;
+        return http.Response(
+          jsonEncode({
+            "smtpHost": updatePayload!["smtpHost"],
+            "smtpPort": updatePayload!["smtpPort"],
+            "smtpUserName": updatePayload!["smtpUserName"],
+            "smtpUserEmail": updatePayload!["smtpUserEmail"],
+            "publicAppBaseUrl": updatePayload!["publicAppBaseUrl"],
+            "mainMapRadiusKm": updatePayload!["mainMapRadiusKm"],
+            "miniMapRadiusKm": updatePayload!["miniMapRadiusKm"],
+            "unclaimedDropRadiusKm": updatePayload!["unclaimedDropRadiusKm"],
+            "showExactPositionWhenFullyClaimed":
+                updatePayload!["showExactPositionWhenFullyClaimed"],
+            "authProviders": [],
+          }),
+          200,
+          headers: {"content-type": "application/json"},
+        );
+      }
+
+      return http.Response("Not Found", 404);
+    });
+
+    await tester.pumpWidget(
+      _AdminConfigurationHarness(
+        apiClient: AppApiClient(
+          httpClient: mockHttpClient,
+          baseUrl: "http://localhost",
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final context = tester.element(find.byType(AdminConfigurationPage));
+    final l10n = AppLocalizations.of(context)!;
+
+    await tester.enterText(
+      find.widgetWithText(TextField, l10n.smtpPortLabel),
+      "587",
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, l10n.smtpUserNameLabel),
+      "mailer-admin",
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, l10n.smtpUserEmailLabel),
+      "smtp-admin@example.test",
+    );
+    final saveButtonFinder = find.widgetWithText(FilledButton, l10n.saveButton);
+    await tester.scrollUntilVisible(
+      saveButtonFinder,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(saveButtonFinder);
+    await tester.pumpAndSettle();
+
+    expect(updatePayload, isNotNull);
+    expect(updatePayload!["smtpPort"], 587);
+    expect(updatePayload!["smtpUserName"], "mailer-admin");
+    expect(updatePayload!["smtpUserEmail"], "smtp-admin@example.test");
   });
 }
 

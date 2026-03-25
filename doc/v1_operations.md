@@ -13,7 +13,7 @@
 - Authentication__ExternalProviders__Providers__<provider>__Enabled
 - Authentication__ExternalProviders__Providers__<provider>__ClientId
 - Authentication__ExternalProviders__Providers__<provider>__ClientSecret
-- SMTP host settings
+- SMTP host, port and user identity settings
 - Public app base URL setting
 - Map radius configuration
   - `MainMapRadiusKm` (default 30)
@@ -71,6 +71,7 @@
 - The admin user list renders each account with role, approval and suspension icons plus the stored profile image when one is available
 - Pending Artist or Drop-Maker applications are highlighted in the admin user list with a dedicated red status icon in addition to the pending-role subtitle
 - Admin user management blocks self-lockout by preventing an admin from suspending their own account or revoking their own approval in both the API and the UI
+- Admin settings persist SMTP host, SMTP port, SMTP user name and SMTP user email together with the existing public app base URL and map settings
 - Profile images are served from `/api/media/user-profile-images/{id}` and remain inside the SQL-backed persistence model
 - In-app profile notifications are available through `GET /api/profile/notifications` and can be acknowledged through `POST /api/profile/notifications/{notificationId}/mark-read`
 - The profile screen loads `/api/profile` and `/api/profile/notifications` independently so a notification-loading failure does not hide the main profile data; the notification section shows a retry action instead

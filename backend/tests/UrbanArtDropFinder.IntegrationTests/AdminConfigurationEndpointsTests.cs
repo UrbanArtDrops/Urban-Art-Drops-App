@@ -28,6 +28,9 @@ public sealed class AdminConfigurationEndpointsTests : IClassFixture<TestWebAppl
             new
             {
                 smtpHost = "smtp.example.test",
+                smtpPort = 2525,
+                smtpUserName = "mailer-user",
+                smtpUserEmail = "mailer@example.test",
                 publicAppBaseUrl = "https://app.example.test",
                 mainMapRadiusKm = 42,
                 miniMapRadiusKm = 7,
@@ -45,6 +48,9 @@ public sealed class AdminConfigurationEndpointsTests : IClassFixture<TestWebAppl
         var payload = await getResponse.Content.ReadFromJsonAsync<AppConfigurationDto>();
         Assert.NotNull(payload);
         Assert.Equal("smtp.example.test", payload!.SmtpHost);
+        Assert.Equal(2525, payload.SmtpPort);
+        Assert.Equal("mailer-user", payload.SmtpUserName);
+        Assert.Equal("mailer@example.test", payload.SmtpUserEmail);
         Assert.Equal("https://app.example.test", payload.PublicAppBaseUrl);
         Assert.Equal(42, payload.MainMapRadiusKm);
         Assert.Equal(7, payload.MiniMapRadiusKm);
@@ -83,6 +89,9 @@ public sealed class AdminConfigurationEndpointsTests : IClassFixture<TestWebAppl
 
     private sealed record AppConfigurationDto(
         string SmtpHost,
+        int SmtpPort,
+        string? SmtpUserName,
+        string? SmtpUserEmail,
         string PublicAppBaseUrl,
         int MainMapRadiusKm,
         int MiniMapRadiusKm,

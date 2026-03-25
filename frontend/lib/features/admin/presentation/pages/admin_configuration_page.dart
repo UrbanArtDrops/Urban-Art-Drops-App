@@ -16,6 +16,10 @@ class AdminConfigurationPage extends StatefulWidget {
 
 class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
   final TextEditingController _smtpHostController = TextEditingController();
+  final TextEditingController _smtpPortController = TextEditingController();
+  final TextEditingController _smtpUserNameController = TextEditingController();
+  final TextEditingController _smtpUserEmailController =
+      TextEditingController();
   final TextEditingController _publicAppBaseUrlController =
       TextEditingController();
   final TextEditingController _mainMapRadiusController =
@@ -40,6 +44,9 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
   @override
   void dispose() {
     _smtpHostController.dispose();
+    _smtpPortController.dispose();
+    _smtpUserNameController.dispose();
+    _smtpUserEmailController.dispose();
     _publicAppBaseUrlController.dispose();
     _mainMapRadiusController.dispose();
     _miniMapRadiusController.dispose();
@@ -80,6 +87,9 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
   void _applyConfiguration(AppConfigurationModel configuration) {
     _configuration = configuration;
     _smtpHostController.text = configuration.smtpHost;
+    _smtpPortController.text = configuration.smtpPort.toString();
+    _smtpUserNameController.text = configuration.smtpUserName;
+    _smtpUserEmailController.text = configuration.smtpUserEmail;
     _publicAppBaseUrlController.text = configuration.publicAppBaseUrl;
     _mainMapRadiusController.text = configuration.mainMapRadiusKm.toString();
     _miniMapRadiusController.text = configuration.miniMapRadiusKm.toString();
@@ -91,12 +101,16 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
 
   Future<void> _saveConfiguration() async {
     final l10n = AppLocalizations.of(context)!;
+    final smtpPort = int.tryParse(_smtpPortController.text.trim());
     final mainMapRadiusKm = int.tryParse(_mainMapRadiusController.text.trim());
     final miniMapRadiusKm = int.tryParse(_miniMapRadiusController.text.trim());
     final unclaimedDropRadiusKm = int.tryParse(
       _unclaimedRadiusController.text.trim(),
     );
-    if (mainMapRadiusKm == null ||
+    if (smtpPort == null ||
+        smtpPort < 1 ||
+        smtpPort > 65535 ||
+        mainMapRadiusKm == null ||
         miniMapRadiusKm == null ||
         unclaimedDropRadiusKm == null ||
         mainMapRadiusKm < 1 ||
@@ -112,6 +126,9 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
     try {
       final updated = await _apiClient.updateAppConfiguration(
         smtpHost: _smtpHostController.text.trim(),
+        smtpPort: smtpPort,
+        smtpUserName: _smtpUserNameController.text.trim(),
+        smtpUserEmail: _smtpUserEmailController.text.trim(),
         publicAppBaseUrl: _publicAppBaseUrlController.text.trim(),
         mainMapRadiusKm: mainMapRadiusKm,
         miniMapRadiusKm: miniMapRadiusKm,
@@ -169,6 +186,27 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
                 TextField(
                   controller: _smtpHostController,
                   decoration: InputDecoration(labelText: l10n.smtpLabel),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _smtpPortController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(labelText: l10n.smtpPortLabel),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _smtpUserNameController,
+                  decoration: InputDecoration(
+                    labelText: l10n.smtpUserNameLabel,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _smtpUserEmailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: InputDecoration(
+                    labelText: l10n.smtpUserEmailLabel,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 TextField(

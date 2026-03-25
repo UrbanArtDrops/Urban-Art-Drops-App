@@ -543,6 +543,9 @@
     }
   },
   "smtpLabel": "SMTP-Host",
+  "smtpPortLabel": "SMTP-Port",
+  "smtpUserNameLabel": "SMTP-Benutzername",
+  "smtpUserEmailLabel": "SMTP-Benutzer-E-Mail",
   "mainMapRadiusSetting": "Hauptkartenausschnitt (km)",
   "miniMapRadiusSetting": "Mini-Kartenausschnitt (km)",
   "unclaimedRadiusSetting": "Unclaimed-Umkreis (km)",

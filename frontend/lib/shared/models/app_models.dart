@@ -836,6 +836,9 @@ class ReportedArtPieceModel {
 class AppConfigurationModel {
   const AppConfigurationModel({
     required this.smtpHost,
+    required this.smtpPort,
+    required this.smtpUserName,
+    required this.smtpUserEmail,
     required this.publicAppBaseUrl,
     required this.mainMapRadiusKm,
     required this.miniMapRadiusKm,
@@ -848,6 +851,9 @@ class AppConfigurationModel {
     final providerEntries = _readList(json, "authProviders", "AuthProviders");
     return AppConfigurationModel(
       smtpHost: _readString(json, "smtpHost", "SmtpHost"),
+      smtpPort: _readInt(json, "smtpPort", "SmtpPort"),
+      smtpUserName: _readString(json, "smtpUserName", "SmtpUserName"),
+      smtpUserEmail: _readString(json, "smtpUserEmail", "SmtpUserEmail"),
       publicAppBaseUrl: _readString(
         json,
         "publicAppBaseUrl",
@@ -874,6 +880,9 @@ class AppConfigurationModel {
 
   static const AppConfigurationModel defaults = AppConfigurationModel(
     smtpHost: "",
+    smtpPort: 587,
+    smtpUserName: "",
+    smtpUserEmail: "",
     publicAppBaseUrl: "",
     mainMapRadiusKm: 30,
     miniMapRadiusKm: 5,
@@ -883,6 +892,9 @@ class AppConfigurationModel {
   );
 
   final String smtpHost;
+  final int smtpPort;
+  final String smtpUserName;
+  final String smtpUserEmail;
   final String publicAppBaseUrl;
   final int mainMapRadiusKm;
   final int miniMapRadiusKm;

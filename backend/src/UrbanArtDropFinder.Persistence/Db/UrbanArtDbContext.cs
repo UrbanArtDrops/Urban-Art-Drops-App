@@ -138,6 +138,8 @@ public sealed class UrbanArtDbContext : DbContext
             entity.HasKey(x => x.Id);
             entity.Property(x => x.PublicAppBaseUrl).HasMaxLength(512);
             entity.Property(x => x.SmtpHost).HasMaxLength(512);
+            entity.Property(x => x.SmtpUserName).HasMaxLength(256);
+            entity.Property(x => x.SmtpUserEmail).HasMaxLength(320);
         });
 
         base.OnModelCreating(modelBuilder);

@@ -69,7 +69,7 @@
 - Self-service profile changes update the persisted account record directly; the Flutter session mirrors changed email, display name, and profile image URL locally after save
 - When an admin edits, publishes, depublishes, or deletes an art piece or drop, the impacted artist or drop-maker receives a persisted in-app notification linked to that entity
 - JWT signing keys must be supplied outside source control for stable environments; local development can fall back to an ephemeral in-memory signing key for the running process
-- Admin configuration is persisted in SQL and currently drives SMTP host, public app base URL, map radii and exact-position rendering behavior
+- Admin configuration is persisted in SQL and currently drives SMTP host, SMTP port, SMTP user identity fields, public app base URL, map radii and exact-position rendering behavior
 - The admin configuration screen also shows the current external-provider status snapshot from backend configuration, including login visibility, client-id presence, client-secret presence, and PKCE usage
 - Backup target: daily with 14-day retention
 - Log retention target: 30 days

@@ -1258,6 +1258,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get smtpLabel => 'SMTP-Host';
 
   @override
+  String get smtpPortLabel => 'SMTP-Port';
+
+  @override
+  String get smtpUserNameLabel => 'SMTP-Benutzername';
+
+  @override
+  String get smtpUserEmailLabel => 'SMTP-Benutzer-E-Mail';
+
+  @override
   String get mainMapRadiusSetting => 'Hauptkartenausschnitt (km)';
 
   @override

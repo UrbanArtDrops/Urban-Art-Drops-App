@@ -647,6 +647,9 @@ class AppApiClient {
 
   Future<AppConfigurationModel> updateAppConfiguration({
     required String smtpHost,
+    required int smtpPort,
+    required String smtpUserName,
+    required String smtpUserEmail,
     required String publicAppBaseUrl,
     required int mainMapRadiusKm,
     required int miniMapRadiusKm,
@@ -658,6 +661,9 @@ class AppApiClient {
       headers: _jsonHeaders(),
       body: jsonEncode({
         "smtpHost": smtpHost,
+        "smtpPort": smtpPort,
+        "smtpUserName": smtpUserName,
+        "smtpUserEmail": smtpUserEmail,
         "publicAppBaseUrl": publicAppBaseUrl,
         "mainMapRadiusKm": mainMapRadiusKm,
         "miniMapRadiusKm": miniMapRadiusKm,

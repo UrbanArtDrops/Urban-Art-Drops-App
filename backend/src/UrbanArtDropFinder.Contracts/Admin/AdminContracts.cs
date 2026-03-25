@@ -2,6 +2,9 @@ namespace UrbanArtDropFinder.Contracts.Admin;
 
 public sealed record UpdateAppConfigurationRequest(
     string? SmtpHost,
+    int SmtpPort,
+    string? SmtpUserName,
+    string? SmtpUserEmail,
     string? PublicAppBaseUrl,
     int MainMapRadiusKm,
     int MiniMapRadiusKm,
@@ -19,6 +22,9 @@ public sealed record ExternalProviderConfigurationStatusResponse(
 
 public sealed record AppConfigurationResponse(
     string? SmtpHost,
+    int SmtpPort,
+    string? SmtpUserName,
+    string? SmtpUserEmail,
     string? PublicAppBaseUrl,
     int MainMapRadiusKm,
     int MiniMapRadiusKm,

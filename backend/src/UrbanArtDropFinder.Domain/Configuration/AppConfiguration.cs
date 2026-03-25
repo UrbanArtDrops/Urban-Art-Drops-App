@@ -4,6 +4,9 @@ public sealed class AppConfiguration
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public string? SmtpHost { get; set; }
+    public int SmtpPort { get; set; } = 587;
+    public string? SmtpUserName { get; set; }
+    public string? SmtpUserEmail { get; set; }
     public string? PublicAppBaseUrl { get; set; }
     public int MainMapRadiusKm { get; set; } = 30;
     public int MiniMapRadiusKm { get; set; } = 5;

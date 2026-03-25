@@ -1240,6 +1240,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get smtpLabel => 'SMTP host';
 
   @override
+  String get smtpPortLabel => 'SMTP port';
+
+  @override
+  String get smtpUserNameLabel => 'SMTP user name';
+
+  @override
+  String get smtpUserEmailLabel => 'SMTP user email';
+
+  @override
   String get mainMapRadiusSetting => 'Main map radius (km)';
 
   @override
