@@ -794,8 +794,68 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authMfaRequired => 'MFA is required for this account.';
 
   @override
+  String get authForgotPasswordAction => 'Forgot password?';
+
+  @override
+  String get authForgotPasswordTitle => 'Reset password';
+
+  @override
+  String get authForgotPasswordHint =>
+      'Enter the email address of your local account. If a matching account exists, we will send a reset link.';
+
+  @override
+  String get authForgotPasswordEmailRequired => 'Enter an email address.';
+
+  @override
+  String get authForgotPasswordSubmit => 'Request reset link';
+
+  @override
+  String get authForgotPasswordSubmitted =>
+      'If a matching local account exists, a reset link has been sent.';
+
+  @override
+  String get authResetPasswordTitle => 'Set new password';
+
+  @override
+  String get authResetPasswordHint =>
+      'Enter a new password. The link is only valid for a limited time.';
+
+  @override
+  String get authResetPasswordMissingParameters =>
+      'The password reset link is incomplete or invalid.';
+
+  @override
+  String get authResetPasswordPasswordRequired => 'Enter a new password.';
+
+  @override
+  String get authResetPasswordSubmit => 'Set password';
+
+  @override
+  String get authResetPasswordSuccess => 'Password has been reset.';
+
+  @override
+  String get authNewPasswordLabel => 'New password';
+
+  @override
+  String get authVerifyEmailTitle => 'Verify email address';
+
+  @override
+  String get authVerifyEmailInProgress => 'Verifying email address...';
+
+  @override
+  String get authVerifyEmailSuccess =>
+      'Email address verified. You can sign in now.';
+
+  @override
+  String get authVerifyEmailFailure => 'Email address could not be verified.';
+
+  @override
+  String get authVerifyEmailMissingParameters =>
+      'The verification link is incomplete or invalid.';
+
+  @override
   String get authHunterRegistrationSuccess =>
-      'Hunter account created. The verification step was simulated for local development. You can sign in now.';
+      'Hunter account created. Verify your email address with the link we sent before signing in.';
 
   @override
   String get authApprovalRequestSubmitted =>

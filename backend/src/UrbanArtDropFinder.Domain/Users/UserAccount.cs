@@ -16,6 +16,10 @@ public sealed class UserAccount
     public bool IsProviderAccount { get; private set; }
     public string? Provider { get; private set; }
     public string? PasswordHash { get; private set; }
+    public string? EmailVerificationTokenHash { get; private set; }
+    public DateTimeOffset? EmailVerificationTokenExpiresAtUtc { get; private set; }
+    public string? PasswordResetTokenHash { get; private set; }
+    public DateTimeOffset? PasswordResetTokenExpiresAtUtc { get; private set; }
     public bool IsMfaEnabled { get; private set; }
     public string? MfaSecretKey { get; private set; }
     public int FailedLoginAttempts { get; private set; }
@@ -78,7 +82,63 @@ public sealed class UserAccount
         return account;
     }
 
-    public void MarkEmailVerified() => IsEmailVerified = true;
+    public void MarkEmailVerified()
+    {
+        IsEmailVerified = true;
+        EmailVerificationTokenHash = null;
+        EmailVerificationTokenExpiresAtUtc = null;
+    }
+
+    public void BeginEmailVerification(string tokenHash, DateTimeOffset expiresAtUtc)
+    {
+        if (string.IsNullOrWhiteSpace(tokenHash))
+        {
+            throw new DomainValidationException("Email verification token hash is required.");
+        }
+
+        IsEmailVerified = false;
+        EmailVerificationTokenHash = tokenHash.Trim();
+        EmailVerificationTokenExpiresAtUtc = expiresAtUtc;
+    }
+
+    public bool CanCompleteEmailVerification(DateTimeOffset nowUtc) =>
+        !IsEmailVerified &&
+        !string.IsNullOrWhiteSpace(EmailVerificationTokenHash) &&
+        EmailVerificationTokenExpiresAtUtc.HasValue &&
+        EmailVerificationTokenExpiresAtUtc.Value > nowUtc;
+
+    public void BeginPasswordReset(string tokenHash, DateTimeOffset expiresAtUtc)
+    {
+        if (string.IsNullOrWhiteSpace(tokenHash))
+        {
+            throw new DomainValidationException("Password reset token hash is required.");
+        }
+
+        PasswordResetTokenHash = tokenHash.Trim();
+        PasswordResetTokenExpiresAtUtc = expiresAtUtc;
+    }
+
+    public bool CanCompletePasswordReset(DateTimeOffset nowUtc) =>
+        !IsProviderAccount &&
+        PasswordHash is not null &&
+        !string.IsNullOrWhiteSpace(PasswordResetTokenHash) &&
+        PasswordResetTokenExpiresAtUtc.HasValue &&
+        PasswordResetTokenExpiresAtUtc.Value > nowUtc;
+
+    public void CompletePasswordReset(string passwordHash)
+    {
+        if (string.IsNullOrWhiteSpace(passwordHash))
+        {
+            throw new DomainValidationException("Password hash is required.");
+        }
+
+        PasswordHash = passwordHash;
+        PasswordResetTokenHash = null;
+        PasswordResetTokenExpiresAtUtc = null;
+        FailedLoginAttempts = 0;
+        NextLoginAllowedAtUtc = null;
+        MarkEmailVerified();
+    }
 
     public void SetApproval(bool approved) => IsApproved = approved;
 

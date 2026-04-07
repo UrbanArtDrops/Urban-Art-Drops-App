@@ -69,6 +69,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<IUserAccountStore, UserAccountStore>();
         services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
+        services.AddSingleton<IAccountTokenHasher, Sha256AccountTokenHasher>();
         services.AddSingleton<ITokenGenerator, SecureTokenGenerator>();
         services.AddSingleton<ITotpService, TotpService>();
         services.AddSingleton<IMfaChallengeTokenService, JwtMfaChallengeTokenService>();

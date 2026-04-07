@@ -421,6 +421,13 @@ class _LoginPageState extends State<LoginPage> {
                             )
                           : Text(l10n.navLogin),
                     ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: _isSaving
+                          ? null
+                          : () => context.go("/auth/forgot-password"),
+                      child: Text(l10n.authForgotPasswordAction),
+                    ),
                   ],
                 ),
               ),

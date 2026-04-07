@@ -1508,10 +1508,118 @@ abstract class AppLocalizations {
   /// **'MFA is required for this account.'**
   String get authMfaRequired;
 
+  /// No description provided for @authForgotPasswordAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot password?'**
+  String get authForgotPasswordAction;
+
+  /// No description provided for @authForgotPasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset password'**
+  String get authForgotPasswordTitle;
+
+  /// No description provided for @authForgotPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the email address of your local account. If a matching account exists, we will send a reset link.'**
+  String get authForgotPasswordHint;
+
+  /// No description provided for @authForgotPasswordEmailRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an email address.'**
+  String get authForgotPasswordEmailRequired;
+
+  /// No description provided for @authForgotPasswordSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Request reset link'**
+  String get authForgotPasswordSubmit;
+
+  /// No description provided for @authForgotPasswordSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'If a matching local account exists, a reset link has been sent.'**
+  String get authForgotPasswordSubmitted;
+
+  /// No description provided for @authResetPasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set new password'**
+  String get authResetPasswordTitle;
+
+  /// No description provided for @authResetPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a new password. The link is only valid for a limited time.'**
+  String get authResetPasswordHint;
+
+  /// No description provided for @authResetPasswordMissingParameters.
+  ///
+  /// In en, this message translates to:
+  /// **'The password reset link is incomplete or invalid.'**
+  String get authResetPasswordMissingParameters;
+
+  /// No description provided for @authResetPasswordPasswordRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a new password.'**
+  String get authResetPasswordPasswordRequired;
+
+  /// No description provided for @authResetPasswordSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Set password'**
+  String get authResetPasswordSubmit;
+
+  /// No description provided for @authResetPasswordSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Password has been reset.'**
+  String get authResetPasswordSuccess;
+
+  /// No description provided for @authNewPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'New password'**
+  String get authNewPasswordLabel;
+
+  /// No description provided for @authVerifyEmailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify email address'**
+  String get authVerifyEmailTitle;
+
+  /// No description provided for @authVerifyEmailInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying email address...'**
+  String get authVerifyEmailInProgress;
+
+  /// No description provided for @authVerifyEmailSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Email address verified. You can sign in now.'**
+  String get authVerifyEmailSuccess;
+
+  /// No description provided for @authVerifyEmailFailure.
+  ///
+  /// In en, this message translates to:
+  /// **'Email address could not be verified.'**
+  String get authVerifyEmailFailure;
+
+  /// No description provided for @authVerifyEmailMissingParameters.
+  ///
+  /// In en, this message translates to:
+  /// **'The verification link is incomplete or invalid.'**
+  String get authVerifyEmailMissingParameters;
+
   /// No description provided for @authHunterRegistrationSuccess.
   ///
   /// In en, this message translates to:
-  /// **'Hunter account created. The verification step was simulated for local development. You can sign in now.'**
+  /// **'Hunter account created. Verify your email address with the link we sent before signing in.'**
   String get authHunterRegistrationSuccess;
 
   /// No description provided for @authApprovalRequestSubmitted.

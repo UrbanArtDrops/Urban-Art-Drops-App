@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using UrbanArtDropFinder.Domain.Configuration;
 using UrbanArtDropFinder.Domain.Users;
 using UrbanArtDropFinder.Persistence.Db;
 
@@ -150,6 +151,9 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
     [Fact]
     public async Task RegisterLocal_ForHunter_PersistsHunterRoleAndAllowsVerifiedLogin()
     {
+        await ConfigureTransactionalMailAsync();
+        _factory.SmtpMailSender.Reset();
+
         var uniqueId = Guid.NewGuid().ToString("N");
         var email = $"hunter.{uniqueId}@example.com";
         var userName = $"hunter.{uniqueId}";
@@ -170,7 +174,39 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
         Assert.Equal(userName, registerResult.UserName);
         Assert.Equal(email, registerResult.Email);
 
-        var verifyResponse = await _client.PostAsync($"/api/auth/verify-email/{registerResult.UserId}", null);
+        var loginBeforeVerificationResponse = await _client.PostAsJsonAsync(
+            "/api/auth/login-local",
+            new
+            {
+                email,
+                password = "Aaaaaaaaaaaaaaa!"
+            });
+        Assert.Equal(HttpStatusCode.BadRequest, loginBeforeVerificationResponse.StatusCode);
+
+        var mailRequest = _factory.SmtpMailSender.LastRequest;
+        Assert.NotNull(mailRequest);
+        Assert.Contains(email, mailRequest!.Value.Message.Recipients);
+        var verificationUri = ExtractFirstUri(mailRequest.Value.Message.TextBody, "/auth/verify-email");
+        var verificationToken = ParseQueryParameter(verificationUri, "token");
+        Assert.False(string.IsNullOrWhiteSpace(verificationToken));
+        Assert.Equal(registerResult.UserId?.ToString(), ParseQueryParameter(verificationUri, "userId"));
+
+        var invalidVerifyResponse = await _client.PostAsJsonAsync(
+            "/api/auth/verify-email",
+            new
+            {
+                userId = registerResult.UserId,
+                token = "wrong-token"
+            });
+        Assert.Equal(HttpStatusCode.BadRequest, invalidVerifyResponse.StatusCode);
+
+        var verifyResponse = await _client.PostAsJsonAsync(
+            "/api/auth/verify-email",
+            new
+            {
+                userId = registerResult.UserId,
+                token = verificationToken
+            });
         await EnsureSuccessWithBodyAsync(verifyResponse);
 
         var loginResponse = await _client.PostAsJsonAsync(
@@ -189,6 +225,126 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
         Assert.False(string.IsNullOrWhiteSpace(loginResult.AccessToken));
         Assert.NotNull(loginResult.AccessTokenExpiresAtUtc);
         Assert.Equal("Bearer", loginResult.TokenType);
+    }
+
+    [Fact]
+    public async Task VerifyEmail_WithExpiredToken_DoesNotVerifyAccount()
+    {
+        var uniqueId = Guid.NewGuid().ToString("N");
+        var email = $"hunter.expired.{uniqueId}@example.com";
+        var token = $"expired-token-{uniqueId}";
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<UrbanArtDbContext>();
+            var passwordHasher = scope.ServiceProvider.GetRequiredService<UrbanArtDropFinder.Application.Abstractions.IPasswordHasher>();
+            var tokenHasher = scope.ServiceProvider.GetRequiredService<UrbanArtDropFinder.Application.Abstractions.IAccountTokenHasher>();
+            var user = UserAccount.CreateLocal(
+                email,
+                $"hunter-expired-{uniqueId}",
+                UserRole.Hunter,
+                passwordHasher.Hash("Aaaaaaaaaaaaaaa!"),
+                approved: true);
+            user.BeginEmailVerification(
+                tokenHasher.HashToken(token),
+                DateTimeOffset.UtcNow.AddMinutes(-5));
+            dbContext.UserAccounts.Add(user);
+            await dbContext.SaveChangesAsync();
+        }
+
+        var response = await _client.PostAsJsonAsync(
+            "/api/auth/verify-email",
+            new
+            {
+                userId = (await FindUserIdByEmailAsync(email)),
+                token
+            });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        using var verificationScope = _factory.Services.CreateScope();
+        var verificationDbContext = verificationScope.ServiceProvider.GetRequiredService<UrbanArtDbContext>();
+        var storedUser = await verificationDbContext.UserAccounts.SingleAsync(user => user.Email == email);
+        Assert.False(storedUser.IsEmailVerified);
+    }
+
+    [Fact]
+    public async Task PasswordReset_WithValidToken_ChangesLocalAccountPassword()
+    {
+        await ConfigureTransactionalMailAsync();
+        _factory.SmtpMailSender.Reset();
+
+        var uniqueId = Guid.NewGuid().ToString("N");
+        var email = $"hunter.reset.{uniqueId}@example.com";
+        const string oldPassword = "Aaaaaaaaaaaaaaa!";
+        const string newPassword = "Bbbbbbbbbbbbbbb!";
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<UrbanArtDbContext>();
+            var passwordHasher = scope.ServiceProvider.GetRequiredService<UrbanArtDropFinder.Application.Abstractions.IPasswordHasher>();
+            var user = UserAccount.CreateLocal(
+                email,
+                $"hunter-reset-{uniqueId}",
+                UserRole.Hunter,
+                passwordHasher.Hash(oldPassword),
+                approved: true);
+            user.MarkEmailVerified();
+            dbContext.UserAccounts.Add(user);
+            await dbContext.SaveChangesAsync();
+        }
+
+        var requestResponse = await _client.PostAsJsonAsync(
+            "/api/auth/password-reset/request",
+            new { email });
+        await EnsureSuccessWithBodyAsync(requestResponse);
+
+        var mailRequest = _factory.SmtpMailSender.LastRequest;
+        Assert.NotNull(mailRequest);
+        Assert.Contains(email, mailRequest!.Value.Message.Recipients);
+        var resetUri = ExtractFirstUri(mailRequest.Value.Message.TextBody, "/auth/reset-password");
+        var resetToken = ParseQueryParameter(resetUri, "token");
+        var userId = ParseQueryParameter(resetUri, "userId");
+        Assert.False(string.IsNullOrWhiteSpace(resetToken));
+        Assert.False(string.IsNullOrWhiteSpace(userId));
+
+        var invalidResetResponse = await _client.PostAsJsonAsync(
+            "/api/auth/password-reset/complete",
+            new
+            {
+                userId,
+                token = "wrong-token",
+                newPassword
+            });
+        Assert.Equal(HttpStatusCode.BadRequest, invalidResetResponse.StatusCode);
+
+        var completeResponse = await _client.PostAsJsonAsync(
+            "/api/auth/password-reset/complete",
+            new
+            {
+                userId,
+                token = resetToken,
+                newPassword
+            });
+        await EnsureSuccessWithBodyAsync(completeResponse);
+
+        var newLoginResponse = await _client.PostAsJsonAsync(
+            "/api/auth/login-local",
+            new
+            {
+                email,
+                password = newPassword
+            });
+        await EnsureSuccessWithBodyAsync(newLoginResponse);
+
+        var oldLoginResponse = await _client.PostAsJsonAsync(
+            "/api/auth/login-local",
+            new
+            {
+                email,
+                password = oldPassword
+            });
+        Assert.Equal(HttpStatusCode.BadRequest, oldLoginResponse.StatusCode);
     }
 
     [Fact]
@@ -604,6 +760,31 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
 
     private sealed record AvailableExternalProviderDto(string Provider, string DisplayName);
 
+    private async Task ConfigureTransactionalMailAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<UrbanArtDbContext>();
+        var configuration = await dbContext.AppConfigurations.FirstAsync();
+        configuration.SmtpHost = "smtp.test";
+        configuration.SmtpPort = 465;
+        configuration.SmtpSecurityMode = SmtpSecurityMode.Tls;
+        configuration.SmtpUserName = "smtp-user";
+        configuration.SmtpUserEmail = "noreply@example.com";
+        configuration.SmtpPasswordSecretName = "Smtp:Password";
+        configuration.PublicAppBaseUrl = "https://app.test";
+        await dbContext.SaveChangesAsync();
+    }
+
+    private async Task<Guid> FindUserIdByEmailAsync(string email)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<UrbanArtDbContext>();
+        return await dbContext.UserAccounts
+            .Where(user => user.Email == email)
+            .Select(user => user.Id)
+            .SingleAsync();
+    }
+
     private static async Task EnsureSuccessWithBodyAsync(HttpResponseMessage response)
     {
         if (response.IsSuccessStatusCode)
@@ -636,5 +817,21 @@ public sealed class AuthEndpointsTests : IClassFixture<TestWebApplicationFactory
         }
 
         return null;
+    }
+
+    private static Uri ExtractFirstUri(string text, string expectedPath)
+    {
+        var candidates = text.Split([' ', '\r', '\n', '\t'], StringSplitOptions.RemoveEmptyEntries);
+        foreach (var candidate in candidates)
+        {
+            var normalized = candidate.Trim().TrimEnd('.', ',', ';', ')');
+            if (Uri.TryCreate(normalized, UriKind.Absolute, out var uri) &&
+                string.Equals(uri.AbsolutePath, expectedPath, StringComparison.OrdinalIgnoreCase))
+            {
+                return uri;
+            }
+        }
+
+        throw new Xunit.Sdk.XunitException($"No URI with path '{expectedPath}' found in '{text}'.");
     }
 }

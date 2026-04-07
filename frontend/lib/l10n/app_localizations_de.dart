@@ -803,8 +803,71 @@ class AppLocalizationsDe extends AppLocalizations {
   String get authMfaRequired => 'MFA ist fuer dieses Konto erforderlich.';
 
   @override
+  String get authForgotPasswordAction => 'Passwort vergessen?';
+
+  @override
+  String get authForgotPasswordTitle => 'Passwort zuruecksetzen';
+
+  @override
+  String get authForgotPasswordHint =>
+      'Gib die E-Mail-Adresse deines lokalen Kontos ein. Wenn ein passendes Konto existiert, senden wir einen Link zum Zuruecksetzen.';
+
+  @override
+  String get authForgotPasswordEmailRequired =>
+      'Bitte E-Mail-Adresse eingeben.';
+
+  @override
+  String get authForgotPasswordSubmit => 'Reset-Link anfordern';
+
+  @override
+  String get authForgotPasswordSubmitted =>
+      'Wenn ein passendes lokales Konto existiert, wurde ein Reset-Link gesendet.';
+
+  @override
+  String get authResetPasswordTitle => 'Neues Passwort setzen';
+
+  @override
+  String get authResetPasswordHint =>
+      'Gib ein neues Passwort ein. Der Link ist nur zeitlich begrenzt gueltig.';
+
+  @override
+  String get authResetPasswordMissingParameters =>
+      'Der Passwort-Reset-Link ist unvollstaendig oder ungueltig.';
+
+  @override
+  String get authResetPasswordPasswordRequired =>
+      'Bitte neues Passwort eingeben.';
+
+  @override
+  String get authResetPasswordSubmit => 'Passwort setzen';
+
+  @override
+  String get authResetPasswordSuccess => 'Passwort wurde zurueckgesetzt.';
+
+  @override
+  String get authNewPasswordLabel => 'Neues Passwort';
+
+  @override
+  String get authVerifyEmailTitle => 'E-Mail-Adresse bestaetigen';
+
+  @override
+  String get authVerifyEmailInProgress => 'E-Mail-Adresse wird bestaetigt...';
+
+  @override
+  String get authVerifyEmailSuccess =>
+      'E-Mail-Adresse wurde bestaetigt. Du kannst dich jetzt anmelden.';
+
+  @override
+  String get authVerifyEmailFailure =>
+      'E-Mail-Adresse konnte nicht bestaetigt werden.';
+
+  @override
+  String get authVerifyEmailMissingParameters =>
+      'Der Verifikationslink ist unvollstaendig oder ungueltig.';
+
+  @override
   String get authHunterRegistrationSuccess =>
-      'Hunter-Konto erstellt. Die Verifikation wurde fuer die lokale Entwicklung simuliert. Du kannst dich jetzt anmelden.';
+      'Hunter-Konto erstellt. Bitte bestaetige deine E-Mail-Adresse ueber den zugesendeten Link, bevor du dich anmeldest.';
 
   @override
   String get authApprovalRequestSubmitted =>

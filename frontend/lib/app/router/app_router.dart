@@ -9,9 +9,12 @@ import "../../features/admin/presentation/pages/admin_user_management_page.dart"
 import "../../features/artist_area/presentation/pages/artist_art_pieces_page.dart";
 import "../../features/authentication/presentation/bloc/auth_session_cubit.dart";
 import "../../features/authentication/presentation/pages/bootstrap_admin_page.dart";
+import "../../features/authentication/presentation/pages/forgot_password_page.dart";
 import "../../features/authentication/presentation/pages/login_page.dart";
 import "../../features/authentication/presentation/pages/profile_page.dart";
 import "../../features/authentication/presentation/pages/register_page.dart";
+import "../../features/authentication/presentation/pages/reset_password_page.dart";
+import "../../features/authentication/presentation/pages/verify_email_page.dart";
 import "../../features/discovery/presentation/pages/claim_page.dart";
 import "../../features/discovery/presentation/pages/drop_detail_page.dart";
 import "../../features/discovery/presentation/pages/drop_list_page.dart";
@@ -90,6 +93,24 @@ GoRouter createAppRouter(AuthSessionCubit authSessionCubit) {
       GoRoute(
         path: "/auth/bootstrap-admin",
         builder: (context, state) => const BootstrapAdminPage(),
+      ),
+      GoRoute(
+        path: "/auth/forgot-password",
+        builder: (context, state) => const ForgotPasswordPage(),
+      ),
+      GoRoute(
+        path: "/auth/reset-password",
+        builder: (context, state) => ResetPasswordPage(
+          userId: state.uri.queryParameters["userId"],
+          token: state.uri.queryParameters["token"],
+        ),
+      ),
+      GoRoute(
+        path: "/auth/verify-email",
+        builder: (context, state) => VerifyEmailPage(
+          userId: state.uri.queryParameters["userId"],
+          token: state.uri.queryParameters["token"],
+        ),
       ),
       GoRoute(
         path: "/auth/profile",

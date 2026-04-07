@@ -199,12 +199,59 @@ class AppApiClient {
     return ManagedUser.fromJson(_decodeObjectResponse(response));
   }
 
-  Future<void> verifyEmail(String userId) async {
+  Future<AccountActionResultModel> requestEmailVerification({
+    required String email,
+  }) async {
     final response = await _httpClient.post(
-      _uri("/api/auth/verify-email/$userId"),
-      headers: _headers(includeAuthorization: false),
+      _uri("/api/auth/email-verification/request"),
+      headers: _jsonHeaders(includeAuthorization: false),
+      body: jsonEncode({"email": email}),
+    );
+    _ensureSuccess(response, "Failed to request email verification.");
+    return AccountActionResultModel.fromJson(_decodeObjectResponse(response));
+  }
+
+  Future<AccountActionResultModel> verifyEmail({
+    required String userId,
+    required String token,
+  }) async {
+    final response = await _httpClient.post(
+      _uri("/api/auth/verify-email"),
+      headers: _jsonHeaders(includeAuthorization: false),
+      body: jsonEncode({"userId": userId, "token": token}),
     );
     _ensureSuccess(response, "Failed to verify email.");
+    return AccountActionResultModel.fromJson(_decodeObjectResponse(response));
+  }
+
+  Future<AccountActionResultModel> requestPasswordReset({
+    required String email,
+  }) async {
+    final response = await _httpClient.post(
+      _uri("/api/auth/password-reset/request"),
+      headers: _jsonHeaders(includeAuthorization: false),
+      body: jsonEncode({"email": email}),
+    );
+    _ensureSuccess(response, "Failed to request password reset.");
+    return AccountActionResultModel.fromJson(_decodeObjectResponse(response));
+  }
+
+  Future<AccountActionResultModel> completePasswordReset({
+    required String userId,
+    required String token,
+    required String newPassword,
+  }) async {
+    final response = await _httpClient.post(
+      _uri("/api/auth/password-reset/complete"),
+      headers: _jsonHeaders(includeAuthorization: false),
+      body: jsonEncode({
+        "userId": userId,
+        "token": token,
+        "newPassword": newPassword,
+      }),
+    );
+    _ensureSuccess(response, "Failed to reset password.");
+    return AccountActionResultModel.fromJson(_decodeObjectResponse(response));
   }
 
   Future<CurrentUserProfileModel> getCurrentUserProfile() async {

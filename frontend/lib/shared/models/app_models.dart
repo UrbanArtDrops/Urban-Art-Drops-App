@@ -151,6 +151,23 @@ class AuthResultModel {
   final String? mfaProvisioningUri;
 }
 
+class AccountActionResultModel {
+  const AccountActionResultModel({
+    required this.success,
+    required this.message,
+  });
+
+  factory AccountActionResultModel.fromJson(Map<String, dynamic> json) {
+    return AccountActionResultModel(
+      success: _readBool(json, "success", "Success"),
+      message: _readString(json, "message", "Message"),
+    );
+  }
+
+  final bool success;
+  final String message;
+}
+
 class ExternalProviderAuthStartModel {
   const ExternalProviderAuthStartModel({
     required this.authorizationUrl,

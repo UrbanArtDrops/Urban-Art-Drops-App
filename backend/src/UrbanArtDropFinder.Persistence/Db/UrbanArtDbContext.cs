@@ -36,6 +36,8 @@ public sealed class UrbanArtDbContext : DbContext
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Email).IsRequired();
             entity.Property(x => x.UserName).IsRequired();
+            entity.Property(x => x.EmailVerificationTokenHash).HasMaxLength(128);
+            entity.Property(x => x.PasswordResetTokenHash).HasMaxLength(128);
             entity.Property(x => x.MfaSecretKey).HasMaxLength(128);
             entity.HasIndex(x => x.Email).IsUnique();
             entity.HasIndex(x => x.UserName).IsUnique();

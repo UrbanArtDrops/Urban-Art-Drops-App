@@ -12,6 +12,8 @@
 - Provider auth uses a backend-coordinated OAuth 2.0 / OIDC browser flow instead of Firebase: the Flutter client asks the API for an authorization URL, opens the system browser, and completes the login only after the backend callback has exchanged the authorization code and resolved the external identity
 - App-based MFA for Admin and Moderator is enforced by the authentication boundary before an access token is issued
 - Exponential login backoff: 15s, 30s, 60s, 120s
+- Local email verification and password reset use single-use secure random tokens that are stored only as hashes on the user account record; email verification tokens expire after 24 hours and password reset tokens expire after 1 hour
+- Local Hunter registration starts as approved but unverified until the email verification link is completed; password reset completion also clears stale login backoff state after the token is validated
 - Local and provider self-service registration always create an approved Hunter account first; Hunters request Artist or Drop-Maker access later from the main profile area, and admins approve or reject those role applications in user management
 - Local login no longer asks the client to pick a role; the API returns the stored role and identity payload for the session
 - The API now issues bearer access tokens for local login and enforces authorization policies at the endpoint boundary for admin, moderation, artist and drop-creator workflows

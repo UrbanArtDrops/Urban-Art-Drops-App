@@ -10,6 +10,16 @@ public sealed record LoginLocalRequest(string Email, string Password);
 
 public sealed record LoginProviderRequest(string Provider, string ProviderSubject, string Email);
 
+public sealed record RequestEmailVerificationRequest(string Email);
+
+public sealed record CompleteEmailVerificationRequest(Guid UserId, string Token);
+
+public sealed record RequestPasswordResetRequest(string Email);
+
+public sealed record CompletePasswordResetRequest(Guid UserId, string Token, string NewPassword);
+
+public sealed record AccountActionResult(bool Success, string Message);
+
 public sealed record BeginExternalProviderLoginRequest(string Provider, string CallbackUrl);
 
 public sealed record BeginExternalProviderRegistrationRequest(

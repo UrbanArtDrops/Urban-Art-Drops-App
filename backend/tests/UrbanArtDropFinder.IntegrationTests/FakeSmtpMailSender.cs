@@ -9,6 +9,12 @@ public sealed class FakeSmtpMailSender : ISmtpMailSender
 
     public (SmtpMailMessage Message, SmtpDeliveryOptions DeliveryOptions)? LastRequest { get; private set; }
 
+    public void Reset()
+    {
+        Handler = static (_, _, _) => Task.FromResult(new SmtpMailSendResult(true, "SMTP message sent."));
+        LastRequest = null;
+    }
+
     public Task<SmtpMailSendResult> SendAsync(
         SmtpMailMessage message,
         SmtpDeliveryOptions deliveryOptions,

@@ -215,9 +215,31 @@ var supportedExternalProviders = new HashSet<string>(StringComparer.OrdinalIgnor
 authGroup.MapPost("/register-local", async (
     RegisterLocalRequest request,
     AuthApplicationService authService,
+    UrbanArtDbContext dbContext,
+    ITokenGenerator tokenGenerator,
+    IAccountTokenHasher accountTokenHasher,
+    ISmtpMailSender smtpMailSender,
+    ISmtpSecretResolver smtpSecretResolver,
+    IClock clock,
+    HttpContext httpContext,
     CancellationToken cancellationToken) =>
 {
     var result = await authService.RegisterLocalAsync(request, cancellationToken);
+    if (result.Success && result.UserId.HasValue)
+    {
+        var user = await dbContext.UserAccounts.FirstAsync(account => account.Id == result.UserId.Value, cancellationToken);
+        await BeginEmailVerificationAsync(
+            user,
+            httpContext.Request,
+            tokenGenerator,
+            accountTokenHasher,
+            smtpMailSender,
+            smtpSecretResolver,
+            dbContext,
+            clock,
+            cancellationToken);
+    }
+
     return result.Success ? Results.Ok(result) : Results.BadRequest(result);
 });
 
@@ -345,20 +367,124 @@ authGroup.MapPost("/mfa/complete", async (
     return result.Success ? Results.Ok(result) : Results.BadRequest(result);
 });
 
-authGroup.MapPost("/verify-email/{userId:guid}", async (
-    Guid userId,
+authGroup.MapPost("/email-verification/request", async (
+    RequestEmailVerificationRequest request,
     UrbanArtDbContext dbContext,
+    ITokenGenerator tokenGenerator,
+    IAccountTokenHasher accountTokenHasher,
+    ISmtpMailSender smtpMailSender,
+    ISmtpSecretResolver smtpSecretResolver,
+    IClock clock,
+    HttpContext httpContext,
     CancellationToken cancellationToken) =>
 {
-    var user = await dbContext.UserAccounts.FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
+    var normalizedEmail = NormalizeOptionalText(request.Email)?.ToLowerInvariant();
+    var user = normalizedEmail is null
+        ? null
+        : await dbContext.UserAccounts.FirstOrDefaultAsync(
+            account => account.Email == normalizedEmail,
+            cancellationToken);
+    if (user is not null && !user.IsProviderAccount && !user.IsEmailVerified)
+    {
+        await BeginEmailVerificationAsync(
+            user,
+            httpContext.Request,
+            tokenGenerator,
+            accountTokenHasher,
+            smtpMailSender,
+            smtpSecretResolver,
+            dbContext,
+            clock,
+            cancellationToken);
+    }
+
+    return Results.Ok(new AccountActionResult(true, "If the account exists, an email verification link was sent."));
+});
+
+authGroup.MapPost("/verify-email", async (
+    CompleteEmailVerificationRequest request,
+    UrbanArtDbContext dbContext,
+    IAccountTokenHasher accountTokenHasher,
+    IClock clock,
+    CancellationToken cancellationToken) =>
+{
+    var user = await dbContext.UserAccounts.FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken);
     if (user is null)
     {
-        return Results.NotFound();
+        return Results.BadRequest(new AccountActionResult(false, "Email verification token is invalid or expired."));
+    }
+
+    if (!user.CanCompleteEmailVerification(clock.UtcNow) ||
+        !accountTokenHasher.VerifyToken(user.EmailVerificationTokenHash, request.Token))
+    {
+        return Results.BadRequest(new AccountActionResult(false, "Email verification token is invalid or expired."));
     }
 
     user.MarkEmailVerified();
     await dbContext.SaveChangesAsync(cancellationToken);
-    return Results.Ok();
+    return Results.Ok(new AccountActionResult(true, "Email address verified."));
+});
+
+authGroup.MapPost("/password-reset/request", async (
+    RequestPasswordResetRequest request,
+    UrbanArtDbContext dbContext,
+    ITokenGenerator tokenGenerator,
+    IAccountTokenHasher accountTokenHasher,
+    ISmtpMailSender smtpMailSender,
+    ISmtpSecretResolver smtpSecretResolver,
+    IClock clock,
+    HttpContext httpContext,
+    CancellationToken cancellationToken) =>
+{
+    var normalizedEmail = NormalizeOptionalText(request.Email)?.ToLowerInvariant();
+    var user = normalizedEmail is null
+        ? null
+        : await dbContext.UserAccounts.FirstOrDefaultAsync(
+            account => account.Email == normalizedEmail,
+            cancellationToken);
+    if (user is not null && !user.IsProviderAccount && user.PasswordHash is not null)
+    {
+        var token = tokenGenerator.GenerateSecureToken(48);
+        user.BeginPasswordReset(accountTokenHasher.HashToken(token), clock.UtcNow.AddHours(1));
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await SendPasswordResetEmailAsync(
+            user,
+            token,
+            httpContext.Request,
+            dbContext,
+            smtpMailSender,
+            smtpSecretResolver,
+            cancellationToken);
+    }
+
+    return Results.Ok(new AccountActionResult(true, "If the account exists, a password reset link was sent."));
+});
+
+authGroup.MapPost("/password-reset/complete", async (
+    CompletePasswordResetRequest request,
+    UrbanArtDbContext dbContext,
+    IPasswordHasher passwordHasher,
+    IAccountTokenHasher accountTokenHasher,
+    IClock clock,
+    CancellationToken cancellationToken) =>
+{
+    var validation = PasswordPolicy.Validate(request.NewPassword);
+    if (!validation.IsValid)
+    {
+        return Results.BadRequest(new AccountActionResult(false, validation.Error ?? "Invalid password."));
+    }
+
+    var user = await dbContext.UserAccounts.FirstOrDefaultAsync(account => account.Id == request.UserId, cancellationToken);
+    if (user is null ||
+        !user.CanCompletePasswordReset(clock.UtcNow) ||
+        !accountTokenHasher.VerifyToken(user.PasswordResetTokenHash, request.Token))
+    {
+        return Results.BadRequest(new AccountActionResult(false, "Password reset token is invalid or expired."));
+    }
+
+    user.CompletePasswordReset(passwordHasher.Hash(request.NewPassword));
+    await dbContext.SaveChangesAsync(cancellationToken);
+    return Results.Ok(new AccountActionResult(true, "Password has been reset."));
 });
 
 var profileGroup = app.MapGroup("/api/profile");
@@ -2394,6 +2520,119 @@ static string? NormalizeOptionalText(string? value)
 {
     var normalized = value?.Trim();
     return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
+}
+
+static async Task BeginEmailVerificationAsync(
+    UserAccount user,
+    HttpRequest request,
+    ITokenGenerator tokenGenerator,
+    IAccountTokenHasher accountTokenHasher,
+    ISmtpMailSender smtpMailSender,
+    ISmtpSecretResolver smtpSecretResolver,
+    UrbanArtDbContext dbContext,
+    IClock clock,
+    CancellationToken cancellationToken)
+{
+    var token = tokenGenerator.GenerateSecureToken(48);
+    user.BeginEmailVerification(accountTokenHasher.HashToken(token), clock.UtcNow.AddHours(24));
+    await dbContext.SaveChangesAsync(cancellationToken);
+    await SendEmailVerificationEmailAsync(
+        user,
+        token,
+        request,
+        dbContext,
+        smtpMailSender,
+        smtpSecretResolver,
+        cancellationToken);
+}
+
+static async Task<bool> SendEmailVerificationEmailAsync(
+    UserAccount user,
+    string token,
+    HttpRequest request,
+    UrbanArtDbContext dbContext,
+    ISmtpMailSender smtpMailSender,
+    ISmtpSecretResolver smtpSecretResolver,
+    CancellationToken cancellationToken)
+{
+    var configuration = await GetConfigurationAsync(dbContext, cancellationToken);
+    var appBaseUri = ResolvePublicAppBaseUrl(configuration, request);
+    var verificationUrl = $"{appBaseUri}/auth/verify-email?userId={Uri.EscapeDataString(user.Id.ToString())}&token={Uri.EscapeDataString(token)}";
+    var body = string.Join(
+        Environment.NewLine,
+        "Bitte bestaetige deine Urban Art Drops E-Mail-Adresse innerhalb von 24 Stunden:",
+        verificationUrl,
+        string.Empty,
+        "If you did not create this account, ignore this message.");
+
+    return await SendTransactionalEmailAsync(
+        dbContext,
+        smtpMailSender,
+        smtpSecretResolver,
+        user.Email,
+        "Urban Art Drops E-Mail-Adresse bestaetigen",
+        body,
+        cancellationToken);
+}
+
+static async Task<bool> SendPasswordResetEmailAsync(
+    UserAccount user,
+    string token,
+    HttpRequest request,
+    UrbanArtDbContext dbContext,
+    ISmtpMailSender smtpMailSender,
+    ISmtpSecretResolver smtpSecretResolver,
+    CancellationToken cancellationToken)
+{
+    var configuration = await GetConfigurationAsync(dbContext, cancellationToken);
+    var appBaseUri = ResolvePublicAppBaseUrl(configuration, request);
+    var resetUrl = $"{appBaseUri}/auth/reset-password?userId={Uri.EscapeDataString(user.Id.ToString())}&token={Uri.EscapeDataString(token)}";
+    var body = string.Join(
+        Environment.NewLine,
+        "Mit diesem Link kannst du dein Urban Art Drops Passwort innerhalb von 1 Stunde zuruecksetzen:",
+        resetUrl,
+        string.Empty,
+        "If you did not request this reset, ignore this message.");
+
+    return await SendTransactionalEmailAsync(
+        dbContext,
+        smtpMailSender,
+        smtpSecretResolver,
+        user.Email,
+        "Urban Art Drops Passwort zuruecksetzen",
+        body,
+        cancellationToken);
+}
+
+static async Task<bool> SendTransactionalEmailAsync(
+    UrbanArtDbContext dbContext,
+    ISmtpMailSender smtpMailSender,
+    ISmtpSecretResolver smtpSecretResolver,
+    string recipientEmail,
+    string subject,
+    string body,
+    CancellationToken cancellationToken)
+{
+    var configuration = await GetConfigurationAsync(dbContext, cancellationToken);
+    var smtpHost = NormalizeOptionalText(configuration.SmtpHost);
+    var senderEmail = NormalizeOptionalText(configuration.SmtpUserEmail);
+    if (smtpHost is null || senderEmail is null)
+    {
+        return false;
+    }
+
+    var smtpPassword = smtpSecretResolver.ResolveSecret(configuration.SmtpPasswordSecretName);
+    var result = await smtpMailSender.SendAsync(
+        new SmtpMailMessage(senderEmail, [recipientEmail], subject, body),
+        new SmtpDeliveryOptions(
+            smtpHost,
+            configuration.SmtpPort,
+            configuration.SmtpSecurityMode,
+            NormalizeOptionalText(configuration.SmtpUserName),
+            smtpPassword),
+        cancellationToken);
+
+    return result.Success;
 }
 
 static async Task<bool> SendModerationReportAlertAsync(

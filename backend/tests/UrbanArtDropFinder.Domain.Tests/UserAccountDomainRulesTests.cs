@@ -72,4 +72,43 @@ public sealed class UserAccountDomainRulesTests
         Assert.Null(user.PendingRoleApplication);
         Assert.Null(user.PendingRoleApplicationRequestedAtUtc);
     }
+
+    [Fact]
+    public void BeginEmailVerification_ResetsVerificationStateAndStoresExpiry()
+    {
+        var user = UserAccount.CreateLocal(
+            "hunter@example.com",
+            "hunter",
+            UserRole.Hunter,
+            "hash",
+            approved: true);
+        user.MarkEmailVerified();
+        var expiresAtUtc = DateTimeOffset.Parse("2026-04-08T10:00:00+00:00");
+
+        user.BeginEmailVerification("token-hash", expiresAtUtc);
+
+        Assert.False(user.IsEmailVerified);
+        Assert.Equal("token-hash", user.EmailVerificationTokenHash);
+        Assert.Equal(expiresAtUtc, user.EmailVerificationTokenExpiresAtUtc);
+    }
+
+    [Fact]
+    public void CompletePasswordReset_ChangesPasswordAndClearsToken()
+    {
+        var user = UserAccount.CreateLocal(
+            "hunter@example.com",
+            "hunter",
+            UserRole.Hunter,
+            "old-hash",
+            approved: true);
+        user.BeginPasswordReset("reset-hash", DateTimeOffset.Parse("2026-04-08T10:00:00+00:00"));
+
+        user.CompletePasswordReset("new-hash");
+
+        Assert.Equal("new-hash", user.PasswordHash);
+        Assert.Null(user.PasswordResetTokenHash);
+        Assert.Null(user.PasswordResetTokenExpiresAtUtc);
+        Assert.Equal(0, user.FailedLoginAttempts);
+        Assert.Null(user.NextLoginAllowedAtUtc);
+    }
 }
