@@ -16,7 +16,8 @@ public sealed record SocialMediaPublishRequest(
     string ArtPieceTitle,
     string DropMakerDisplayName,
     string? DropMakerComment,
-    string? PublicDropUrl);
+    string? PublicDropUrl,
+    IReadOnlyCollection<string> ImageUrls);
 
 /// <summary>Represents the provider result of a social media publish attempt.</summary>
 public sealed record SocialMediaPublishResult(

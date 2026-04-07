@@ -364,6 +364,12 @@ public sealed class DropEndpointsTests : IClassFixture<TestWebApplicationFactory
         Assert.Equal(
             ["Instagram", "TikTok"],
             _factory.SocialMediaPublisher.Requests.Select(request => request.Channel).Order().ToArray());
+        Assert.All(
+            _factory.SocialMediaPublisher.Requests,
+            request => Assert.Contains(
+                "/api/media/drop-location-photos/",
+                Assert.Single(request.ImageUrls),
+                StringComparison.Ordinal));
 
         var reloadedResponse = await _client.GetAsync($"/api/drops/{createdDrop.Id}");
         await EnsureSuccessWithBodyAsync(reloadedResponse);

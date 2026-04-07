@@ -17,8 +17,18 @@
 - SMTP passwords must be supplied through configuration or secret storage, for example a key referenced by `SmtpPasswordSecretName`; they are not stored as cleartext in SQL app configuration
 - Social media provider settings under `SocialMedia:Providers:<channel>` when automatic publishing is enabled:
   - `Enabled`
-  - `PublishEndpoint`
   - `AccessTokenSecretName`
+  - `ProviderKind` when the channel name should use another built-in publisher implementation
+  - `ApiBaseUrl` to override the default provider API root in tests or non-standard environments
+  - Facebook: `PageId` and optionally `PublishEndpoint` for the page feed endpoint
+  - Instagram: `BusinessAccountId` or `InstagramBusinessAccountId`; optionally `MediaEndpoint` and `PublishEndpoint`; the publisher creates a media container from the first public drop image URL and then calls `media_publish`
+  - TikTok: optional `PublishEndpoint`, `PrivacyLevel`, `DisableComment`, `AutoAddMusic` and `PhotoCoverIndex`; the publisher uses the Content Posting API photo-pull payload
+  - Custom providers: `PublishEndpoint`; the API sends a generic JSON payload containing drop metadata, public URL and public image URLs
+- Social publishing resilience settings:
+  - `SocialMedia:Retry:MaxAttempts` defaults to `3`
+  - `SocialMedia:Retry:BaseDelayMilliseconds` defaults to `250`
+  - `SocialMedia:CircuitBreaker:FailureThreshold` defaults to `3`
+  - `SocialMedia:CircuitBreaker:BreakDurationSeconds` defaults to `60`
 - Public app base URL setting
 - Map radius configuration
   - `MainMapRadiusKm` (default 30)
@@ -132,7 +142,7 @@
 - Draft and persisted drops store an optional drop-maker comment plus a selected list of social channels
 - The production step must be confirmed before QR generation, and the placement step must be confirmed before final publish
 - Final placement writes coordinates, location photos and the placement confirmation through `PUT /api/drops/{id}` and can publish the drop immediately afterwards
-- Publishing a drop with selected social channels attempts provider publishing through the configured `SocialMedia:Providers:<channel>` integration and stores per-channel publish status on the drop
+- Publishing a drop with selected social channels attempts provider publishing through the configured `SocialMedia:Providers:<channel>` integration and stores per-channel publish status on the drop. Built-in publishers exist for Facebook page-feed posts, Instagram media-container publishing and TikTok Content Posting API photo posts; custom channels still use the generic JSON endpoint path.
 - Admins can open the same drop management area to inspect and manage all drops across drop-makers, and admin-triggered drop changes create persisted in-app notifications for the impacted drop-maker accounts
 
 ## Admin Content Management

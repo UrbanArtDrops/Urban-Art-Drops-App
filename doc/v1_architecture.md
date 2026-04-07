@@ -46,7 +46,7 @@
 - Re-entering the quantity step of the drop-maker wizard preserves existing claimed and reusable QR items instead of recreating the entire item set on every update
 - The drop-maker wizard finishes the flow by updating location coordinates, uploading local location photos as data URLs and optionally publishing the completed drop
 - Drops persist an optional drop-maker comment plus an explicit selection of target social channels so publication intent remains part of the domain model instead of UI-only state
-- Publishing a drop attempts social publication for the selected channels through the configured provider integration and stores per-channel publish status on the drop
+- Publishing a drop attempts social publication for the selected channels through the configured provider integration and stores per-channel publish status on the drop. The backend contains provider-specific adapters for Facebook page-feed posts, Instagram media-container publishing and TikTok photo posts, plus a generic JSON adapter for custom channels.
 - Drop detail now loads persisted comments from the API, allows eligible signed-in roles to post comments, and exposes report actions for comments and linked art pieces
 - Reported comments and art pieces are persisted with reason and timestamp metadata so the moderation queue can be resolved without losing audit context
 - Artists can access reported drop comments that belong to drops created from their own art pieces, drop-makers can access reported drop comments for their own drops, and moderator/admin users continue to manage the global queue and art-piece moderation actions
@@ -74,6 +74,7 @@
 - JWT signing keys must be supplied outside source control for stable environments; local development can fall back to an ephemeral in-memory signing key for the running process
 - Admin configuration is persisted in SQL and currently drives SMTP host, SMTP port, SMTP security mode, SMTP user identity fields, SMTP password secret reference, public app base URL, map radii and exact-position rendering behavior
 - SMTP password material is resolved from runtime configuration or secret storage through the stored secret reference; it is not persisted as cleartext in the application configuration table
+- Social media publishing resolves access tokens through runtime configuration secret references, sends provider-specific payloads for Facebook, Instagram and TikTok, and protects external provider calls with bounded retry/backoff plus an in-memory circuit breaker per channel
 - Admin content management provides a global operational surface for art pieces and drops while delegating actual publish, depublish and delete operations to the existing protected APIs
 - The admin configuration screen also shows the current external-provider status snapshot from backend configuration, including login visibility, client-id presence, client-secret presence, and PKCE usage
 - Backup target: daily with 14-day retention

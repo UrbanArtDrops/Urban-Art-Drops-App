@@ -2703,8 +2703,12 @@ static async Task PublishDropToSocialChannelsAsync(
         .AsNoTracking()
         .FirstOrDefaultAsync(user => user.Id == drop.DropMakerId, cancellationToken);
     var configuration = await GetConfigurationAsync(dbContext, cancellationToken);
+    var apiBaseUri = $"{request.Scheme}://{request.Host}";
     var appBaseUri = ResolvePublicAppBaseUrl(configuration, request);
     var publicDropUrl = $"{appBaseUri}/hunter/drops/{drop.Id}";
+    var imageUrls = drop.LocationPhotos
+        .Select(photo => $"{apiBaseUri}/api/media/drop-location-photos/{photo.Id}")
+        .ToList();
     var nowUtc = DateTimeOffset.UtcNow;
 
     foreach (var channel in channels)
@@ -2716,7 +2720,8 @@ static async Task PublishDropToSocialChannelsAsync(
                 artPiece?.Title ?? drop.ArtPieceId.ToString(),
                 dropMaker?.UserName ?? drop.DropMakerId.ToString(),
                 drop.DropMakerComment,
-                publicDropUrl),
+                publicDropUrl,
+                imageUrls),
             cancellationToken);
 
         var existingStatus = await dbContext.DropSocialPublishStatuses
