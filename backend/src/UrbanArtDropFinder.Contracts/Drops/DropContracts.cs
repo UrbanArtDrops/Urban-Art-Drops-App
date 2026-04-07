@@ -7,6 +7,8 @@ public sealed record CreateDropRequest(
     int? PortableItemCount,
     string? DropMakerComment,
     IReadOnlyCollection<string> SocialChannels,
+    bool ProductionPrinted,
+    bool PlacementConfirmed,
     double? Latitude,
     double? Longitude,
     IReadOnlyCollection<string> LocationPhotoUrls,

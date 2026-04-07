@@ -455,6 +455,7 @@ class _MyDropsPageState extends State<MyDropsPage> {
               artDescription: art?.description ?? "",
               dropMakerComment: drop.dropMakerComment,
               socialChannels: drop.socialChannels,
+              socialPublishStatuses: drop.socialPublishStatuses,
               l10n: l10n,
             ),
             galleryUrls: [...?art?.photoUrls, ...drop.locationPhotoUrls],
@@ -621,6 +622,7 @@ String _buildDropDescription({
   required String artDescription,
   required String? dropMakerComment,
   required List<String> socialChannels,
+  required List<DropSocialPublishStatusModel> socialPublishStatuses,
   required AppLocalizations l10n,
 }) {
   final segments = <String>[];
@@ -637,6 +639,12 @@ String _buildDropDescription({
   if (socialChannels.isNotEmpty) {
     segments.add(
       "${l10n.dropSocialChannelsLabel}: ${socialChannels.join(", ")}",
+    );
+  }
+
+  if (socialPublishStatuses.isNotEmpty) {
+    segments.add(
+      "${l10n.dropSocialPublishStatusLabel}: ${socialPublishStatuses.map((status) => "${status.channel} ${status.status}").join(", ")}",
     );
   }
 

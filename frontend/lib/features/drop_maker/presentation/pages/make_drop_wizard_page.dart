@@ -530,8 +530,11 @@ class _MakeDropWizardPageState extends State<MakeDropWizardPage> {
         return l10n.makeDropItemCountInvalid;
       case MakeDropWizardDraftValidationError.invalidPortableItemCount:
         return l10n.makeDropPortableItemCountInvalid;
+      case MakeDropWizardDraftValidationError.missingPrintConfirmation:
+        return l10n.makeDropPrintConfirmationRequired;
       case MakeDropWizardDraftValidationError.missingLocation:
       case MakeDropWizardDraftValidationError.missingLocationPhotos:
+      case MakeDropWizardDraftValidationError.missingPlacementConfirmation:
         return l10n.genericSaveError;
     }
   }
@@ -545,10 +548,13 @@ class _MakeDropWizardPageState extends State<MakeDropWizardPage> {
         return l10n.makeDropLocationRequired;
       case MakeDropWizardDraftValidationError.missingLocationPhotos:
         return l10n.makeDropLocationPhotosRequired;
+      case MakeDropWizardDraftValidationError.missingPlacementConfirmation:
+        return l10n.makeDropPlacementConfirmationRequired;
       case MakeDropWizardDraftValidationError.missingArtPiece:
       case MakeDropWizardDraftValidationError.missingDropMaker:
       case MakeDropWizardDraftValidationError.invalidItemCount:
       case MakeDropWizardDraftValidationError.invalidPortableItemCount:
+      case MakeDropWizardDraftValidationError.missingPrintConfirmation:
         return l10n.genericSaveError;
     }
   }
@@ -1027,6 +1033,22 @@ class _MakeDropWizardPageState extends State<MakeDropWizardPage> {
               ),
             ],
             const SizedBox(height: 12),
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              value: _draft.productionPrinted,
+              onChanged: _isSaving
+                  ? null
+                  : (value) {
+                      setState(() {
+                        _draft = _draft.copyWith(
+                          productionPrinted: value ?? false,
+                        );
+                      });
+                    },
+              title: Text(l10n.makeDropProductionPrintedLabel),
+              subtitle: Text(l10n.makeDropProductionPrintedDescription),
+            ),
+            const SizedBox(height: 12),
             TextField(
               controller: _dropMakerCommentController,
               minLines: 3,
@@ -1243,6 +1265,22 @@ class _MakeDropWizardPageState extends State<MakeDropWizardPage> {
                   ),
                 ),
               ),
+            const SizedBox(height: 12),
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              value: _draft.placementConfirmed,
+              onChanged: _isSaving
+                  ? null
+                  : (value) {
+                      setState(() {
+                        _draft = _draft.copyWith(
+                          placementConfirmed: value ?? false,
+                        );
+                      });
+                    },
+              title: Text(l10n.makeDropPlacementConfirmedLabel),
+              subtitle: Text(l10n.makeDropPlacementConfirmedDescription),
+            ),
             const SizedBox(height: 12),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,

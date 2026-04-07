@@ -491,6 +491,28 @@ class _DropDetailContent extends StatelessWidget {
             ),
           ),
         ],
+        if (drop.socialPublishStatuses.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _withUnifiedWidth(
+            _SectionCard(
+              title: l10n.dropSocialPublishStatusLabel,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: drop.socialPublishStatuses
+                    .map(
+                      (status) => ListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.campaign_outlined),
+                        title: Text(status.channel),
+                        subtitle: Text("${status.status}: ${status.message}"),
+                      ),
+                    )
+                    .toList(growable: false),
+              ),
+            ),
+          ),
+        ],
         const SizedBox(height: 12),
         _withUnifiedWidth(
           _SectionCard(

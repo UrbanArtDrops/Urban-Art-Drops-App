@@ -5,8 +5,10 @@ enum MakeDropWizardDraftValidationError {
   missingDropMaker,
   invalidItemCount,
   invalidPortableItemCount,
+  missingPrintConfirmation,
   missingLocation,
   missingLocationPhotos,
+  missingPlacementConfirmation,
 }
 
 class MakeDropWizardDraft {
@@ -18,6 +20,8 @@ class MakeDropWizardDraft {
     required this.portableItemCount,
     required this.dropMakerComment,
     required this.socialChannels,
+    required this.productionPrinted,
+    required this.placementConfirmed,
     required this.itemCount,
     required this.downloadConfirmed,
     required this.locationLabel,
@@ -41,6 +45,8 @@ class MakeDropWizardDraft {
       portableItemCount: null,
       dropMakerComment: "",
       socialChannels: const [],
+      productionPrinted: false,
+      placementConfirmed: false,
       itemCount: 1,
       downloadConfirmed: false,
       locationLabel: "",
@@ -62,6 +68,8 @@ class MakeDropWizardDraft {
       portableItemCount: drop.portableItemCount,
       dropMakerComment: drop.dropMakerComment ?? "",
       socialChannels: drop.socialChannels,
+      productionPrinted: drop.productionPrinted,
+      placementConfirmed: drop.placementConfirmed,
       itemCount: drop.itemCount,
       downloadConfirmed: true,
       locationLabel: _buildLocationLabel(drop),
@@ -81,6 +89,8 @@ class MakeDropWizardDraft {
   final int? portableItemCount;
   final String dropMakerComment;
   final List<String> socialChannels;
+  final bool productionPrinted;
+  final bool placementConfirmed;
   final int itemCount;
   final bool downloadConfirmed;
   final String locationLabel;
@@ -110,6 +120,8 @@ class MakeDropWizardDraft {
     int? portableItemCount,
     String? dropMakerComment,
     List<String>? socialChannels,
+    bool? productionPrinted,
+    bool? placementConfirmed,
     bool clearPortableItemCount = false,
     int? itemCount,
     bool? downloadConfirmed,
@@ -133,6 +145,8 @@ class MakeDropWizardDraft {
           : portableItemCount ?? this.portableItemCount,
       dropMakerComment: dropMakerComment ?? this.dropMakerComment,
       socialChannels: socialChannels ?? this.socialChannels,
+      productionPrinted: productionPrinted ?? this.productionPrinted,
+      placementConfirmed: placementConfirmed ?? this.placementConfirmed,
       itemCount: itemCount ?? this.itemCount,
       downloadConfirmed: downloadConfirmed ?? this.downloadConfirmed,
       locationLabel: locationLabel ?? this.locationLabel,
@@ -150,6 +164,8 @@ class MakeDropWizardDraft {
       dropId: drop.id,
       dropMakerComment: drop.dropMakerComment ?? "",
       socialChannels: drop.socialChannels,
+      productionPrinted: drop.productionPrinted,
+      placementConfirmed: drop.placementConfirmed,
       items: drop.items,
     );
   }
@@ -173,6 +189,9 @@ class MakeDropWizardDraft {
         errors.add(MakeDropWizardDraftValidationError.invalidPortableItemCount);
       }
     }
+    if (!productionPrinted) {
+      errors.add(MakeDropWizardDraftValidationError.missingPrintConfirmation);
+    }
     return errors;
   }
 
@@ -183,6 +202,11 @@ class MakeDropWizardDraft {
     }
     if (locationPhotoSources.isEmpty) {
       errors.add(MakeDropWizardDraftValidationError.missingLocationPhotos);
+    }
+    if (!placementConfirmed) {
+      errors.add(
+        MakeDropWizardDraftValidationError.missingPlacementConfirmation,
+      );
     }
     return errors;
   }
@@ -197,6 +221,8 @@ class MakeDropWizardDraft {
           ? null
           : dropMakerComment.trim(),
       socialChannels: socialChannels,
+      productionPrinted: productionPrinted,
+      placementConfirmed: placementConfirmed,
       latitude: latitude,
       longitude: longitude,
       locationPhotoUrls: locationPhotoSources,

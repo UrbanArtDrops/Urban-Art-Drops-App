@@ -1877,8 +1877,26 @@ abstract class AppLocalizations {
   /// No description provided for @makeDropStepPrintDescription.
   ///
   /// In en, this message translates to:
-  /// **'Printing the drop is out of scope. Enter the item quantity here.'**
+  /// **'Print the production asset, inspect the produced items and confirm production before QR codes are generated.'**
   String get makeDropStepPrintDescription;
+
+  /// No description provided for @makeDropProductionPrintedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop has been printed and inspected'**
+  String get makeDropProductionPrintedLabel;
+
+  /// No description provided for @makeDropProductionPrintedDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm this step only after the physical production is complete.'**
+  String get makeDropProductionPrintedDescription;
+
+  /// No description provided for @makeDropPrintConfirmationRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please confirm that the drop has been printed and inspected first.'**
+  String get makeDropPrintConfirmationRequired;
 
   /// No description provided for @makeDropItemCountLabel.
   ///
@@ -1931,8 +1949,26 @@ abstract class AppLocalizations {
   /// No description provided for @makeDropStepPlaceDescription.
   ///
   /// In en, this message translates to:
-  /// **'Placing the drop is out of scope. Then capture the drop location and location photos.'**
+  /// **'Place the drop at the captured location, document the spot with photos and confirm placement.'**
   String get makeDropStepPlaceDescription;
+
+  /// No description provided for @makeDropPlacementConfirmedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop has been placed'**
+  String get makeDropPlacementConfirmedLabel;
+
+  /// No description provided for @makeDropPlacementConfirmedDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm this step only after the drop has been physically placed.'**
+  String get makeDropPlacementConfirmedDescription;
+
+  /// No description provided for @makeDropPlacementConfirmationRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please confirm that the drop has been placed first.'**
+  String get makeDropPlacementConfirmationRequired;
 
   /// No description provided for @makeDropLocationLabel.
   ///
@@ -2342,6 +2378,24 @@ abstract class AppLocalizations {
   /// **'SMTP password'**
   String get smtpPasswordLabel;
 
+  /// No description provided for @smtpPasswordSecretNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'SMTP password secret'**
+  String get smtpPasswordSecretNameLabel;
+
+  /// No description provided for @smtpPasswordConfiguredHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Production mail sending uses this configured secret.'**
+  String get smtpPasswordConfiguredHint;
+
+  /// No description provided for @smtpPasswordMissingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a secret reference such as Smtp:Password for production mail sending.'**
+  String get smtpPasswordMissingHint;
+
   /// No description provided for @smtpPasswordTransientHint.
   ///
   /// In en, this message translates to:
@@ -2497,6 +2551,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Social channels'**
   String get dropSocialChannelsLabel;
+
+  /// No description provided for @dropSocialPublishStatusLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Social publishing'**
+  String get dropSocialPublishStatusLabel;
 
   /// No description provided for @bootstrapAdminTitle.
   ///

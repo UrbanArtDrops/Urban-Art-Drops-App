@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using UrbanArtDropFinder.Persistence.Db;
 
@@ -11,9 +12,11 @@ using UrbanArtDropFinder.Persistence.Db;
 namespace UrbanArtDropFinder.Persistence.Migrations
 {
     [DbContext(typeof(UrbanArtDbContext))]
-    partial class UrbanArtDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260406212453_AddMailSocialAndDropExecutionState")]
+    partial class AddMailSocialAndDropExecutionState
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

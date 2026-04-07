@@ -491,6 +491,8 @@ class AppApiClient {
         "portableItemCount": input.portableItemCount,
         "dropMakerComment": input.dropMakerComment,
         "socialChannels": input.socialChannels,
+        "productionPrinted": input.productionPrinted,
+        "placementConfirmed": input.placementConfirmed,
         "latitude": input.latitude,
         "longitude": input.longitude,
         "locationPhotoUrls": input.locationPhotoUrls,
@@ -512,6 +514,8 @@ class AppApiClient {
         "portableItemCount": input.portableItemCount,
         "dropMakerComment": input.dropMakerComment,
         "socialChannels": input.socialChannels,
+        "productionPrinted": input.productionPrinted,
+        "placementConfirmed": input.placementConfirmed,
         "latitude": input.latitude,
         "longitude": input.longitude,
         "locationPhotoUrls": input.locationPhotoUrls,
@@ -651,6 +655,7 @@ class AppApiClient {
     required SmtpSecurityModeModel smtpSecurityMode,
     required String smtpUserName,
     required String smtpUserEmail,
+    required String smtpPasswordSecretName,
     required String publicAppBaseUrl,
     required int mainMapRadiusKm,
     required int miniMapRadiusKm,
@@ -666,6 +671,7 @@ class AppApiClient {
         "smtpSecurityMode": smtpSecurityMode.wireValue,
         "smtpUserName": smtpUserName,
         "smtpUserEmail": smtpUserEmail,
+        "smtpPasswordSecretName": smtpPasswordSecretName,
         "publicAppBaseUrl": publicAppBaseUrl,
         "mainMapRadiusKm": mainMapRadiusKm,
         "miniMapRadiusKm": miniMapRadiusKm,
@@ -683,6 +689,7 @@ class AppApiClient {
     required SmtpSecurityModeModel smtpSecurityMode,
     required String smtpUserName,
     required String smtpPassword,
+    required String smtpPasswordSecretName,
   }) async {
     final response = await _httpClient.post(
       _uri("/api/admin/configuration/smtp/test"),
@@ -693,6 +700,7 @@ class AppApiClient {
         "smtpSecurityMode": smtpSecurityMode.wireValue,
         "smtpUserName": smtpUserName,
         "smtpPassword": smtpPassword,
+        "smtpPasswordSecretName": smtpPasswordSecretName,
       }),
     );
     _ensureSuccess(response, "Failed to test SMTP connection.");

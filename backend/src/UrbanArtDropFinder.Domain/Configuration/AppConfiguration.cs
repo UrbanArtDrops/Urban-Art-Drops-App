@@ -8,6 +8,7 @@ public sealed class AppConfiguration
     public SmtpSecurityMode SmtpSecurityMode { get; set; } = SmtpSecurityMode.Tls;
     public string? SmtpUserName { get; set; }
     public string? SmtpUserEmail { get; set; }
+    public string? SmtpPasswordSecretName { get; set; }
     public string? PublicAppBaseUrl { get; set; }
     public int MainMapRadiusKm { get; set; } = 30;
     public int MiniMapRadiusKm { get; set; } = 5;

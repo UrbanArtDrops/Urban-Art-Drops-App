@@ -524,6 +524,11 @@ class DropModel {
     required this.portableItemCount,
     required this.dropMakerComment,
     required this.socialChannels,
+    this.productionPrinted = false,
+    this.productionPrintedAtUtc,
+    this.placementConfirmed = false,
+    this.placementConfirmedAtUtc,
+    this.socialPublishStatuses = const [],
     required this.latitude,
     required this.longitude,
     required this.isPublished,
@@ -544,6 +549,11 @@ class DropModel {
         .toList(growable: false);
     final locationEntries = _readList(json, "locationPhotos", "LocationPhotos");
     final socialChannels = _readList(json, "socialChannels", "SocialChannels");
+    final socialPublishStatusEntries = _readList(
+      json,
+      "socialPublishStatuses",
+      "SocialPublishStatuses",
+    );
     final claimed = itemModels.where((entry) => entry.isClaimed).length;
 
     return DropModel(
@@ -564,6 +574,30 @@ class DropModel {
       socialChannels: socialChannels
           .map((entry) => entry.toString().trim())
           .where((entry) => entry.isNotEmpty)
+          .toList(growable: false),
+      productionPrinted: _readBool(
+        json,
+        "productionPrinted",
+        "ProductionPrinted",
+      ),
+      productionPrintedAtUtc: _readNullableDateTime(
+        json,
+        "productionPrintedAtUtc",
+        "ProductionPrintedAtUtc",
+      ),
+      placementConfirmed: _readBool(
+        json,
+        "placementConfirmed",
+        "PlacementConfirmed",
+      ),
+      placementConfirmedAtUtc: _readNullableDateTime(
+        json,
+        "placementConfirmedAtUtc",
+        "PlacementConfirmedAtUtc",
+      ),
+      socialPublishStatuses: socialPublishStatusEntries
+          .whereType<Map<String, dynamic>>()
+          .map(DropSocialPublishStatusModel.fromJson)
           .toList(growable: false),
       latitude: _readNullableDouble(json, "latitude", "Latitude"),
       longitude: _readNullableDouble(json, "longitude", "Longitude"),
@@ -586,6 +620,11 @@ class DropModel {
   final int? portableItemCount;
   final String? dropMakerComment;
   final List<String> socialChannels;
+  final bool productionPrinted;
+  final DateTime? productionPrintedAtUtc;
+  final bool placementConfirmed;
+  final DateTime? placementConfirmedAtUtc;
+  final List<DropSocialPublishStatusModel> socialPublishStatuses;
   final double? latitude;
   final double? longitude;
   final bool isPublished;
@@ -605,6 +644,47 @@ class DropModel {
 
   bool get canResumeWizard =>
       itemCount > 0 && !isPublished && (!hasLocation || !hasLocationPhotos);
+}
+
+class DropSocialPublishStatusModel {
+  const DropSocialPublishStatusModel({
+    required this.channel,
+    required this.status,
+    required this.message,
+    required this.externalPostId,
+    required this.lastAttemptAtUtc,
+    required this.publishedAtUtc,
+  });
+
+  factory DropSocialPublishStatusModel.fromJson(Map<String, dynamic> json) {
+    return DropSocialPublishStatusModel(
+      channel: _readString(json, "channel", "Channel"),
+      status: _readString(json, "status", "Status"),
+      message: _readString(json, "message", "Message"),
+      externalPostId: _readNullableString(
+        json,
+        "externalPostId",
+        "ExternalPostId",
+      ),
+      lastAttemptAtUtc: _readNullableDateTime(
+        json,
+        "lastAttemptAtUtc",
+        "LastAttemptAtUtc",
+      ),
+      publishedAtUtc: _readNullableDateTime(
+        json,
+        "publishedAtUtc",
+        "PublishedAtUtc",
+      ),
+    );
+  }
+
+  final String channel;
+  final String status;
+  final String message;
+  final String? externalPostId;
+  final DateTime? lastAttemptAtUtc;
+  final DateTime? publishedAtUtc;
 }
 
 class LeaderboardEntry {
@@ -840,6 +920,8 @@ class AppConfigurationModel {
     required this.smtpSecurityMode,
     required this.smtpUserName,
     required this.smtpUserEmail,
+    required this.smtpPasswordSecretName,
+    required this.smtpPasswordConfigured,
     required this.publicAppBaseUrl,
     required this.mainMapRadiusKm,
     required this.miniMapRadiusKm,
@@ -858,6 +940,16 @@ class AppConfigurationModel {
       ),
       smtpUserName: _readString(json, "smtpUserName", "SmtpUserName"),
       smtpUserEmail: _readString(json, "smtpUserEmail", "SmtpUserEmail"),
+      smtpPasswordSecretName: _readString(
+        json,
+        "smtpPasswordSecretName",
+        "SmtpPasswordSecretName",
+      ),
+      smtpPasswordConfigured: _readBool(
+        json,
+        "smtpPasswordConfigured",
+        "SmtpPasswordConfigured",
+      ),
       publicAppBaseUrl: _readString(
         json,
         "publicAppBaseUrl",
@@ -888,6 +980,8 @@ class AppConfigurationModel {
     smtpSecurityMode: SmtpSecurityModeModel.tls,
     smtpUserName: "",
     smtpUserEmail: "",
+    smtpPasswordSecretName: "",
+    smtpPasswordConfigured: false,
     publicAppBaseUrl: "",
     mainMapRadiusKm: 30,
     miniMapRadiusKm: 5,
@@ -901,6 +995,8 @@ class AppConfigurationModel {
   final SmtpSecurityModeModel smtpSecurityMode;
   final String smtpUserName;
   final String smtpUserEmail;
+  final String smtpPasswordSecretName;
+  final bool smtpPasswordConfigured;
   final String publicAppBaseUrl;
   final int mainMapRadiusKm;
   final int miniMapRadiusKm;
@@ -986,6 +1082,8 @@ class CreateDropInput {
     required this.portableItemCount,
     required this.dropMakerComment,
     required this.socialChannels,
+    this.productionPrinted = false,
+    this.placementConfirmed = false,
     required this.latitude,
     required this.longitude,
     required this.locationPhotoUrls,
@@ -998,6 +1096,8 @@ class CreateDropInput {
   final int? portableItemCount;
   final String? dropMakerComment;
   final List<String> socialChannels;
+  final bool productionPrinted;
+  final bool placementConfirmed;
   final double? latitude;
   final double? longitude;
   final List<String> locationPhotoUrls;

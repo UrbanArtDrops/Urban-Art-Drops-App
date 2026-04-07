@@ -1007,7 +1007,19 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get makeDropStepPrintDescription =>
-      'Drop drucken ist out of scope. Trage hier die Anzahl der Gegenstände ein.';
+      'Drucke die Produktionsdatei, pruefe die erzeugten Gegenstaende und bestaetige den Druckabschluss, bevor QR-Codes erzeugt werden.';
+
+  @override
+  String get makeDropProductionPrintedLabel =>
+      'Drop wurde gedruckt und geprueft';
+
+  @override
+  String get makeDropProductionPrintedDescription =>
+      'Bestaetige diesen Schritt erst, wenn die physische Produktion abgeschlossen ist.';
+
+  @override
+  String get makeDropPrintConfirmationRequired =>
+      'Bitte bestaetige zuerst, dass der Drop gedruckt und geprueft wurde.';
 
   @override
   String get makeDropItemCountLabel => 'Anzahl Gegenstände';
@@ -1038,7 +1050,18 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get makeDropStepPlaceDescription =>
-      'Drop anbringen ist out of scope. Erfasse danach Standort und Standortfotos des Drops.';
+      'Bringe den Drop am erfassten Standort an, dokumentiere den Ort mit Fotos und bestaetige die Platzierung.';
+
+  @override
+  String get makeDropPlacementConfirmedLabel => 'Drop wurde angebracht';
+
+  @override
+  String get makeDropPlacementConfirmedDescription =>
+      'Bestaetige diesen Schritt erst, wenn der Drop physisch platziert wurde.';
+
+  @override
+  String get makeDropPlacementConfirmationRequired =>
+      'Bitte bestaetige zuerst, dass der Drop angebracht wurde.';
 
   @override
   String get makeDropLocationLabel => 'Standort des Drops';
@@ -1285,6 +1308,17 @@ class AppLocalizationsDe extends AppLocalizations {
   String get smtpPasswordLabel => 'SMTP-Passwort';
 
   @override
+  String get smtpPasswordSecretNameLabel => 'SMTP-Passwort-Secret';
+
+  @override
+  String get smtpPasswordConfiguredHint =>
+      'Produktiver Mailversand nutzt dieses konfigurierte Secret.';
+
+  @override
+  String get smtpPasswordMissingHint =>
+      'Fuer produktiven Mailversand eine Secret-Referenz wie Smtp:Password eintragen.';
+
+  @override
   String get smtpPasswordTransientHint =>
       'Wird nur fuer den Verbindungstest verwendet. Das Passwort wird nicht in der Anwendungskonfiguration gespeichert.';
 
@@ -1375,6 +1409,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get dropSocialChannelsLabel => 'Social-Media-Kanäle';
+
+  @override
+  String get dropSocialPublishStatusLabel => 'Social-Media-Veröffentlichung';
 
   @override
   String get bootstrapAdminTitle => 'Admin-Bootstrap';

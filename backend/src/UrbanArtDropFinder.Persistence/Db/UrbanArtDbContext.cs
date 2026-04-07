@@ -25,6 +25,7 @@ public sealed class UrbanArtDbContext : DbContext
     public DbSet<DropItem> DropItems => Set<DropItem>();
     public DbSet<DropLocationPhoto> DropLocationPhotos => Set<DropLocationPhoto>();
     public DbSet<DropSocialChannelSelection> DropSocialChannelSelections => Set<DropSocialChannelSelection>();
+    public DbSet<DropSocialPublishStatus> DropSocialPublishStatuses => Set<DropSocialPublishStatus>();
     public DbSet<DropComment> DropComments => Set<DropComment>();
     public DbSet<AppConfiguration> AppConfigurations => Set<AppConfiguration>();
 
@@ -102,6 +103,7 @@ public sealed class UrbanArtDbContext : DbContext
             entity.HasMany(x => x.Items).WithOne().HasForeignKey(x => x.DropId);
             entity.HasMany(x => x.LocationPhotos).WithOne().HasForeignKey(x => x.DropId);
             entity.HasMany(x => x.SocialChannels).WithOne().HasForeignKey(x => x.DropId);
+            entity.HasMany(x => x.SocialPublishStatuses).WithOne().HasForeignKey(x => x.DropId);
         });
 
         modelBuilder.Entity<DropItem>(entity =>
@@ -125,6 +127,16 @@ public sealed class UrbanArtDbContext : DbContext
             entity.HasIndex(x => new { x.DropId, x.Channel }).IsUnique();
         });
 
+        modelBuilder.Entity<DropSocialPublishStatus>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Channel).IsRequired().HasMaxLength(64);
+            entity.Property(x => x.Status).IsRequired().HasMaxLength(32);
+            entity.Property(x => x.Message).IsRequired().HasMaxLength(1000);
+            entity.Property(x => x.ExternalPostId).HasMaxLength(512);
+            entity.HasIndex(x => new { x.DropId, x.Channel }).IsUnique();
+        });
+
         modelBuilder.Entity<DropComment>(entity =>
         {
             entity.HasKey(x => x.Id);
@@ -140,6 +152,7 @@ public sealed class UrbanArtDbContext : DbContext
             entity.Property(x => x.SmtpHost).HasMaxLength(512);
             entity.Property(x => x.SmtpUserName).HasMaxLength(256);
             entity.Property(x => x.SmtpUserEmail).HasMaxLength(320);
+            entity.Property(x => x.SmtpPasswordSecretName).HasMaxLength(512);
         });
 
         base.OnModelCreating(modelBuilder);

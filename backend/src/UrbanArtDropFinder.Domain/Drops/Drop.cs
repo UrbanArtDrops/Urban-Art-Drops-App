@@ -15,9 +15,14 @@ public sealed class Drop
     public double? Latitude { get; private set; }
     public double? Longitude { get; private set; }
     public bool IsPublished { get; private set; }
+    public bool ProductionPrinted { get; private set; }
+    public DateTimeOffset? ProductionPrintedAtUtc { get; private set; }
+    public bool PlacementConfirmed { get; private set; }
+    public DateTimeOffset? PlacementConfirmedAtUtc { get; private set; }
     public ICollection<DropItem> Items { get; set; } = new List<DropItem>();
     public ICollection<DropLocationPhoto> LocationPhotos { get; set; } = new List<DropLocationPhoto>();
     public ICollection<DropSocialChannelSelection> SocialChannels { get; set; } = new List<DropSocialChannelSelection>();
+    public ICollection<DropSocialPublishStatus> SocialPublishStatuses { get; set; } = new List<DropSocialPublishStatus>();
 
     private Drop()
     {
@@ -93,6 +98,18 @@ public sealed class Drop
     {
         Latitude = null;
         Longitude = null;
+    }
+
+    public void SetProductionPrinted(bool productionPrinted, DateTimeOffset nowUtc)
+    {
+        ProductionPrinted = productionPrinted;
+        ProductionPrintedAtUtc = productionPrinted ? nowUtc : null;
+    }
+
+    public void SetPlacementConfirmed(bool placementConfirmed, DateTimeOffset nowUtc)
+    {
+        PlacementConfirmed = placementConfirmed;
+        PlacementConfirmedAtUtc = placementConfirmed ? nowUtc : null;
     }
 
     public void AddLocationPhoto(byte[] binaryData, string contentType)
@@ -208,14 +225,16 @@ public sealed class Drop
         Latitude.HasValue &&
         Longitude.HasValue &&
         LocationPhotos.Count > 0 &&
-        Items.Count > 0;
+        Items.Count > 0 &&
+        ProductionPrinted &&
+        PlacementConfirmed;
 
     public void Publish()
     {
         if (!CanPublish())
         {
             throw new DomainValidationException(
-                "Drop requires location, at least one location photo and at least one item before publishing.");
+                "Drop requires location, at least one location photo, at least one item, print confirmation and placement confirmation before publishing.");
         }
 
         IsPublished = true;

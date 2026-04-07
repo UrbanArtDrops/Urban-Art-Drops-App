@@ -312,6 +312,67 @@ public sealed class DropEndpointsTests : IClassFixture<TestWebApplicationFactory
                 && notification.RelatedEntityId == createdDrop.Id);
     }
 
+    [Fact]
+    public async Task PublishDrop_PublishesConfiguredSocialChannelsAndStoresStatus()
+    {
+        var uniqueId = Guid.NewGuid().ToString("N");
+        var admin = await _factory.CreateAuthenticatedUserAsync(UserRole.Admin, $"admin.drop.social.{uniqueId}");
+        _factory.SocialMediaPublisher.Requests.Clear();
+
+        Guid artPieceId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<UrbanArtDbContext>();
+            var artPiece = ArtPiece.Create(
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                $"Social Publish Art {uniqueId}",
+                "Social publish test",
+                "A sufficiently detailed artwork description for social publish integration testing.",
+                ArtPieceAssetKind.Image);
+            artPiece.AddPhoto([0x01], "image/png");
+            dbContext.ArtPieces.Add(artPiece);
+            await dbContext.SaveChangesAsync();
+            artPieceId = artPiece.Id;
+        }
+
+        var createResponse = await _client.PostAuthorizedAsJsonAsync(
+            "/api/drops/",
+            new
+            {
+                artPieceId,
+                dropMakerId = admin.Id,
+                isStationary = true,
+                portableItemCount = (int?)null,
+                dropMakerComment = "Share this drop.",
+                socialChannels = new[] { "Instagram", "TikTok" },
+                productionPrinted = true,
+                placementConfirmed = true,
+                latitude = 50.1109,
+                longitude = 8.6821,
+                locationPhotoUrls = new[] { SamplePngDataUrl },
+                itemCount = 1
+            },
+            admin.AccessToken);
+        await EnsureSuccessWithBodyAsync(createResponse);
+        var createdDrop = await createResponse.Content.ReadFromJsonAsync<DropResponseDto>();
+        Assert.NotNull(createdDrop);
+
+        var publishResponse = await _client.PostAuthorizedAsync($"/api/drops/{createdDrop!.Id}/publish", admin.AccessToken);
+        await EnsureSuccessWithBodyAsync(publishResponse);
+
+        Assert.Equal(
+            ["Instagram", "TikTok"],
+            _factory.SocialMediaPublisher.Requests.Select(request => request.Channel).Order().ToArray());
+
+        var reloadedResponse = await _client.GetAsync($"/api/drops/{createdDrop.Id}");
+        await EnsureSuccessWithBodyAsync(reloadedResponse);
+        var reloadedDrop = await reloadedResponse.Content.ReadFromJsonAsync<DropResponseDto>();
+        Assert.NotNull(reloadedDrop);
+        Assert.Contains(reloadedDrop!.SocialPublishStatuses, status => status.Channel == "Instagram" && status.Status == "Published");
+        Assert.Contains(reloadedDrop.SocialPublishStatuses, status => status.Channel == "TikTok" && status.Status == "Published");
+    }
+
     private sealed record DropResponseDto(
         Guid Id,
         Guid ArtPieceId,
@@ -320,6 +381,11 @@ public sealed class DropEndpointsTests : IClassFixture<TestWebApplicationFactory
         int? PortableItemCount,
         string? DropMakerComment,
         IReadOnlyCollection<string> SocialChannels,
+        bool ProductionPrinted,
+        DateTimeOffset? ProductionPrintedAtUtc,
+        bool PlacementConfirmed,
+        DateTimeOffset? PlacementConfirmedAtUtc,
+        IReadOnlyCollection<DropSocialPublishStatusResponseDto> SocialPublishStatuses,
         double? Latitude,
         double? Longitude,
         bool IsPublished,
@@ -336,6 +402,14 @@ public sealed class DropEndpointsTests : IClassFixture<TestWebApplicationFactory
         Guid? ClaimedByUserId,
         string? ClaimedByAnonymousNickname,
         DateTimeOffset? ClaimedAtUtc);
+
+    private sealed record DropSocialPublishStatusResponseDto(
+        string Channel,
+        string Status,
+        string Message,
+        string? ExternalPostId,
+        DateTimeOffset LastAttemptAtUtc,
+        DateTimeOffset? PublishedAtUtc);
 
     private sealed record ClaimPreviewResponseDto(
         Guid DropId,

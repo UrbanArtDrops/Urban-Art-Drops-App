@@ -25,6 +25,7 @@ public static class ServiceCollectionExtensions
             configuration.GetSection(ExternalProviderAuthenticationOptions.SectionName));
         services.AddMemoryCache();
         services.AddHttpClient("external-auth");
+        services.AddHttpClient("social-media");
 
         var persistenceProvider = configuration["Persistence:Provider"];
         if (string.Equals(persistenceProvider, "InMemory", StringComparison.OrdinalIgnoreCase))
@@ -73,6 +74,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMfaChallengeTokenService, JwtMfaChallengeTokenService>();
         services.AddSingleton<IAccessTokenIssuer, JwtAccessTokenIssuer>();
         services.AddSingleton<ISmtpConnectionTester, SmtpConnectionTester>();
+        services.AddSingleton<ISmtpSecretResolver, ConfigurationSmtpSecretResolver>();
+        services.AddSingleton<ISmtpMailSender, SmtpMailSender>();
+        services.AddSingleton<ISocialMediaPublisher, ConfiguredSocialMediaPublisher>();
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<ExternalProviderStatusService>();
         services.AddScoped<AuthApplicationService>();

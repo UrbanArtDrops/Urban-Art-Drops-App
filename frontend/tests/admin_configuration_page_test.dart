@@ -23,6 +23,8 @@ void main() {
             "smtpSecurityMode": 1,
             "smtpUserName": "mailer-user",
             "smtpUserEmail": "mailer@example.test",
+            "smtpPasswordSecretName": "Smtp:Password",
+            "smtpPasswordConfigured": true,
             "publicAppBaseUrl": "https://app.example.test",
             "mainMapRadiusKm": 30,
             "miniMapRadiusKm": 5,
@@ -104,6 +106,9 @@ void main() {
   });
 
   testWidgets("saves smtp port and user fields", (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
     Map<String, dynamic>? updatePayload;
 
     final mockHttpClient = MockClient((request) async {
@@ -116,6 +121,8 @@ void main() {
             "smtpSecurityMode": 1,
             "smtpUserName": "mailer-user",
             "smtpUserEmail": "mailer@example.test",
+            "smtpPasswordSecretName": "Smtp:Password",
+            "smtpPasswordConfigured": true,
             "publicAppBaseUrl": "https://app.example.test",
             "mainMapRadiusKm": 30,
             "miniMapRadiusKm": 5,
@@ -138,6 +145,10 @@ void main() {
             "smtpSecurityMode": updatePayload!["smtpSecurityMode"],
             "smtpUserName": updatePayload!["smtpUserName"],
             "smtpUserEmail": updatePayload!["smtpUserEmail"],
+            "smtpPasswordSecretName": updatePayload!["smtpPasswordSecretName"],
+            "smtpPasswordConfigured": updatePayload!["smtpPasswordSecretName"]
+                .toString()
+                .isNotEmpty,
             "publicAppBaseUrl": updatePayload!["publicAppBaseUrl"],
             "mainMapRadiusKm": updatePayload!["mainMapRadiusKm"],
             "miniMapRadiusKm": updatePayload!["miniMapRadiusKm"],
@@ -197,10 +208,14 @@ void main() {
     expect(updatePayload!["smtpSecurityMode"], 1);
     expect(updatePayload!["smtpUserName"], "mailer-admin");
     expect(updatePayload!["smtpUserEmail"], "smtp-admin@example.test");
+    expect(updatePayload!["smtpPasswordSecretName"], "Smtp:Password");
     expect(updatePayload!.containsKey("smtpPassword"), isFalse);
   });
 
   testWidgets("tests smtp connection with transient password", (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
     Map<String, dynamic>? smtpTestPayload;
 
     final mockHttpClient = MockClient((request) async {
@@ -213,6 +228,8 @@ void main() {
             "smtpSecurityMode": 1,
             "smtpUserName": "mailer-user",
             "smtpUserEmail": "mailer@example.test",
+            "smtpPasswordSecretName": "Smtp:Password",
+            "smtpPasswordConfigured": true,
             "publicAppBaseUrl": "https://app.example.test",
             "mainMapRadiusKm": 30,
             "miniMapRadiusKm": 5,
@@ -278,6 +295,7 @@ void main() {
     expect(smtpTestPayload!["smtpSecurityMode"], 1);
     expect(smtpTestPayload!["smtpUserName"], "mailer-admin");
     expect(smtpTestPayload!["smtpPassword"], "TopSecretPassword!123");
+    expect(smtpTestPayload!["smtpPasswordSecretName"], "Smtp:Password");
   });
 }
 

@@ -69,6 +69,8 @@ void main() {
       "smtpSecurityMode": 1,
       "smtpUserName": "mailer-user",
       "smtpUserEmail": "mailer@example.test",
+      "smtpPasswordSecretName": "Smtp:Password",
+      "smtpPasswordConfigured": true,
       "publicAppBaseUrl": "https://app.example.test",
       "mainMapRadiusKm": 30,
       "miniMapRadiusKm": 5,
@@ -101,6 +103,8 @@ void main() {
     expect(configuration.smtpSecurityMode, SmtpSecurityModeModel.tls);
     expect(configuration.smtpUserName, "mailer-user");
     expect(configuration.smtpUserEmail, "mailer@example.test");
+    expect(configuration.smtpPasswordSecretName, "Smtp:Password");
+    expect(configuration.smtpPasswordConfigured, isTrue);
     expect(configuration.authProviders.first.provider, "google");
     expect(configuration.authProviders.first.visibleOnLogin, isTrue);
     expect(configuration.authProviders.last.provider, "facebook");

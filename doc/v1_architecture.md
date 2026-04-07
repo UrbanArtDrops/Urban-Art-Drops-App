@@ -28,7 +28,7 @@
 ## Core Domain Rules
 - Art piece requires title, description and at least one photo before publish
 - Art pieces support a dedicated optional subtitle field that is stored separately from the title and exposed across artist, discovery and drop-maker flows
-- Drop requires location, location photo and at least one item before publish
+- Drop requires location, location photo, at least one item, production confirmation and placement confirmation before publish
 - Each drop item has unique QR token
 - One claim per hunter per drop
 - Anonymous nickname cannot collide with registered usernames
@@ -44,6 +44,7 @@
 - Re-entering the quantity step of the drop-maker wizard preserves existing claimed and reusable QR items instead of recreating the entire item set on every update
 - The drop-maker wizard finishes the flow by updating location coordinates, uploading local location photos as data URLs and optionally publishing the completed drop
 - Drops persist an optional drop-maker comment plus an explicit selection of target social channels so publication intent remains part of the domain model instead of UI-only state
+- Publishing a drop attempts social publication for the selected channels through the configured provider integration and stores per-channel publish status on the drop
 - Drop detail now loads persisted comments from the API, allows eligible signed-in roles to post comments, and exposes report actions for comments and linked art pieces
 - Reported comments and art pieces are persisted with reason and timestamp metadata so the moderation queue can be resolved without losing audit context
 - Artists can access reported drop comments that belong to drops created from their own art pieces, drop-makers can access reported drop comments for their own drops, and moderator/admin users continue to manage the global queue and art-piece moderation actions
@@ -58,7 +59,7 @@
 - Drop-list and My Drops mini-maps mirror the same radius-overlay rule for not fully claimed drops
 
 ## Operations
-- Alerts via SMTP mail for reported content and account approval requests
+- Alerts via SMTP mail for reported content
 - Moderator and admin users resolve reports in a dedicated moderation queue with comment hide, report dismissal, and art-piece depublish actions
 - Runtime startup applies EF Core migrations against the configured SQL database and only bootstraps application configuration defaults
 - Debug and sample content seeding is disabled; a fresh database starts without demo users, art pieces, drops, comments, or reports
@@ -69,7 +70,9 @@
 - Self-service profile changes update the persisted account record directly; the Flutter session mirrors changed email, display name, and profile image URL locally after save
 - When an admin edits, publishes, depublishes, or deletes an art piece or drop, the impacted artist or drop-maker receives a persisted in-app notification linked to that entity
 - JWT signing keys must be supplied outside source control for stable environments; local development can fall back to an ephemeral in-memory signing key for the running process
-- Admin configuration is persisted in SQL and currently drives SMTP host, SMTP port, SMTP user identity fields, public app base URL, map radii and exact-position rendering behavior
+- Admin configuration is persisted in SQL and currently drives SMTP host, SMTP port, SMTP security mode, SMTP user identity fields, SMTP password secret reference, public app base URL, map radii and exact-position rendering behavior
+- SMTP password material is resolved from runtime configuration or secret storage through the stored secret reference; it is not persisted as cleartext in the application configuration table
+- Admin content management provides a global operational surface for art pieces and drops while delegating actual publish, depublish and delete operations to the existing protected APIs
 - The admin configuration screen also shows the current external-provider status snapshot from backend configuration, including login visibility, client-id presence, client-secret presence, and PKCE usage
 - Backup target: daily with 14-day retention
 - Log retention target: 30 days

@@ -13,7 +13,12 @@
 - Authentication__ExternalProviders__Providers__<provider>__Enabled
 - Authentication__ExternalProviders__Providers__<provider>__ClientId
 - Authentication__ExternalProviders__Providers__<provider>__ClientSecret
-- SMTP host, port and user identity settings
+- SMTP host, port, security mode, user identity and password secret-reference settings
+- SMTP passwords must be supplied through configuration or secret storage, for example a key referenced by `SmtpPasswordSecretName`; they are not stored as cleartext in SQL app configuration
+- Social media provider settings under `SocialMedia:Providers:<channel>` when automatic publishing is enabled:
+  - `Enabled`
+  - `PublishEndpoint`
+  - `AccessTokenSecretName`
 - Public app base URL setting
 - Map radius configuration
   - `MainMapRadiusKm` (default 30)
@@ -72,7 +77,7 @@
 - The admin user list renders each account with role, approval and suspension icons plus the stored profile image when one is available
 - Pending Artist or Drop-Maker applications are highlighted in the admin user list with a dedicated red status icon in addition to the pending-role subtitle
 - Admin user management blocks self-lockout by preventing an admin from suspending their own account or revoking their own approval in both the API and the UI
-- Admin settings persist SMTP host, SMTP port, SMTP security mode, SMTP user name and SMTP user email together with the existing public app base URL and map settings; fresh configurations default to port 465 with TLS, while SMTP passwords stay transient in the admin UI and are only forwarded to the dedicated connection-test endpoint
+- Admin settings persist SMTP host, SMTP port, SMTP security mode, SMTP user name, SMTP user email and the SMTP password secret reference together with the existing public app base URL and map settings; fresh configurations default to port 465 with TLS, while password material itself stays in secret storage or is sent transiently only to the dedicated connection-test endpoint
 - Profile images are served from `/api/media/user-profile-images/{id}` and remain inside the SQL-backed persistence model
 - In-app profile notifications are available through `GET /api/profile/notifications` and can be acknowledged through `POST /api/profile/notifications/{notificationId}/mark-read`
 - The profile screen loads `/api/profile` and `/api/profile/notifications` independently so a notification-loading failure does not hide the main profile data; the notification section shows a retry action instead
@@ -85,9 +90,9 @@
 ## Monitoring and alerts
 - Health endpoint: /api/health
 - Mail alerts for:
-- account approval requests
 - reported comments
 - reported art pieces
+- Mail alerts use the persisted SMTP host/port/security/user settings and resolve the stored password secret reference through runtime configuration before sending to approved, verified, non-suspended admin and moderator accounts
 
 ## Test isolation
 - Integration tests override the runtime SQL registration with an in-memory EF Core database inside the test host
@@ -115,14 +120,20 @@
 - Multi-image artwork and drop galleries expose small left and right navigation tabs directly on the image frame in addition to automatic cycling where applicable
 
 ## Drop-Maker Wizard
-- Drop creation in the web client is a multi-step process: artwork review, artwork selection, production confirmation, quantity capture, QR review, placement and optional publish
+- Drop creation in the web client is a multi-step process: artwork review, artwork selection, production download, physical production confirmation, quantity capture, QR review, physical placement confirmation and optional publish
 - The wizard persists a draft drop through `POST /api/drops` before the QR step so the backend becomes the source of truth for item and token generation
 - QR review now shows the public claim URL for each generated item instead of only the raw token
 - After the QR step, the wizard can be paused and later resumed from My Drops by reopening the stored draft drop
 - Returning to the quantity step updates the draft by preserving claimed items and keeping existing reusable QR tokens whenever possible
 - Draft and persisted drops store an optional drop-maker comment plus a selected list of social channels
-- Final placement writes coordinates and location photos through `PUT /api/drops/{id}` and can publish the drop immediately afterwards
+- The production step must be confirmed before QR generation, and the placement step must be confirmed before final publish
+- Final placement writes coordinates, location photos and the placement confirmation through `PUT /api/drops/{id}` and can publish the drop immediately afterwards
+- Publishing a drop with selected social channels attempts provider publishing through the configured `SocialMedia:Providers:<channel>` integration and stores per-channel publish status on the drop
 - Admins can open the same drop management area to inspect and manage all drops across drop-makers, and admin-triggered drop changes create persisted in-app notifications for the impacted drop-maker accounts
+
+## Admin Content Management
+- Admin content management at `/admin/content` loads the global art-piece and drop lists and provides publish, depublish and delete actions without forcing admins through individual owner-scoped workspaces
+- The page reuses the existing protected admin APIs, so all actions require an authenticated admin session and preserve the existing owner notification behavior
 
 ## Leaderboard
 - The leaderboard derives hunter ranks from claimed drop items and expands the signed-in hunter entry automatically when it exists

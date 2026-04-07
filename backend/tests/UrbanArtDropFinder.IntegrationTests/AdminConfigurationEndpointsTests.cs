@@ -34,6 +34,7 @@ public sealed class AdminConfigurationEndpointsTests : IClassFixture<TestWebAppl
                 smtpSecurityMode = (int)SmtpSecurityMode.Tls,
                 smtpUserName = "mailer-user",
                 smtpUserEmail = "mailer@example.test",
+                smtpPasswordSecretName = "Smtp:Password",
                 publicAppBaseUrl = "https://app.example.test",
                 mainMapRadiusKm = 42,
                 miniMapRadiusKm = 7,
@@ -55,6 +56,8 @@ public sealed class AdminConfigurationEndpointsTests : IClassFixture<TestWebAppl
         Assert.Equal((int)SmtpSecurityMode.Tls, payload.SmtpSecurityMode);
         Assert.Equal("mailer-user", payload.SmtpUserName);
         Assert.Equal("mailer@example.test", payload.SmtpUserEmail);
+        Assert.Equal("Smtp:Password", payload.SmtpPasswordSecretName);
+        Assert.True(payload.SmtpPasswordConfigured);
         Assert.Equal("https://app.example.test", payload.PublicAppBaseUrl);
         Assert.Equal(42, payload.MainMapRadiusKm);
         Assert.Equal(7, payload.MiniMapRadiusKm);
@@ -109,7 +112,8 @@ public sealed class AdminConfigurationEndpointsTests : IClassFixture<TestWebAppl
                 smtpPort = 465,
                 smtpSecurityMode = (int)SmtpSecurityMode.Tls,
                 smtpUserName = "mailer-user",
-                smtpPassword = "TopSecretPassword!123"
+                smtpPassword = "TopSecretPassword!123",
+                smtpPasswordSecretName = (string?)null
             },
             admin.AccessToken);
         await EnsureSuccessWithBodyAsync(response);
@@ -133,6 +137,30 @@ public sealed class AdminConfigurationEndpointsTests : IClassFixture<TestWebAppl
         Assert.Null(configuration!.SmtpPassword);
     }
 
+    [Fact]
+    public async Task SmtpConnectionTestEndpoint_UsesConfiguredSecretReference_WhenPasswordIsNotSupplied()
+    {
+        var admin = await _factory.CreateAuthenticatedUserAsync(
+            UserRole.Admin,
+            $"admin.smtp.secret.{Guid.NewGuid():N}");
+
+        var response = await _client.PostAuthorizedAsJsonAsync(
+            "/api/admin/configuration/smtp/test",
+            new
+            {
+                smtpHost = "smtp.example.test",
+                smtpPort = 465,
+                smtpSecurityMode = (int)SmtpSecurityMode.Tls,
+                smtpUserName = "mailer-user",
+                smtpPassword = (string?)null,
+                smtpPasswordSecretName = "Smtp:Password"
+            },
+            admin.AccessToken);
+        await EnsureSuccessWithBodyAsync(response);
+
+        Assert.Equal("TestSmtpPassword!123", _factory.SmtpConnectionTester.LastRequest?.Password);
+    }
+
     private sealed record AppConfigurationDto(
         string SmtpHost,
         int SmtpPort,
@@ -140,6 +168,8 @@ public sealed class AdminConfigurationEndpointsTests : IClassFixture<TestWebAppl
         string? SmtpUserName,
         string? SmtpUserEmail,
         string? SmtpPassword,
+        string? SmtpPasswordSecretName,
+        bool SmtpPasswordConfigured,
         string PublicAppBaseUrl,
         int MainMapRadiusKm,
         int MiniMapRadiusKm,

@@ -12,6 +12,8 @@ namespace UrbanArtDropFinder.IntegrationTests;
 public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
     public FakeSmtpConnectionTester SmtpConnectionTester { get; } = new();
+    public FakeSmtpMailSender SmtpMailSender { get; } = new();
+    public FakeSocialMediaPublisher SocialMediaPublisher { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -39,6 +41,7 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
                     ["Authentication:ExternalProviders:Providers:microsoft:AuthorizationEndpoint"] = "https://provider.test/oauth/authorize",
                     ["Authentication:ExternalProviders:Providers:microsoft:TokenEndpoint"] = "https://provider.test/oauth/token",
                     ["Authentication:ExternalProviders:Providers:microsoft:UserInfoEndpoint"] = "https://provider.test/oauth/userinfo",
+                    ["Smtp:Password"] = "TestSmtpPassword!123",
                     ["ConnectionStrings:SqlServer"] =
                         "Server=(localdb)\\MSSQLLocalDB;Database=UrbanArtDropFinder.Tests.Placeholder;Trusted_Connection=True;TrustServerCertificate=True"
                 });
@@ -66,6 +69,10 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
                 .ConfigurePrimaryHttpMessageHandler(() => new FakeExternalProviderHttpMessageHandler());
             services.RemoveAll<ISmtpConnectionTester>();
             services.AddSingleton<ISmtpConnectionTester>(SmtpConnectionTester);
+            services.RemoveAll<ISmtpMailSender>();
+            services.AddSingleton<ISmtpMailSender>(SmtpMailSender);
+            services.RemoveAll<ISocialMediaPublisher>();
+            services.AddSingleton<ISocialMediaPublisher>(SocialMediaPublisher);
         });
     }
 }

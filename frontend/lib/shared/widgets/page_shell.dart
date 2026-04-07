@@ -242,6 +242,12 @@ List<_NavigationEntry> _buildNavigationEntries(
       ),
     if (isAdmin)
       _NavigationEntry("/admin/users", l10n.menuUsers, Icons.groups_outlined),
+    if (isAdmin)
+      _NavigationEntry(
+        "/admin/content",
+        l10n.navAdminContent,
+        Icons.admin_panel_settings_outlined,
+      ),
     const _NavigationEntry.divider(),
     if (isAuthenticated)
       _NavigationEntry.signOut(l10n.logoutButton, Icons.logout_outlined),

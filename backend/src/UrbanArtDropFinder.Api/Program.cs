@@ -889,6 +889,8 @@ artGroup.MapPost("/{id:guid}/report", async (
     Guid id,
     ReportArtPieceRequest request,
     UrbanArtDbContext dbContext,
+    ISmtpMailSender smtpMailSender,
+    ISmtpSecretResolver smtpSecretResolver,
     CancellationToken cancellationToken) =>
 {
     var artPiece = await dbContext.ArtPieces.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
@@ -899,7 +901,14 @@ artGroup.MapPost("/{id:guid}/report", async (
 
     artPiece.Report(request.Reason, DateTimeOffset.UtcNow);
     await dbContext.SaveChangesAsync(cancellationToken);
-    return Results.Ok(new { mailAlertTriggered = true });
+    var mailAlertTriggered = await SendModerationReportAlertAsync(
+        dbContext,
+        smtpMailSender,
+        smtpSecretResolver,
+        $"Kunstwerk gemeldet: {artPiece.Title}",
+        $"Das Kunstwerk '{artPiece.Title}' wurde gemeldet.\n\nGrund: {artPiece.ReportReason ?? "-"}\nKunstwerk-ID: {artPiece.Id}",
+        cancellationToken);
+    return Results.Ok(new { mailAlertTriggered });
 });
 
 artGroup.MapDelete("/{id:guid}", async (Guid id, HttpContext httpContext, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
@@ -939,6 +948,7 @@ dropsGroup.MapGet("/", async (HttpContext httpContext, UrbanArtDbContext dbConte
         .Include(x => x.Items)
         .Include(x => x.LocationPhotos)
         .Include(x => x.SocialChannels)
+        .Include(x => x.SocialPublishStatuses)
         .AsNoTracking()
         .ToListAsync(cancellationToken);
     var configuration = await GetConfigurationAsync(dbContext, cancellationToken);
@@ -955,6 +965,7 @@ dropsGroup.MapGet("/{id:guid}", async (Guid id, HttpContext httpContext, UrbanAr
         .Include(x => x.Items)
         .Include(x => x.LocationPhotos)
         .Include(x => x.SocialChannels)
+        .Include(x => x.SocialPublishStatuses)
         .AsNoTracking()
         .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
@@ -993,7 +1004,10 @@ dropsGroup.MapPost("/", async (
             request.IsStationary,
             request.PortableItemCount,
             request.DropMakerComment,
-            request.SocialChannels);
+            request.SocialChannels ?? []);
+        var nowUtc = DateTimeOffset.UtcNow;
+        drop.SetProductionPrinted(request.ProductionPrinted, nowUtc);
+        drop.SetPlacementConfirmed(request.PlacementConfirmed, nowUtc);
 
         if (request.Latitude.HasValue && request.Longitude.HasValue)
         {
@@ -1062,6 +1076,9 @@ dropsGroup.MapPut("/{id:guid}", async (
             request.DropMakerComment,
             [],
             request.ItemCount);
+        var nowUtc = DateTimeOffset.UtcNow;
+        drop.SetProductionPrinted(request.ProductionPrinted, nowUtc);
+        drop.SetPlacementConfirmed(request.PlacementConfirmed, nowUtc);
 
         if (request.Latitude.HasValue && request.Longitude.HasValue)
         {
@@ -1097,7 +1114,7 @@ dropsGroup.MapPut("/{id:guid}", async (
                 cancellationToken);
         }
 
-        var normalizedSocialChannels = request.SocialChannels
+        var normalizedSocialChannels = (request.SocialChannels ?? [])
             .Select(DropSocialChannelSelection.NormalizeChannel)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
@@ -1171,6 +1188,7 @@ dropsGroup.MapPut("/{id:guid}", async (
             .Include(x => x.Items)
             .Include(x => x.LocationPhotos)
             .Include(x => x.SocialChannels)
+            .Include(x => x.SocialPublishStatuses)
             .AsNoTracking()
             .FirstAsync(x => x.Id == id, cancellationToken);
         return Results.Ok(ToDropResponse(reloadedDrop, httpContext.Request, configuration));
@@ -1181,7 +1199,12 @@ dropsGroup.MapPut("/{id:guid}", async (
     }
 }).RequireAuthorization(AuthPolicies.DropCreator);
 
-dropsGroup.MapPost("/{id:guid}/publish", async (Guid id, HttpContext httpContext, UrbanArtDbContext dbContext, CancellationToken cancellationToken) =>
+dropsGroup.MapPost("/{id:guid}/publish", async (
+    Guid id,
+    HttpContext httpContext,
+    UrbanArtDbContext dbContext,
+    ISocialMediaPublisher socialMediaPublisher,
+    CancellationToken cancellationToken) =>
 {
     var actorResolution = await ResolveAuthenticatedActorAsync(httpContext, dbContext, cancellationToken);
     if (actorResolution.Failure is not null)
@@ -1192,6 +1215,8 @@ dropsGroup.MapPost("/{id:guid}/publish", async (Guid id, HttpContext httpContext
     var drop = await dbContext.Drops
         .Include(x => x.Items)
         .Include(x => x.LocationPhotos)
+        .Include(x => x.SocialChannels)
+        .Include(x => x.SocialPublishStatuses)
         .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
     if (drop is null)
@@ -1208,6 +1233,12 @@ dropsGroup.MapPost("/{id:guid}/publish", async (Guid id, HttpContext httpContext
     {
         drop.Publish();
         await dbContext.SaveChangesAsync(cancellationToken);
+        await PublishDropToSocialChannelsAsync(
+            drop,
+            httpContext.Request,
+            dbContext,
+            socialMediaPublisher,
+            cancellationToken);
         await NotifyAdminDropStakeholdersAsync(
             actorResolution.Actor!,
             dbContext,
@@ -1523,6 +1554,8 @@ commentsGroup.MapPost("/{id:guid}/report", async (
     Guid id,
     ReportCommentRequest request,
     UrbanArtDbContext dbContext,
+    ISmtpMailSender smtpMailSender,
+    ISmtpSecretResolver smtpSecretResolver,
     CancellationToken cancellationToken) =>
 {
     var comment = await dbContext.DropComments.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
@@ -1533,7 +1566,14 @@ commentsGroup.MapPost("/{id:guid}/report", async (
 
     comment.Report(request.Reason, DateTimeOffset.UtcNow);
     await dbContext.SaveChangesAsync(cancellationToken);
-    return Results.Ok(new { mailAlertTriggered = true });
+    var mailAlertTriggered = await SendModerationReportAlertAsync(
+        dbContext,
+        smtpMailSender,
+        smtpSecretResolver,
+        $"Kommentar gemeldet: Drop {comment.DropId}",
+        $"Ein Kommentar wurde gemeldet.\n\nGrund: {comment.ReportReason ?? "-"}\nKommentar-ID: {comment.Id}\nDrop-ID: {comment.DropId}",
+        cancellationToken);
+    return Results.Ok(new { mailAlertTriggered });
 }).RequireAuthorization(AuthPolicies.ApprovedAccount);
 
 commentsGroup.MapPost("/{id:guid}/hide", async (
@@ -1963,6 +2003,7 @@ adminGroup.MapPut("/configuration", async (
       config.SmtpSecurityMode = (SmtpSecurityMode)request.SmtpSecurityMode;
       config.SmtpUserName = NormalizeOptionalText(request.SmtpUserName);
       config.SmtpUserEmail = NormalizeOptionalText(request.SmtpUserEmail);
+      config.SmtpPasswordSecretName = NormalizeOptionalText(request.SmtpPasswordSecretName);
       config.PublicAppBaseUrl = NormalizeOptionalBaseUrl(request.PublicAppBaseUrl);
       config.MainMapRadiusKm = request.MainMapRadiusKm;
       config.MiniMapRadiusKm = request.MiniMapRadiusKm;
@@ -1976,6 +2017,7 @@ adminGroup.MapPut("/configuration", async (
 adminGroup.MapPost("/configuration/smtp/test", async (
       TestSmtpConnectionRequest request,
       ISmtpConnectionTester smtpConnectionTester,
+      ISmtpSecretResolver smtpSecretResolver,
       CancellationToken cancellationToken) =>
   {
       var smtpHost = NormalizeOptionalText(request.SmtpHost);
@@ -1995,7 +2037,9 @@ adminGroup.MapPost("/configuration/smtp/test", async (
       }
 
       var smtpUserName = NormalizeOptionalText(request.SmtpUserName);
-      var smtpPassword = NormalizeOptionalText(request.SmtpPassword);
+      var smtpPasswordSecretName = NormalizeOptionalText(request.SmtpPasswordSecretName);
+      var smtpPassword = NormalizeOptionalText(request.SmtpPassword)
+          ?? smtpSecretResolver.ResolveSecret(smtpPasswordSecretName);
       if ((smtpUserName is null) != (smtpPassword is null))
       {
           return Results.BadRequest(new
@@ -2313,6 +2357,8 @@ static AppConfigurationResponse ToAppConfigurationResponse(
         (int)configuration.SmtpSecurityMode,
         configuration.SmtpUserName,
         configuration.SmtpUserEmail,
+        configuration.SmtpPasswordSecretName,
+        !string.IsNullOrWhiteSpace(configuration.SmtpPasswordSecretName),
         configuration.PublicAppBaseUrl,
         configuration.MainMapRadiusKm,
         configuration.MiniMapRadiusKm,
@@ -2348,6 +2394,116 @@ static string? NormalizeOptionalText(string? value)
 {
     var normalized = value?.Trim();
     return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
+}
+
+static async Task<bool> SendModerationReportAlertAsync(
+    UrbanArtDbContext dbContext,
+    ISmtpMailSender smtpMailSender,
+    ISmtpSecretResolver smtpSecretResolver,
+    string subject,
+    string body,
+    CancellationToken cancellationToken)
+{
+    var configuration = await GetConfigurationAsync(dbContext, cancellationToken);
+    var smtpHost = NormalizeOptionalText(configuration.SmtpHost);
+    var senderEmail = NormalizeOptionalText(configuration.SmtpUserEmail);
+    if (smtpHost is null || senderEmail is null)
+    {
+        return false;
+    }
+
+    var recipients = await dbContext.UserAccounts
+        .AsNoTracking()
+        .Where(user =>
+            (user.Role == UserRole.Admin || user.Role == UserRole.Moderator) &&
+            user.IsApproved &&
+            !user.IsSuspended &&
+            user.IsEmailVerified)
+        .Select(user => user.Email)
+        .Distinct()
+        .ToListAsync(cancellationToken);
+    if (recipients.Count == 0)
+    {
+        return false;
+    }
+
+    var smtpPassword = smtpSecretResolver.ResolveSecret(configuration.SmtpPasswordSecretName);
+    var result = await smtpMailSender.SendAsync(
+        new SmtpMailMessage(senderEmail, recipients, subject, body),
+        new SmtpDeliveryOptions(
+            smtpHost,
+            configuration.SmtpPort,
+            configuration.SmtpSecurityMode,
+            NormalizeOptionalText(configuration.SmtpUserName),
+            smtpPassword),
+        cancellationToken);
+
+    return result.Success;
+}
+
+static async Task PublishDropToSocialChannelsAsync(
+    Drop drop,
+    HttpRequest request,
+    UrbanArtDbContext dbContext,
+    ISocialMediaPublisher socialMediaPublisher,
+    CancellationToken cancellationToken)
+{
+    var channels = drop.SocialChannels
+        .Select(channel => channel.Channel)
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToList();
+    if (channels.Count == 0)
+    {
+        return;
+    }
+
+    var artPiece = await dbContext.ArtPieces
+        .AsNoTracking()
+        .FirstOrDefaultAsync(piece => piece.Id == drop.ArtPieceId, cancellationToken);
+    var dropMaker = await dbContext.UserAccounts
+        .AsNoTracking()
+        .FirstOrDefaultAsync(user => user.Id == drop.DropMakerId, cancellationToken);
+    var configuration = await GetConfigurationAsync(dbContext, cancellationToken);
+    var appBaseUri = ResolvePublicAppBaseUrl(configuration, request);
+    var publicDropUrl = $"{appBaseUri}/hunter/drops/{drop.Id}";
+    var nowUtc = DateTimeOffset.UtcNow;
+
+    foreach (var channel in channels)
+    {
+        var result = await socialMediaPublisher.PublishDropAsync(
+            new SocialMediaPublishRequest(
+                drop.Id,
+                channel,
+                artPiece?.Title ?? drop.ArtPieceId.ToString(),
+                dropMaker?.UserName ?? drop.DropMakerId.ToString(),
+                drop.DropMakerComment,
+                publicDropUrl),
+            cancellationToken);
+
+        var existingStatus = await dbContext.DropSocialPublishStatuses
+            .FirstOrDefaultAsync(
+                status => status.DropId == drop.Id && status.Channel == channel,
+                cancellationToken);
+        if (existingStatus is null)
+        {
+            existingStatus = new DropSocialPublishStatus
+            {
+                DropId = drop.Id,
+                Channel = channel
+            };
+            await dbContext.DropSocialPublishStatuses.AddAsync(existingStatus, cancellationToken);
+        }
+
+        existingStatus.Status = result.Outcome.ToString();
+        existingStatus.Message = result.Message;
+        existingStatus.ExternalPostId = result.ExternalPostId;
+        existingStatus.LastAttemptAtUtc = nowUtc;
+        existingStatus.PublishedAtUtc = result.Outcome == SocialMediaPublishOutcome.Published
+            ? nowUtc
+            : null;
+    }
+
+    await dbContext.SaveChangesAsync(cancellationToken);
 }
 
 static async Task<(UserAccount? Actor, IResult? Failure)> ResolveAuthenticatedActorAsync(
@@ -2655,6 +2811,16 @@ static DropResponseDto ToDropResponse(Drop drop, HttpRequest request, AppConfigu
         .Select(channel => channel.Channel)
         .OrderBy(channel => channel, StringComparer.OrdinalIgnoreCase)
         .ToList();
+    var socialPublishStatuses = drop.SocialPublishStatuses
+        .OrderBy(status => status.Channel, StringComparer.OrdinalIgnoreCase)
+        .Select(status => new DropSocialPublishStatusResponseDto(
+            status.Channel,
+            status.Status,
+            status.Message,
+            status.ExternalPostId,
+            status.LastAttemptAtUtc,
+            status.PublishedAtUtc))
+        .ToList();
     var items = drop.Items
         .Select(item => new DropItemResponseDto(
             item.Id,
@@ -2674,6 +2840,11 @@ static DropResponseDto ToDropResponse(Drop drop, HttpRequest request, AppConfigu
         drop.PortableItemCount,
         drop.DropMakerComment,
         socialChannels,
+        drop.ProductionPrinted,
+        drop.ProductionPrintedAtUtc,
+        drop.PlacementConfirmed,
+        drop.PlacementConfirmedAtUtc,
+        socialPublishStatuses,
         drop.Latitude,
         drop.Longitude,
         drop.IsPublished,
@@ -3330,6 +3501,14 @@ internal sealed record DropItemResponseDto(
     string? ClaimedByAnonymousNickname,
     DateTimeOffset? ClaimedAtUtc);
 
+internal sealed record DropSocialPublishStatusResponseDto(
+    string Channel,
+    string Status,
+    string Message,
+    string? ExternalPostId,
+    DateTimeOffset LastAttemptAtUtc,
+    DateTimeOffset? PublishedAtUtc);
+
 internal sealed record DropResponseDto(
     Guid Id,
     Guid ArtPieceId,
@@ -3338,6 +3517,11 @@ internal sealed record DropResponseDto(
     int? PortableItemCount,
     string? DropMakerComment,
     IReadOnlyCollection<string> SocialChannels,
+    bool ProductionPrinted,
+    DateTimeOffset? ProductionPrintedAtUtc,
+    bool PlacementConfirmed,
+    DateTimeOffset? PlacementConfirmedAtUtc,
+    IReadOnlyCollection<DropSocialPublishStatusResponseDto> SocialPublishStatuses,
     double? Latitude,
     double? Longitude,
     bool IsPublished,

@@ -1,11 +1,15 @@
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using UrbanArtDropFinder.Contracts.Art;
 using UrbanArtDropFinder.Contracts.Comments;
 using UrbanArtDropFinder.Contracts.Moderation;
 using UrbanArtDropFinder.Domain.Art;
+using UrbanArtDropFinder.Domain.Configuration;
 using UrbanArtDropFinder.Domain.Users;
+using UrbanArtDropFinder.Persistence.Db;
 
 namespace UrbanArtDropFinder.IntegrationTests;
 
@@ -30,6 +34,7 @@ public sealed class ModerationEndpointsTests : IClassFixture<TestWebApplicationF
         var moderator = await CreateUserAsync(UserRole.Moderator, $"moderator.{uniqueId}");
         var artist = await CreateUserAsync(UserRole.Artist, $"artist.flow.{uniqueId}");
         var reporter = await CreateUserAsync(UserRole.Hunter, $"reporter.flow.{uniqueId}");
+        await ConfigureSmtpAlertsAsync();
         var createArtResponse = await _client.PostAuthorizedAsJsonAsync(
             "/api/art-pieces/",
             new
@@ -89,6 +94,9 @@ public sealed class ModerationEndpointsTests : IClassFixture<TestWebApplicationF
             new ReportArtPieceRequest("Artwork needs content review"),
             reporter.AccessToken);
         await EnsureSuccessWithBodyAsync(reportArtResponse);
+        Assert.NotNull(_factory.SmtpMailSender.LastRequest);
+        Assert.Contains(moderator.Email, _factory.SmtpMailSender.LastRequest!.Value.Message.Recipients);
+        Assert.Equal("TestSmtpPassword!123", _factory.SmtpMailSender.LastRequest.Value.DeliveryOptions.Password);
 
         var queueResponse = await GetModerationQueueAsync(moderator.AccessToken);
         Assert.NotNull(queueResponse);
@@ -274,6 +282,20 @@ public sealed class ModerationEndpointsTests : IClassFixture<TestWebApplicationF
 
     private Task<TestAuthUtilities.AuthenticatedTestUser> CreateUserAsync(UserRole role, string userName)
         => _factory.CreateAuthenticatedUserAsync(role, userName);
+
+    private async Task ConfigureSmtpAlertsAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<UrbanArtDbContext>();
+        var configuration = await dbContext.AppConfigurations.SingleAsync();
+        configuration.SmtpHost = "smtp.example.test";
+        configuration.SmtpPort = 465;
+        configuration.SmtpSecurityMode = SmtpSecurityMode.Tls;
+        configuration.SmtpUserName = "mailer-user";
+        configuration.SmtpUserEmail = "mailer@example.test";
+        configuration.SmtpPasswordSecretName = "Smtp:Password";
+        await dbContext.SaveChangesAsync();
+    }
 
     private async Task<ReportedDropContext> CreateReportedCommentAsync(
         TestAuthUtilities.AuthenticatedTestUser artist,

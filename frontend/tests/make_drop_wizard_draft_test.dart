@@ -28,13 +28,23 @@ void main() {
       errors,
       contains(MakeDropWizardDraftValidationError.invalidPortableItemCount),
     );
+    expect(
+      errors,
+      contains(MakeDropWizardDraftValidationError.missingPrintConfirmation),
+    );
   });
 
   test("toCreateInput clears portable count for stationary drops", () {
-    final draft = MakeDropWizardDraft.initial(
-      artPieceId: "art-1",
-      dropMakerId: "maker-1",
-    ).copyWith(itemCount: 3, isStationary: true, portableItemCount: 2);
+    final draft =
+        MakeDropWizardDraft.initial(
+          artPieceId: "art-1",
+          dropMakerId: "maker-1",
+        ).copyWith(
+          itemCount: 3,
+          isStationary: true,
+          portableItemCount: 2,
+          productionPrinted: true,
+        );
 
     final input = draft.toCreateInput();
 
@@ -43,6 +53,7 @@ void main() {
     expect(input.isStationary, isTrue);
     expect(input.portableItemCount, isNull);
     expect(input.itemCount, 3);
+    expect(input.productionPrinted, isTrue);
   });
 
   test("validatePlacementStep requires coordinates and location photos", () {
@@ -61,6 +72,10 @@ void main() {
       errors,
       contains(MakeDropWizardDraftValidationError.missingLocationPhotos),
     );
+    expect(
+      errors,
+      contains(MakeDropWizardDraftValidationError.missingPlacementConfirmation),
+    );
   });
 
   test("withPersistedDrop exposes backend-generated qr tokens", () {
@@ -72,6 +87,8 @@ void main() {
       portableItemCount: null,
       dropMakerComment: "Hide near the east entrance.",
       socialChannels: ["Instagram"],
+      productionPrinted: true,
+      placementConfirmed: false,
       latitude: null,
       longitude: null,
       isPublished: false,
@@ -108,6 +125,8 @@ void main() {
     expect(draft.hasPersistedDrop, isTrue);
     expect(draft.dropMakerComment, "Hide near the east entrance.");
     expect(draft.socialChannels, ["Instagram"]);
+    expect(draft.productionPrinted, isTrue);
+    expect(draft.placementConfirmed, isFalse);
     expect(draft.qrTokens, ["token-1", "token-2"]);
   });
 
@@ -120,6 +139,8 @@ void main() {
       portableItemCount: 2,
       dropMakerComment: "Place after sunset.",
       socialChannels: ["Facebook", "TikTok"],
+      productionPrinted: true,
+      placementConfirmed: false,
       latitude: null,
       longitude: null,
       isPublished: false,
@@ -148,6 +169,8 @@ void main() {
     expect(draft.portableItemCount, 2);
     expect(draft.dropMakerComment, "Place after sunset.");
     expect(draft.socialChannels, ["Facebook", "TikTok"]);
+    expect(draft.productionPrinted, isTrue);
+    expect(draft.placementConfirmed, isFalse);
     expect(draft.itemCount, 3);
     expect(draft.qrTokens, ["token-1"]);
     expect(draft.resumeStepIndex, 4);
@@ -162,6 +185,8 @@ void main() {
       portableItemCount: null,
       dropMakerComment: null,
       socialChannels: [],
+      productionPrinted: true,
+      placementConfirmed: true,
       latitude: 50.1,
       longitude: 8.6,
       isPublished: false,

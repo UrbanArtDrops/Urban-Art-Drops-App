@@ -21,6 +21,8 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
   final TextEditingController _smtpUserNameController = TextEditingController();
   final TextEditingController _smtpUserEmailController =
       TextEditingController();
+  final TextEditingController _smtpPasswordSecretNameController =
+      TextEditingController();
   final TextEditingController _smtpPasswordController = TextEditingController();
   final TextEditingController _publicAppBaseUrlController =
       TextEditingController();
@@ -51,6 +53,7 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
     _smtpPortController.dispose();
     _smtpUserNameController.dispose();
     _smtpUserEmailController.dispose();
+    _smtpPasswordSecretNameController.dispose();
     _smtpPasswordController.dispose();
     _publicAppBaseUrlController.dispose();
     _mainMapRadiusController.dispose();
@@ -96,6 +99,8 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
     _smtpSecurityMode = configuration.smtpSecurityMode;
     _smtpUserNameController.text = configuration.smtpUserName;
     _smtpUserEmailController.text = configuration.smtpUserEmail;
+    _smtpPasswordSecretNameController.text =
+        configuration.smtpPasswordSecretName;
     _smtpPasswordController.clear();
     _publicAppBaseUrlController.text = configuration.publicAppBaseUrl;
     _mainMapRadiusController.text = configuration.mainMapRadiusKm.toString();
@@ -137,6 +142,7 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
         smtpSecurityMode: _smtpSecurityMode,
         smtpUserName: _smtpUserNameController.text.trim(),
         smtpUserEmail: _smtpUserEmailController.text.trim(),
+        smtpPasswordSecretName: _smtpPasswordSecretNameController.text.trim(),
         publicAppBaseUrl: _publicAppBaseUrlController.text.trim(),
         mainMapRadiusKm: mainMapRadiusKm,
         miniMapRadiusKm: miniMapRadiusKm,
@@ -174,6 +180,8 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
     final smtpPort = _parseSmtpPort();
     final smtpUserName = _smtpUserNameController.text.trim();
     final smtpPassword = _smtpPasswordController.text;
+    final smtpPasswordSecretName = _smtpPasswordSecretNameController.text
+        .trim();
 
     if (smtpHost.isEmpty) {
       _showSnackBar(l10n.smtpTestConnectionHostRequired);
@@ -186,7 +194,8 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
     }
 
     final hasUserName = smtpUserName.isNotEmpty;
-    final hasPassword = smtpPassword.isNotEmpty;
+    final hasPassword =
+        smtpPassword.isNotEmpty || smtpPasswordSecretName.isNotEmpty;
     if (hasUserName != hasPassword) {
       _showSnackBar(l10n.smtpTestConnectionCredentialsRequired);
       return;
@@ -200,6 +209,7 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
         smtpSecurityMode: _smtpSecurityMode,
         smtpUserName: smtpUserName,
         smtpPassword: smtpPassword,
+        smtpPasswordSecretName: smtpPasswordSecretName,
       );
       if (!mounted) {
         return;
@@ -299,6 +309,16 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
                   keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
                     labelText: l10n.smtpUserEmailLabel,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _smtpPasswordSecretNameController,
+                  decoration: InputDecoration(
+                    labelText: l10n.smtpPasswordSecretNameLabel,
+                    helperText: _configuration.smtpPasswordConfigured
+                        ? l10n.smtpPasswordConfiguredHint
+                        : l10n.smtpPasswordMissingHint,
                   ),
                 ),
                 const SizedBox(height: 8),

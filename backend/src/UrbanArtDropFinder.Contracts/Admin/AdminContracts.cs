@@ -6,6 +6,7 @@ public sealed record UpdateAppConfigurationRequest(
     int SmtpSecurityMode,
     string? SmtpUserName,
     string? SmtpUserEmail,
+    string? SmtpPasswordSecretName,
     string? PublicAppBaseUrl,
     int MainMapRadiusKm,
     int MiniMapRadiusKm,
@@ -17,7 +18,8 @@ public sealed record TestSmtpConnectionRequest(
     int SmtpPort,
     int SmtpSecurityMode,
     string? SmtpUserName,
-    string? SmtpPassword);
+    string? SmtpPassword,
+    string? SmtpPasswordSecretName);
 
 public sealed record TestSmtpConnectionResponse(
     bool Success,
@@ -38,6 +40,8 @@ public sealed record AppConfigurationResponse(
     int SmtpSecurityMode,
     string? SmtpUserName,
     string? SmtpUserEmail,
+    string? SmtpPasswordSecretName,
+    bool SmtpPasswordConfigured,
     string? PublicAppBaseUrl,
     int MainMapRadiusKm,
     int MiniMapRadiusKm,

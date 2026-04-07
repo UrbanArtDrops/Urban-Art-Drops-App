@@ -994,7 +994,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get makeDropStepPrintDescription =>
-      'Printing the drop is out of scope. Enter the item quantity here.';
+      'Print the production asset, inspect the produced items and confirm production before QR codes are generated.';
+
+  @override
+  String get makeDropProductionPrintedLabel =>
+      'Drop has been printed and inspected';
+
+  @override
+  String get makeDropProductionPrintedDescription =>
+      'Confirm this step only after the physical production is complete.';
+
+  @override
+  String get makeDropPrintConfirmationRequired =>
+      'Please confirm that the drop has been printed and inspected first.';
 
   @override
   String get makeDropItemCountLabel => 'Item quantity';
@@ -1025,7 +1037,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get makeDropStepPlaceDescription =>
-      'Placing the drop is out of scope. Then capture the drop location and location photos.';
+      'Place the drop at the captured location, document the spot with photos and confirm placement.';
+
+  @override
+  String get makeDropPlacementConfirmedLabel => 'Drop has been placed';
+
+  @override
+  String get makeDropPlacementConfirmedDescription =>
+      'Confirm this step only after the drop has been physically placed.';
+
+  @override
+  String get makeDropPlacementConfirmationRequired =>
+      'Please confirm that the drop has been placed first.';
 
   @override
   String get makeDropLocationLabel => 'Drop location';
@@ -1267,6 +1290,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get smtpPasswordLabel => 'SMTP password';
 
   @override
+  String get smtpPasswordSecretNameLabel => 'SMTP password secret';
+
+  @override
+  String get smtpPasswordConfiguredHint =>
+      'Production mail sending uses this configured secret.';
+
+  @override
+  String get smtpPasswordMissingHint =>
+      'Enter a secret reference such as Smtp:Password for production mail sending.';
+
+  @override
   String get smtpPasswordTransientHint =>
       'Used only for the connection test. The password is not stored in the application configuration.';
 
@@ -1356,6 +1390,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dropSocialChannelsLabel => 'Social channels';
+
+  @override
+  String get dropSocialPublishStatusLabel => 'Social publishing';
 
   @override
   String get bootstrapAdminTitle => 'Bootstrap admin';
