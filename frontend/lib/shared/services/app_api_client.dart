@@ -375,6 +375,7 @@ class AppApiClient {
       _uri("/api/admin/users/$userId/approval", {
         "approved": approved.toString(),
       }),
+      headers: _headers(),
     );
     _ensureSuccess(response, "Failed to update user approval.");
   }
@@ -384,6 +385,7 @@ class AppApiClient {
       _uri("/api/admin/users/$userId/suspension", {
         "suspended": suspended.toString(),
       }),
+      headers: _headers(),
     );
     _ensureSuccess(response, "Failed to update user suspension.");
   }
@@ -391,6 +393,7 @@ class AppApiClient {
   Future<void> updateUserRole(String userId, int role) async {
     final response = await _httpClient.patch(
       _uri("/api/admin/users/$userId/role", {"role": role.toString()}),
+      headers: _headers(),
     );
     _ensureSuccess(response, "Failed to update user role.");
   }
