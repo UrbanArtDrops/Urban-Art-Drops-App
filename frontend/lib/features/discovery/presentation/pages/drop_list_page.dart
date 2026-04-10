@@ -13,6 +13,7 @@ import "../../../authentication/presentation/bloc/auth_session_cubit.dart";
 import "../../../../shared/models/app_models.dart";
 import "../../../../shared/models/hunter_identity.dart";
 import "../../../../shared/services/app_api_client.dart";
+import "../../../../shared/widgets/app_panels.dart";
 import "../../../../shared/widgets/drop_overview_card.dart";
 import "../../../../shared/widgets/page_shell.dart";
 
@@ -496,18 +497,18 @@ class _DropListPageState extends State<DropListPage> {
       return const SizedBox.shrink();
     }
 
-    return Material(
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      borderRadius: BorderRadius.circular(12),
+    return AppSurfacePanel(
+      radius: 20,
+      padding: EdgeInsets.zero,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: Column(
         children: [
           if (_locationSuggestions.isNotEmpty)
             ConstrainedBox(
               constraints: const BoxConstraints(maxHeight: 220),
-              child: ListView.separated(
+              child: ListView.builder(
                 shrinkWrap: true,
                 itemCount: _locationSuggestions.length,
-                separatorBuilder: (context, _) => const Divider(height: 1),
                 itemBuilder: (context, index) {
                   final suggestion = _locationSuggestions[index];
                   return ListTile(
@@ -578,100 +579,109 @@ class _DropListPageState extends State<DropListPage> {
           : Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-                  child: Column(
-                    children: [
-                      TextField(
-                        controller: _searchController,
-                        onChanged: (_) => setState(() {}),
-                        decoration: InputDecoration(
-                          labelText: l10n.searchDropsHint,
-                          prefixIcon: const Icon(Icons.search),
-                          suffixIcon: _searchController.text.isEmpty
-                              ? null
-                              : IconButton(
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    setState(() {});
-                                  },
-                                  icon: const Icon(Icons.clear),
-                                ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _locationController,
-                              focusNode: _locationFocusNode,
-                              onChanged: _onLocationQueryChanged,
-                              decoration: InputDecoration(
-                                hintText: l10n.dropListLocationHint,
-                                prefixIcon: const Icon(Icons.place_outlined),
-                                suffixIcon: _isSearchingLocations
-                                    ? const Padding(
-                                        padding: EdgeInsets.all(12),
-                                        child: SizedBox(
-                                          width: 16,
-                                          height: 16,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                          ),
-                                        ),
-                                      )
-                                    : null,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton.filledTonal(
-                            tooltip: l10n.centerOnMyLocation,
-                            onPressed: _isResolvingUserLocation
+                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+                  child: AppGlassPanel(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppSectionHeading(title: l10n.navDrops),
+                        const SizedBox(height: 14),
+                        TextField(
+                          controller: _searchController,
+                          onChanged: (_) => setState(() {}),
+                          decoration: InputDecoration(
+                            labelText: l10n.searchDropsHint,
+                            prefixIcon: const Icon(Icons.search),
+                            suffixIcon: _searchController.text.isEmpty
                                 ? null
-                                : () => _resolveUserLocation(l10n),
-                            icon: _isResolvingUserLocation
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Icon(Icons.my_location_outlined),
-                          ),
-                          if (_referenceLocation != null) ...[
-                            const SizedBox(width: 8),
-                            IconButton(
-                              tooltip: l10n.cancelAction,
-                              onPressed: _clearReferenceLocation,
-                              icon: const Icon(Icons.close),
-                            ),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      _buildLocationSuggestions(l10n),
-                      if (_referenceLocation != null &&
-                          _referenceLocationLabel != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              l10n.dropListSortingByDistance(
-                                _referenceLocationLabel!,
-                              ),
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
+                                : IconButton(
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      setState(() {});
+                                    },
+                                    icon: const Icon(Icons.clear),
+                                  ),
                           ),
                         ),
-                    ],
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _locationController,
+                                focusNode: _locationFocusNode,
+                                onChanged: _onLocationQueryChanged,
+                                decoration: InputDecoration(
+                                  hintText: l10n.dropListLocationHint,
+                                  prefixIcon: const Icon(Icons.place_outlined),
+                                  suffixIcon: _isSearchingLocations
+                                      ? const Padding(
+                                          padding: EdgeInsets.all(12),
+                                          child: SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          ),
+                                        )
+                                      : null,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton.filledTonal(
+                              tooltip: l10n.centerOnMyLocation,
+                              onPressed: _isResolvingUserLocation
+                                  ? null
+                                  : () => _resolveUserLocation(l10n),
+                              icon: _isResolvingUserLocation
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Icon(Icons.my_location_outlined),
+                            ),
+                            if (_referenceLocation != null) ...[
+                              const SizedBox(width: 8),
+                              IconButton(
+                                tooltip: l10n.cancelAction,
+                                onPressed: _clearReferenceLocation,
+                                icon: const Icon(Icons.close),
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        _buildLocationSuggestions(l10n),
+                        if (_referenceLocation != null &&
+                            _referenceLocationLabel != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                l10n.dropListSortingByDistance(
+                                  _referenceLocationLabel!,
+                                ),
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
                 Expanded(
                   child: viewModels.isEmpty
-                      ? Center(child: Text(l10n.dropListEmpty))
+                      ? Center(
+                          child: AppSurfacePanel(
+                            child: Text(l10n.dropListEmpty),
+                          ),
+                        )
                       : RefreshIndicator(
                           onRefresh: _loadDrops,
                           child: ListView.separated(

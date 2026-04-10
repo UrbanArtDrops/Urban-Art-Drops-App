@@ -3,6 +3,7 @@ import "package:urban_art_drops_app/l10n/app_localizations.dart";
 
 import "../../../../shared/models/app_models.dart";
 import "../../../../shared/services/app_api_client.dart";
+import "../../../../shared/widgets/app_panels.dart";
 import "../../../../shared/widgets/page_shell.dart";
 import "../../../../shared/widgets/password_text_field.dart";
 
@@ -258,224 +259,263 @@ class _AdminConfigurationPageState extends State<AdminConfigurationPage> {
               ),
             )
           : ListView(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
               children: [
-                TextField(
-                  controller: _smtpHostController,
-                  decoration: InputDecoration(labelText: l10n.smtpLabel),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _smtpPortController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(labelText: l10n.smtpPortLabel),
-                ),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<SmtpSecurityModeModel>(
-                  initialValue: _smtpSecurityMode,
-                  decoration: InputDecoration(
-                    labelText: l10n.smtpSecurityModeLabel,
-                  ),
-                  items: [
-                    DropdownMenuItem(
-                      value: SmtpSecurityModeModel.startTls,
-                      child: Text(l10n.smtpSecurityModeStartTls),
-                    ),
-                    DropdownMenuItem(
-                      value: SmtpSecurityModeModel.tls,
-                      child: Text(l10n.smtpSecurityModeTls),
-                    ),
-                  ],
-                  onChanged: _isSaving || _isTestingConnection
-                      ? null
-                      : (value) {
-                          if (value == null) {
-                            return;
-                          }
-
-                          setState(() => _smtpSecurityMode = value);
-                        },
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _smtpUserNameController,
-                  decoration: InputDecoration(
-                    labelText: l10n.smtpUserNameLabel,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _smtpUserEmailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
-                    labelText: l10n.smtpUserEmailLabel,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _smtpPasswordSecretNameController,
-                  decoration: InputDecoration(
-                    labelText: l10n.smtpPasswordSecretNameLabel,
-                    helperText: _configuration.smtpPasswordConfigured
-                        ? l10n.smtpPasswordConfiguredHint
-                        : l10n.smtpPasswordMissingHint,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                PasswordTextField(
-                  controller: _smtpPasswordController,
-                  enabled: !_isSaving && !_isTestingConnection,
-                  decoration: InputDecoration(
-                    labelText: l10n.smtpPasswordLabel,
-                    helperText: l10n.smtpPasswordTransientHint,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _publicAppBaseUrlController,
-                  decoration: InputDecoration(
-                    labelText: l10n.publicAppBaseUrlLabel,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _mainMapRadiusController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: l10n.mainMapRadiusSetting,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _miniMapRadiusController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: l10n.miniMapRadiusSetting,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _unclaimedRadiusController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: l10n.unclaimedRadiusSetting,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                SwitchListTile(
-                  value: _showExactPositionWhenFullyClaimed,
-                  onChanged: _isSaving
-                      ? null
-                      : (value) {
-                          setState(
-                            () => _showExactPositionWhenFullyClaimed = value,
-                          );
-                        },
-                  title: Text(l10n.showExactPositionSetting),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  l10n.authProviderStatusSectionTitle,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                if (_configuration.authProviders.isEmpty)
-                  Text(l10n.authProviderStatusEmpty)
-                else
-                  ..._configuration.authProviders.map(
-                    (provider) => Card.outlined(
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        title: Text(provider.displayName),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 8),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                _StatusChip(
-                                  label: provider.enabled
-                                      ? l10n.authProviderStatusEnabled
-                                      : l10n.authProviderStatusDisabled,
-                                  color: provider.enabled
-                                      ? Colors.green
-                                      : Colors.grey,
-                                ),
-                                _StatusChip(
-                                  label: provider.visibleOnLogin
-                                      ? l10n.authProviderStatusVisibleOnLogin
-                                      : l10n.authProviderStatusHiddenOnLogin,
-                                  color: provider.visibleOnLogin
-                                      ? Colors.blue
-                                      : Colors.orange,
-                                ),
-                                _StatusChip(
-                                  label: provider.hasClientId
-                                      ? l10n.authProviderStatusClientIdPresent
-                                      : l10n.authProviderStatusClientIdMissing,
-                                  color: provider.hasClientId
-                                      ? Colors.green
-                                      : Colors.red,
-                                ),
-                                _StatusChip(
-                                  label: provider.hasClientSecret
-                                      ? l10n.authProviderStatusClientSecretPresent
-                                      : l10n.authProviderStatusClientSecretMissing,
-                                  color: provider.hasClientSecret
-                                      ? Colors.green
-                                      : Colors.red,
-                                ),
-                                _StatusChip(
-                                  label: provider.usesPkce
-                                      ? l10n.authProviderStatusPkceEnabled
-                                      : l10n.authProviderStatusPkceDisabled,
-                                  color: provider.usesPkce
-                                      ? Colors.teal
-                                      : Colors.blueGrey,
-                                ),
-                              ],
-                            ),
-                          ],
+                AppSurfacePanel(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppSectionHeading(title: l10n.smtpLabel),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _smtpHostController,
+                        decoration: InputDecoration(labelText: l10n.smtpLabel),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _smtpPortController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: l10n.smtpPortLabel,
                         ),
                       ),
-                    ),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<SmtpSecurityModeModel>(
+                        initialValue: _smtpSecurityMode,
+                        decoration: InputDecoration(
+                          labelText: l10n.smtpSecurityModeLabel,
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: SmtpSecurityModeModel.startTls,
+                            child: Text(l10n.smtpSecurityModeStartTls),
+                          ),
+                          DropdownMenuItem(
+                            value: SmtpSecurityModeModel.tls,
+                            child: Text(l10n.smtpSecurityModeTls),
+                          ),
+                        ],
+                        onChanged: _isSaving || _isTestingConnection
+                            ? null
+                            : (value) {
+                                if (value == null) {
+                                  return;
+                                }
+
+                                setState(() => _smtpSecurityMode = value);
+                              },
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _smtpUserNameController,
+                        decoration: InputDecoration(
+                          labelText: l10n.smtpUserNameLabel,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _smtpUserEmailController,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: InputDecoration(
+                          labelText: l10n.smtpUserEmailLabel,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _smtpPasswordSecretNameController,
+                        decoration: InputDecoration(
+                          labelText: l10n.smtpPasswordSecretNameLabel,
+                          helperText: _configuration.smtpPasswordConfigured
+                              ? l10n.smtpPasswordConfiguredHint
+                              : l10n.smtpPasswordMissingHint,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      PasswordTextField(
+                        controller: _smtpPasswordController,
+                        enabled: !_isSaving && !_isTestingConnection,
+                        decoration: InputDecoration(
+                          labelText: l10n.smtpPasswordLabel,
+                          helperText: l10n.smtpPasswordTransientHint,
+                        ),
+                      ),
+                    ],
                   ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    FilledButton(
-                      onPressed: _isSaving || _isTestingConnection
-                          ? null
-                          : _saveConfiguration,
-                      child: _isSaving
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Text(l10n.saveButton),
-                    ),
-                    FilledButton.tonalIcon(
-                      onPressed: _isSaving || _isTestingConnection
-                          ? null
-                          : _testSmtpConnection,
-                      icon: _isTestingConnection
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.network_check_outlined),
-                      label: Text(l10n.smtpTestConnectionButton),
-                    ),
-                  ],
+                ),
+                AppSurfacePanel(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppSectionHeading(title: l10n.menuSettings),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _publicAppBaseUrlController,
+                        decoration: InputDecoration(
+                          labelText: l10n.publicAppBaseUrlLabel,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _mainMapRadiusController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: l10n.mainMapRadiusSetting,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _miniMapRadiusController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: l10n.miniMapRadiusSetting,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _unclaimedRadiusController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: l10n.unclaimedRadiusSetting,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SwitchListTile(
+                        value: _showExactPositionWhenFullyClaimed,
+                        onChanged: _isSaving
+                            ? null
+                            : (value) {
+                                setState(
+                                  () => _showExactPositionWhenFullyClaimed =
+                                      value,
+                                );
+                              },
+                        title: Text(l10n.showExactPositionSetting),
+                      ),
+                    ],
+                  ),
+                ),
+                AppSurfacePanel(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppSectionHeading(
+                        title: l10n.authProviderStatusSectionTitle,
+                      ),
+                      const SizedBox(height: 12),
+                      if (_configuration.authProviders.isEmpty)
+                        Text(l10n.authProviderStatusEmpty)
+                      else
+                        ..._configuration.authProviders.map(
+                          (provider) => Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: AppSurfacePanel(
+                              padding: const EdgeInsets.all(16),
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    provider.displayName,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleLarge,
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: [
+                                      _StatusChip(
+                                        label: provider.enabled
+                                            ? l10n.authProviderStatusEnabled
+                                            : l10n.authProviderStatusDisabled,
+                                        color: provider.enabled
+                                            ? Colors.green
+                                            : Colors.grey,
+                                      ),
+                                      _StatusChip(
+                                        label: provider.visibleOnLogin
+                                            ? l10n.authProviderStatusVisibleOnLogin
+                                            : l10n.authProviderStatusHiddenOnLogin,
+                                        color: provider.visibleOnLogin
+                                            ? Colors.blue
+                                            : Colors.orange,
+                                      ),
+                                      _StatusChip(
+                                        label: provider.hasClientId
+                                            ? l10n.authProviderStatusClientIdPresent
+                                            : l10n.authProviderStatusClientIdMissing,
+                                        color: provider.hasClientId
+                                            ? Colors.green
+                                            : Colors.red,
+                                      ),
+                                      _StatusChip(
+                                        label: provider.hasClientSecret
+                                            ? l10n.authProviderStatusClientSecretPresent
+                                            : l10n.authProviderStatusClientSecretMissing,
+                                        color: provider.hasClientSecret
+                                            ? Colors.green
+                                            : Colors.red,
+                                      ),
+                                      _StatusChip(
+                                        label: provider.usesPkce
+                                            ? l10n.authProviderStatusPkceEnabled
+                                            : l10n.authProviderStatusPkceDisabled,
+                                        color: provider.usesPkce
+                                            ? Colors.teal
+                                            : Colors.blueGrey,
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                AppGlassPanel(
+                  child: Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      FilledButton(
+                        onPressed: _isSaving || _isTestingConnection
+                            ? null
+                            : _saveConfiguration,
+                        child: _isSaving
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Text(l10n.saveButton),
+                      ),
+                      FilledButton.tonalIcon(
+                        onPressed: _isSaving || _isTestingConnection
+                            ? null
+                            : _testSmtpConnection,
+                        icon: _isTestingConnection
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.network_check_outlined),
+                        label: Text(l10n.smtpTestConnectionButton),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

@@ -30,7 +30,7 @@ class _UrbanArtDropsAppState extends State<UrbanArtDropsApp> {
     return MaterialApp.router(
       title: "Urban Art Drops",
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
+      theme: AppTheme.darkTheme,
       routerConfig: _router,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: const [

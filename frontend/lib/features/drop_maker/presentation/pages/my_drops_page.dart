@@ -7,6 +7,7 @@ import "../../../authentication/presentation/bloc/auth_session_cubit.dart";
 import "../../../../shared/models/app_models.dart";
 import "../../../../shared/models/hunter_identity.dart";
 import "../../../../shared/services/app_api_client.dart";
+import "../../../../shared/widgets/app_panels.dart";
 import "../../../../shared/widgets/drop_overview_card.dart";
 import "../../../../shared/widgets/page_shell.dart";
 
@@ -507,28 +508,43 @@ class _MyDropsPageState extends State<MyDropsPage> {
           : Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      FilledButton.icon(
-                        onPressed: _isSaving
-                            ? null
-                            : () => context.go("/drop-maker/make-drop-wizard"),
-                        icon: const Icon(Icons.add_location_alt_outlined),
-                        label: Text(l10n.createAction),
-                      ),
-                      const SizedBox(width: 8),
-                      OutlinedButton.icon(
-                        onPressed: _isSaving ? null : _loadData,
-                        icon: const Icon(Icons.refresh),
-                        label: Text(l10n.refreshAction),
-                      ),
-                    ],
+                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+                  child: AppGlassPanel(
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            authState.role == AppUserRole.admin
+                                ? l10n.navDrops
+                                : l10n.menuMyDrops,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ),
+                        FilledButton.icon(
+                          onPressed: _isSaving
+                              ? null
+                              : () =>
+                                    context.go("/drop-maker/make-drop-wizard"),
+                          icon: const Icon(Icons.add_location_alt_outlined),
+                          label: Text(l10n.createAction),
+                        ),
+                        const SizedBox(width: 8),
+                        OutlinedButton.icon(
+                          onPressed: _isSaving ? null : _loadData,
+                          icon: const Icon(Icons.refresh),
+                          label: Text(l10n.refreshAction),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 Expanded(
                   child: viewModels.isEmpty
-                      ? Center(child: Text(l10n.noDropsAvailable))
+                      ? Center(
+                          child: AppSurfacePanel(
+                            child: Text(l10n.noDropsAvailable),
+                          ),
+                        )
                       : RefreshIndicator(
                           onRefresh: _loadData,
                           child: ListView.builder(

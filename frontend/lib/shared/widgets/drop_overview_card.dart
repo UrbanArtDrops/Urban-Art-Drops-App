@@ -7,6 +7,7 @@ import "package:latlong2/latlong.dart";
 import "package:urban_art_drops_app/l10n/app_localizations.dart";
 
 import "../models/hunter_identity.dart";
+import "app_panels.dart";
 import "carousel_navigation_tabs.dart";
 import "hunter_identity_list.dart";
 import "user_avatar.dart";
@@ -62,7 +63,7 @@ class DropOverviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final content = Padding(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(18),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final isDesktop = constraints.maxWidth >= 980;
@@ -127,9 +128,13 @@ class DropOverviewCard extends StatelessWidget {
       ),
     );
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: onTap == null ? content : InkWell(onTap: onTap, child: content),
+    return AppSurfacePanel(
+      withAmbientShadow: true,
+      padding: EdgeInsets.zero,
+      child: Material(
+        color: Colors.transparent,
+        child: onTap == null ? content : InkWell(onTap: onTap, child: content),
+      ),
     );
   }
 }
@@ -179,11 +184,16 @@ class _DropOverviewMainContent extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: Text(
-                title,
-                style: Theme.of(context).textTheme.titleLarge,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.headlineMedium,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
             ),
             if (trailing != null) ...[const SizedBox(width: 8), trailing!],
@@ -192,7 +202,7 @@ class _DropOverviewMainContent extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           subtitle,
-          style: Theme.of(context).textTheme.bodySmall,
+          style: Theme.of(context).textTheme.labelMedium,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
@@ -218,6 +228,7 @@ class _DropOverviewMainContent extends StatelessWidget {
           description.isEmpty ? "-" : description,
           maxLines: 4,
           overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.bodyMedium,
         ),
         const SizedBox(height: 10),
         Wrap(
@@ -238,7 +249,9 @@ class _DropOverviewMainContent extends StatelessWidget {
         const SizedBox(height: 10),
         Text(
           l10n.claimedHuntersTitle,
-          style: Theme.of(context).textTheme.labelLarge,
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            color: Theme.of(context).colorScheme.primary,
+          ),
         ),
         const SizedBox(height: 6),
         HunterIdentityList(
@@ -336,18 +349,19 @@ class _DropPhotoCarouselState extends State<_DropPhotoCarousel> {
     if (photos.isEmpty) {
       return AspectRatio(
         aspectRatio: 4 / 3,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(12),
-          ),
+        child: AppSurfacePanel(
+          radius: 18,
+          padding: EdgeInsets.zero,
+          backgroundColor: Theme.of(
+            context,
+          ).colorScheme.surfaceContainerHighest,
           child: const Center(child: Icon(Icons.image_not_supported_outlined)),
         ),
       );
     }
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(18),
       child: AspectRatio(
         aspectRatio: 4 / 3,
         child: Stack(
@@ -361,7 +375,7 @@ class _DropPhotoCarouselState extends State<_DropPhotoCarousel> {
                 photos[index],
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => const ColoredBox(
-                  color: Color(0xFFE7ECEE),
+                  color: Color(0xFF151515),
                   child: Center(
                     child: Icon(Icons.image_not_supported_outlined),
                   ),
@@ -381,20 +395,16 @@ class _DropPhotoCarouselState extends State<_DropPhotoCarousel> {
                 right: 0,
                 bottom: 8,
                 child: Center(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(999),
+                  child: AppGlassPanel(
+                    radius: 999,
+                    opacity: 0.66,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      child: Text(
-                        "${_activeIndex + 1}/${photos.length}",
-                        style: const TextStyle(color: Colors.white),
-                      ),
+                    child: DefaultTextStyle(
+                      style: const TextStyle(color: Colors.white),
+                      child: Text("${_activeIndex + 1}/${photos.length}"),
                     ),
                   ),
                 ),

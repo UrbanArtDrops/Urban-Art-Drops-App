@@ -5,6 +5,7 @@ import "package:urban_art_drops_app/l10n/app_localizations.dart";
 
 import "../../app/router/app_navigation_history.dart";
 import "../../features/authentication/presentation/bloc/auth_session_cubit.dart";
+import "app_panels.dart";
 
 class PageShell extends StatelessWidget {
   const PageShell({
@@ -59,8 +60,8 @@ class PageShell extends StatelessWidget {
             router.canPop() ||
             navigator.canPop() ||
             AppNavigationHistory.instance.canGoBack(currentLocation);
-
         return Scaffold(
+          backgroundColor: Colors.transparent,
           appBar: AppBar(
             automaticallyImplyLeading: false,
             leadingWidth: canNavigateBack ? 104 : 56,
@@ -70,7 +71,11 @@ class PageShell extends StatelessWidget {
               onBackPressed: () =>
                   _handleBackNavigation(context, currentLocation),
             ),
-            title: Text(title),
+            title: Text(
+              currentLocation.toUpperCase(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
             actions: [...actions],
           ),
           floatingActionButton: floatingActionButton,
@@ -81,8 +86,12 @@ class PageShell extends StatelessWidget {
                 children: _buildNavigationEntries(l10n, authState)
                     .map(
                       (entry) => entry.isDivider
-                          ? const Divider(height: 24)
+                          ? const SizedBox(height: 20)
                           : ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 2,
+                              ),
                               selected: path == entry.path,
                               leading: Icon(entry.icon),
                               title: Text(entry.title),
@@ -104,15 +113,87 @@ class PageShell extends StatelessWidget {
               ),
             ),
           ),
-          body: SafeArea(
-            child: expandBodyToViewport
-                ? SizedBox.expand(child: body)
-                : Center(
+          body: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Theme.of(context).colorScheme.surface,
+                  Theme.of(context).colorScheme.surfaceContainer,
+                  Theme.of(context).colorScheme.surface,
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Stack(
+              children: [
+                Positioned(
+                  top: -120,
+                  right: -40,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.secondary.withValues(alpha: 0.12),
+                          blurRadius: 140,
+                          spreadRadius: 20,
+                        ),
+                      ],
+                    ),
+                    child: const SizedBox(width: 220, height: 220),
+                  ),
+                ),
+                Positioned(
+                  top: 40,
+                  left: -80,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.12),
+                          blurRadius: 160,
+                          spreadRadius: 30,
+                        ),
+                      ],
+                    ),
+                    child: const SizedBox(width: 260, height: 260),
+                  ),
+                ),
+                SafeArea(
+                  child: Center(
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1200),
-                      child: SizedBox.expand(child: body),
+                      constraints: const BoxConstraints(maxWidth: 1320),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          AppScreenHeader(
+                            title: title,
+                            technicalLabel: currentLocation.toUpperCase(),
+                          ),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                              child: expandBodyToViewport
+                                  ? ClipRRect(
+                                      borderRadius: BorderRadius.circular(28),
+                                      child: body,
+                                    )
+                                  : body,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
+                ),
+              ],
+            ),
           ),
         );
       },

@@ -7,6 +7,7 @@ import "package:urban_art_drops_app/l10n/app_localizations.dart";
 import "../../../../shared/models/app_models.dart";
 import "../../../../shared/services/app_api_client.dart";
 import "../../../../shared/services/external_provider_auth_launcher.dart";
+import "../../../../shared/widgets/app_panels.dart";
 import "../../../../shared/widgets/page_shell.dart";
 import "../../../../shared/widgets/password_text_field.dart";
 import "../bloc/auth_session_cubit.dart";
@@ -292,191 +293,182 @@ class _LoginPageState extends State<LoginPage> {
     return PageShell(
       title: l10n.navLogin,
       body: ListView(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
         children: [
+          AppSurfacePanel(
+            margin: const EdgeInsets.only(bottom: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppSectionHeading(title: l10n.navLogin),
+                const SizedBox(height: 10),
+                Text(l10n.authRoleManagedAtRegistration),
+              ],
+            ),
+          ),
           if (!isMfaChallengeActive &&
               !_isCheckingBootstrap &&
               _bootstrapStatus?.bootstrapRequired == true) ...[
-            Card.outlined(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.bootstrapAdminTitle,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(l10n.bootstrapAdminLoginHint),
-                    const SizedBox(height: 12),
-                    FilledButton.icon(
-                      onPressed: () => context.go("/auth/bootstrap-admin"),
-                      icon: const Icon(Icons.admin_panel_settings_outlined),
-                      label: Text(l10n.bootstrapAdminAction),
-                    ),
-                  ],
-                ),
+            AppSurfacePanel(
+              margin: const EdgeInsets.only(bottom: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppSectionHeading(title: l10n.bootstrapAdminTitle),
+                  const SizedBox(height: 8),
+                  Text(l10n.bootstrapAdminLoginHint),
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    onPressed: () => context.go("/auth/bootstrap-admin"),
+                    icon: const Icon(Icons.admin_panel_settings_outlined),
+                    label: Text(l10n.bootstrapAdminAction),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 12),
           ],
           if (isMfaChallengeActive) ...[
-            Card.outlined(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.authMfaTitle,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _mfaSetupRequired
-                          ? l10n.authMfaSetupHint
-                          : l10n.authMfaRequired,
-                    ),
-                    if (_mfaProvisioningUri != null) ...[
-                      const SizedBox(height: 16),
-                      Center(
+            AppSurfacePanel(
+              withAmbientShadow: true,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppSectionHeading(title: l10n.authMfaTitle),
+                  const SizedBox(height: 8),
+                  Text(
+                    _mfaSetupRequired
+                        ? l10n.authMfaSetupHint
+                        : l10n.authMfaRequired,
+                  ),
+                  if (_mfaProvisioningUri != null) ...[
+                    const SizedBox(height: 16),
+                    Center(
+                      child: AppSurfacePanel(
+                        padding: const EdgeInsets.all(14),
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHighest,
                         child: QrImageView(
                           data: _mfaProvisioningUri!,
                           size: 180,
                         ),
                       ),
-                    ],
-                    if ((_mfaManualEntryKey ?? "").isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      SelectableText(
-                        "${l10n.authMfaManualKeyLabel}: ${_mfaManualEntryKey!}",
-                      ),
-                    ],
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _mfaCodeController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: l10n.authMfaCodeLabel,
-                      ),
-                      onSubmitted: (_) {
-                        if (!_isSaving) {
-                          _completeMfa();
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    FilledButton(
-                      onPressed: _isSaving ? null : _completeMfa,
-                      child: _isSaving
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Text(l10n.authMfaContinue),
                     ),
                   ],
-                ),
+                  if ((_mfaManualEntryKey ?? "").isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    SelectableText(
+                      "${l10n.authMfaManualKeyLabel}: ${_mfaManualEntryKey!}",
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _mfaCodeController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: l10n.authMfaCodeLabel,
+                    ),
+                    onSubmitted: (_) {
+                      if (!_isSaving) {
+                        _completeMfa();
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton(
+                    onPressed: _isSaving ? null : _completeMfa,
+                    child: _isSaving
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(l10n.authMfaContinue),
+                  ),
+                ],
               ),
             ),
           ] else ...[
-            Card.outlined(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.authRoleManagedAtRegistration,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: InputDecoration(labelText: l10n.emailLabel),
-                    ),
-                    const SizedBox(height: 8),
-                    PasswordTextField(
-                      controller: _passwordController,
-                      decoration: InputDecoration(
-                        labelText: l10n.passwordLabel,
-                      ),
-                      onSubmitted: (_) {
-                        if (!_isSaving) {
-                          _loginLocal();
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    FilledButton(
-                      onPressed: _isSaving ? null : _loginLocal,
-                      child: _isSaving
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Text(l10n.navLogin),
-                    ),
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: _isSaving
-                          ? null
-                          : () => context.go("/auth/forgot-password"),
-                      child: Text(l10n.authForgotPasswordAction),
-                    ),
-                  ],
-                ),
+            AppSurfacePanel(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppSectionHeading(title: l10n.navLogin),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: InputDecoration(labelText: l10n.emailLabel),
+                  ),
+                  const SizedBox(height: 8),
+                  PasswordTextField(
+                    controller: _passwordController,
+                    decoration: InputDecoration(labelText: l10n.passwordLabel),
+                    onSubmitted: (_) {
+                      if (!_isSaving) {
+                        _loginLocal();
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton(
+                    onPressed: _isSaving ? null : _loginLocal,
+                    child: _isSaving
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(l10n.navLogin),
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: _isSaving
+                        ? null
+                        : () => context.go("/auth/forgot-password"),
+                    child: Text(l10n.authForgotPasswordAction),
+                  ),
+                ],
               ),
             ),
             if (!_isLoadingProviders && _availableProviders.isNotEmpty) ...[
               const SizedBox(height: 12),
-              Card.outlined(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.providerLoginTitle,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(l10n.authProviderLoginHint),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: _availableProviders
-                            .map(
-                              (provider) => ChoiceChip(
-                                label: Text(provider.displayName),
-                                selected:
-                                    _selectedProvider == provider.provider,
-                                onSelected: _isSaving
-                                    ? null
-                                    : (selected) {
-                                        if (selected) {
-                                          setState(
-                                            () => _selectedProvider =
-                                                provider.provider,
-                                          );
-                                        }
-                                      },
-                              ),
-                            )
-                            .toList(growable: false),
-                      ),
-                      const SizedBox(height: 12),
-                      OutlinedButton(
-                        onPressed: _isSaving ? null : _loginProvider,
-                        child: Text(l10n.providerLoginTitle),
-                      ),
-                    ],
-                  ),
+              AppSurfacePanel(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppSectionHeading(title: l10n.providerLoginTitle),
+                    const SizedBox(height: 8),
+                    Text(l10n.authProviderLoginHint),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _availableProviders
+                          .map(
+                            (provider) => ChoiceChip(
+                              label: Text(provider.displayName),
+                              selected: _selectedProvider == provider.provider,
+                              onSelected: _isSaving
+                                  ? null
+                                  : (selected) {
+                                      if (selected) {
+                                        setState(
+                                          () => _selectedProvider =
+                                              provider.provider,
+                                        );
+                                      }
+                                    },
+                            ),
+                          )
+                          .toList(growable: false),
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton(
+                      onPressed: _isSaving ? null : _loginProvider,
+                      child: Text(l10n.providerLoginTitle),
+                    ),
+                  ],
                 ),
               ),
             ],

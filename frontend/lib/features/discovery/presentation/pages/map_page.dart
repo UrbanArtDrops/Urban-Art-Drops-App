@@ -11,6 +11,7 @@ import "package:urban_art_drops_app/l10n/app_localizations.dart";
 import "../../../../shared/models/app_models.dart";
 import "../../../../shared/models/hunter_identity.dart";
 import "../../../../shared/services/app_api_client.dart";
+import "../../../../shared/widgets/app_panels.dart";
 import "../../../../shared/widgets/hunter_identity_list.dart";
 import "../../../../shared/widgets/page_shell.dart";
 import "../../../../shared/widgets/user_avatar.dart";
@@ -457,82 +458,75 @@ class _MapPageState extends State<MapPage> {
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 720),
-              child: Material(
-                elevation: 5,
-                borderRadius: BorderRadius.circular(14),
-                color: Theme.of(
-                  context,
-                ).colorScheme.surface.withValues(alpha: 0.94),
+              child: AppGlassPanel(
+                radius: 28,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _locationSearchController,
-                              focusNode: _locationSearchFocusNode,
-                              onChanged: _onLocationSearchChanged,
-                              decoration: InputDecoration(
-                                hintText: l10n.mapSearchLocationHint,
-                                prefixIcon: const Icon(Icons.search),
-                                suffixIcon: _isSearchingLocations
-                                    ? const Padding(
-                                        padding: EdgeInsets.all(12),
-                                        child: SizedBox(
-                                          height: 16,
-                                          width: 16,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                          ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _locationSearchController,
+                            focusNode: _locationSearchFocusNode,
+                            onChanged: _onLocationSearchChanged,
+                            decoration: InputDecoration(
+                              hintText: l10n.mapSearchLocationHint,
+                              prefixIcon: const Icon(Icons.search),
+                              suffixIcon: _isSearchingLocations
+                                  ? const Padding(
+                                      padding: EdgeInsets.all(12),
+                                      child: SizedBox(
+                                        height: 16,
+                                        width: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
                                         ),
-                                      )
-                                    : _locationSearchController.text.isNotEmpty
-                                    ? IconButton(
-                                        icon: const Icon(Icons.close),
-                                        onPressed: () {
-                                          _locationSearchController.clear();
-                                          _onLocationSearchChanged("");
-                                        },
-                                      )
-                                    : null,
-                              ),
+                                      ),
+                                    )
+                                  : _locationSearchController.text.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.close),
+                                      onPressed: () {
+                                        _locationSearchController.clear();
+                                        _onLocationSearchChanged("");
+                                      },
+                                    )
+                                  : null,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          IconButton.filledTonal(
-                            tooltip: l10n.centerOnMyLocation,
-                            onPressed: _isCenteringOnUser
-                                ? null
-                                : () => _centerOnUserLocation(l10n),
-                            icon: _isCenteringOnUser
-                                ? const SizedBox(
-                                    height: 18,
-                                    width: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Icon(Icons.my_location_outlined),
-                          ),
-                          IconButton.filledTonal(
-                            tooltip: l10n.refreshAction,
-                            onPressed: _isLoadingDrops ? null : _loadMapData,
-                            icon: const Icon(Icons.refresh),
-                          ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton.filledTonal(
+                          tooltip: l10n.centerOnMyLocation,
+                          onPressed: _isCenteringOnUser
+                              ? null
+                              : () => _centerOnUserLocation(l10n),
+                          icon: _isCenteringOnUser
+                              ? const SizedBox(
+                                  height: 18,
+                                  width: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.my_location_outlined),
+                        ),
+                        IconButton.filledTonal(
+                          tooltip: l10n.refreshAction,
+                          onPressed: _isLoadingDrops ? null : _loadMapData,
+                          icon: const Icon(Icons.refresh),
+                        ),
+                      ],
                     ),
-                    if (_locationSuggestions.isNotEmpty)
+                    if (_locationSuggestions.isNotEmpty) ...[
+                      const SizedBox(height: 10),
                       ConstrainedBox(
                         constraints: const BoxConstraints(maxHeight: 220),
-                        child: ListView.separated(
+                        child: ListView.builder(
                           shrinkWrap: true,
                           itemCount: _locationSuggestions.length,
-                          separatorBuilder: (context, index) =>
-                              const Divider(height: 1),
                           itemBuilder: (context, index) {
                             final suggestion = _locationSuggestions[index];
                             return ListTile(
@@ -549,9 +543,10 @@ class _MapPageState extends State<MapPage> {
                           },
                         ),
                       ),
+                    ],
                     if (showNoResults)
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+                        padding: const EdgeInsets.only(top: 10),
                         child: Align(
                           alignment: Alignment.centerLeft,
                           child: Text(
@@ -571,18 +566,10 @@ class _MapPageState extends State<MapPage> {
             left: 12,
             right: 12,
             bottom: 12,
-            child: Material(
-              color: Theme.of(
-                context,
-              ).colorScheme.surface.withValues(alpha: 0.9),
-              borderRadius: BorderRadius.circular(12),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
-                child: Text(l10n.mapShowDropDetailsHint),
-              ),
+            child: AppGlassPanel(
+              radius: 22,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Text(l10n.mapShowDropDetailsHint),
             ),
           ),
       ],
@@ -606,24 +593,26 @@ class _MapPageState extends State<MapPage> {
           return Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        header,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ),
-                    if (_isLoadingDrops)
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+                child: AppGlassPanel(
+                  child: Row(
+                    children: [
+                      Expanded(
                         child: Text(
-                          l10n.loadingData,
-                          style: Theme.of(context).textTheme.bodySmall,
+                          header,
+                          style: Theme.of(context).textTheme.bodyMedium,
                         ),
                       ),
-                  ],
+                      if (_isLoadingDrops)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: Text(
+                            l10n.loadingData,
+                            style: Theme.of(context).textTheme.labelSmall,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
               if (_loadError != null)
