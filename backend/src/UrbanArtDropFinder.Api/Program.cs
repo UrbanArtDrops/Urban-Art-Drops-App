@@ -30,6 +30,7 @@ using UrbanArtDropFinder.Persistence.Db;
 var builder = WebApplication.CreateBuilder(args);
 var jwtOptions = JwtAuthenticationOptionsResolver.Resolve(builder.Configuration, builder.Environment.EnvironmentName);
 
+// Test Kommentar
 builder.WebHost.ConfigureKestrel(options =>
 {
     options.ConfigureEndpointDefaults(endpointOptions =>
